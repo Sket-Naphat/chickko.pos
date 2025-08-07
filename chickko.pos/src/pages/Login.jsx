@@ -24,7 +24,7 @@ function Login() {
       Cookies.set("authToken", token, { expires: 1 }); // อยู่ได้ 1 วัน
 
       // ✅ ถ้า login สำเร็จ ให้ redirect ไปหน้า dashboard
-      navigate("/dashboard");
+      navigate("/home");
     } catch (error) {
       alert("เข้าสู่ระบบไม่สำเร็จ: " + (error.response?.data?.message || error.message));
     }
