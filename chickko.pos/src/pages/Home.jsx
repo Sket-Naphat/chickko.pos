@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 //import jwt_decode from "jwt-decode";
+// ✅ แบบนี้ถูกต้อง
+import { jwtDecode } from "jwt-decode";
 
 function Home() {
   const navigate = useNavigate();
@@ -15,18 +17,17 @@ function Home() {
       return;
     }
 
-    // try {
-    //   const decoded = jwt_decode(token);
-    //   const now = Date.now() / 1000; // เป็นวินาที
-
-    //   if (decoded.exp < now) {
-    //     Cookies.remove("authToken"); // ❌ หมดอายุ
-    //     navigate("/");
-    //   }
-    // } catch (err) {
-    //   Cookies.remove("authToken"); // ❌ token ผิด format
-    //   navigate("/");
-    // }
+    try {
+      const decoded = jwtDecode(token); // ✅
+      const now = Date.now() / 1000;
+      if (decoded.exp < now) {
+        Cookies.remove("authToken");
+        navigate("/");
+      }
+    } catch (err) {
+      Cookies.remove("authToken");
+      navigate("/");
+    }
   }, []);
 
   const menuItems = [
