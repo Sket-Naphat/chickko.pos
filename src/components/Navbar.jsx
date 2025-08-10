@@ -1,15 +1,12 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MdLogout } from "react-icons/md"; // ✅ import icon
 import Cookies from "js-cookie";
+import { logout } from "../lib/api";
 function Navbar() {
     const location = useLocation(); // ✅ ใช้เพื่อเช็ค path ปัจจุบัน
     const navigate = useNavigate();
     const handleLogout = () => {
-        // ✅ ลบ authToken cookie
-        // Cookies.remove("authToken");
-        Cookies.remove("authToken", { path: "/" });
-        // ✅ กลับไปหน้า Login
-        navigate("/");
+        logout(); // ✅ ใช้ฟังก์ชัน logout ที่ import มาจาก api.js
     };
 
 
