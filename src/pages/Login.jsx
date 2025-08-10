@@ -12,27 +12,39 @@ function Login() {
 
   const handleLogin = async () => {
     try {
-
-      // const APIUrl = "http://localhost:5036/api/auth/login" //local test
-      // // const APIUrl = "https://chickkoapi.up.railway.app/api/auth/login"// prd
-      // const response = await axios.post(APIUrl, {
-      //   username,
-      //   password,
-      // });
-
+      // ส่งข้อมูลไปที่ API เพื่อ login
+      if (!username || !password) {
+        alert("กรุณากรอก username และ password");
+        return;
+      }
+      // คาดว่า API จะรับข้อมูลในรูปแบบนี้
       const response = await api.post("/auth/login", { username, password });
-
       // หลัง login สำเร็จ
-      const token = response.data.token; 
+      const token =
+        typeof response.data === "string" ? response.data :
+          typeof response.data?.token === "string" ? response.data.token :
+            typeof response.data?.accessToken === "string" ? response.data.accessToken :
+              null;
 
+      if (!token) {
+        console.log("login response:", response.data);
+        alert("เข้าสู่ระบบไม่สำเร็จ: ไม่พบ token ในผลลัพธ์");
+        return;
+      }
+
+      // dev = http → secure:false, prod(Vercel)=https → secure:true
+      const isHttps = window.location.protocol === "https:";
+
+      Cookies.remove("authToken", { path: "/" });
       Cookies.set("authToken", token, {
-        expires: 1,          // 1 วัน (ปรับได้)
-        secure: true,        // โปรดักชันต้องเป็น https
-        sameSite: "strict",
-        path: "/",           // ให้ทุกหน้าอ่านได้
+        expires: 1,
+        secure: isHttps,
+        sameSite: "Lax",
+        path: "/",
       });
 
-      // ✅ ถ้า login สำเร็จ ให้ redirect ไปหน้า dashboard
+      console.log("token len:", token.length);
+      console.log("cookie now:", Cookies.get("authToken"));
       navigate("/home");
     } catch (error) {
       alert("เข้าสู่ระบบไม่สำเร็จ: " + (error.response?.data?.message || error.message));

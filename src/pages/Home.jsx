@@ -41,7 +41,7 @@ function Home() {
     { title: "📦 Check Stock", path: "/check-stock" },
     { title: "🕒 Work Time", path: "/worktime" },
     { title: "💰 Cost Management", path: "/cost" },
-    { title: "เว็บรับ order", URL: "https://chickkoapp.web.app/index.html" },
+    { title: "🗒️ เว็บรับ order", URL: "https://chickkoapp.web.app/index.html" },
   ];
 
   return (
