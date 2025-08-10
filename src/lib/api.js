@@ -6,7 +6,7 @@ import { jwtDecode } from "jwt-decode";
 /** 
  * เลือก 1 อัน โดย "เอา // ออก" ที่บรรทัดนั้น
  */
-//const FORCE_BASE_URL = "http://localhost:5036/api";            // ← ใช้ API บนเครื่อง
+// const FORCE_BASE_URL = "http://localhost:5036/api";            // ← ใช้ API บนเครื่อง
 // const FORCE_BASE_URL = "https://chickkoapi.up.railway.app/api"; // ← ใช้ Railway
  const FORCE_BASE_URL = null;                                       // ← ค่าเริ่มต้น: ใช้ ENV (Vercel/.env)
 
