@@ -10,7 +10,8 @@ import { jwtDecode } from "jwt-decode";
 function Home() {
   const navigate = useNavigate();
   const handleLogout = () => {
-    Cookies.remove("authToken");
+    // Cookies.remove("authToken");
+    Cookies.remove("authToken", { path: "/" });
     navigate("/");
   };
   useEffect(() => {

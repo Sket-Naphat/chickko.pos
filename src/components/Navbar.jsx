@@ -6,11 +6,13 @@ function Navbar() {
     const navigate = useNavigate();
     const handleLogout = () => {
         // ✅ ลบ authToken cookie
-        Cookies.remove("authToken");
-
+        // Cookies.remove("authToken");
+        Cookies.remove("authToken", { path: "/" });
         // ✅ กลับไปหน้า Login
         navigate("/");
     };
+
+
 
     return (
         <nav className="bg-white shadow-md">

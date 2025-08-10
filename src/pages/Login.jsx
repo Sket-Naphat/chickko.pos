@@ -1,8 +1,9 @@
 // src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+// import axios from "axios";
 import Cookies from "js-cookie";
+import { api } from "../lib/api"; // นำเข้า api ที่สร้างไว้
 
 function Login() {
   const [username, setUsername] = useState(""); // เก็บ username จาก input
@@ -11,17 +12,25 @@ function Login() {
 
   const handleLogin = async () => {
     try {
-      const APIUrl = "http://localhost:5036/api/auth/login" //local test
-      // const APIUrl = "https://chickkoapi.up.railway.app/api/auth/login"// prd
-      const response = await axios.post(APIUrl, {
-        username,
-        password,
+
+      // const APIUrl = "http://localhost:5036/api/auth/login" //local test
+      // // const APIUrl = "https://chickkoapi.up.railway.app/api/auth/login"// prd
+      // const response = await axios.post(APIUrl, {
+      //   username,
+      //   password,
+      // });
+
+      const response = await api.post("/auth/login", { username, password });
+
+      // หลัง login สำเร็จ
+      const token = response.data;
+
+      Cookies.set("authToken", token, {
+        expires: 1,          // 1 วัน (ปรับได้)
+        secure: true,        // โปรดักชันต้องเป็น https
+        sameSite: "strict",
+        path: "/",           // ให้ทุกหน้าอ่านได้
       });
-
-      const token = response.data.token;
-
-      // ✅ เก็บ token ไว้ใน cookie แทน localStorage
-      Cookies.set("authToken", token, { expires: 1 }); // อยู่ได้ 1 วัน
 
       // ✅ ถ้า login สำเร็จ ให้ redirect ไปหน้า dashboard
       navigate("/home");
