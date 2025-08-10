@@ -23,7 +23,7 @@ function Login() {
       const response = await api.post("/auth/login", { username, password });
 
       // หลัง login สำเร็จ
-      const token = response.data;
+      const token = response.data.token; 
 
       Cookies.set("authToken", token, {
         expires: 1,          // 1 วัน (ปรับได้)
