@@ -44,7 +44,7 @@ function App() {
 
       {shouldShowNavbar ? (
         /* ======================= Layout ที่ “มี Navbar” (หลังล็อกอิน) ======================= */
-        <div className="flex flex-col min-h-screen bg-gray-100">
+        <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-1">
             <Routes>

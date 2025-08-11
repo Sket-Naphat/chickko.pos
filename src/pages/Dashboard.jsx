@@ -1,5 +1,8 @@
-//Dashboard.jsx// src/pages/Dashboard.jsx
 function Dashboard() {
-  return <h1>Dashboard Page</h1>
+  return (<>
+    <div>
+      <h1>Dashboard</h1>
+    </div>
+  </>);
 }
 export default Dashboard;

@@ -6,8 +6,8 @@ import { jwtDecode } from "jwt-decode";          // ถอดรหัส JWT
  *   - เอา // ออกอันที่ต้องการ แล้วคอมเมนต์อีกสองอัน
  */
 // const FORCE_BASE_URL = "http://localhost:5036/api";            // ใช้ API local
-// const FORCE_BASE_URL = "https://chickkoapi.up.railway.app/api"; // ใช้ Railway (PRD)
-const FORCE_BASE_URL = null;                                       // ค่าเริ่มต้น → ใช้ ENV
+ const FORCE_BASE_URL = "https://chickkoapi.up.railway.app/api"; // ใช้ Railway (PRD)
+// const FORCE_BASE_URL = null;                                       // ค่าเริ่มต้น → ใช้ ENV
 
 /** baseURL สุดท้ายที่จะถูกใช้: ถ้า FORCE_BASE_URL มีค่า จะ override ENV ทันที */
 const baseURL = FORCE_BASE_URL ?? import.meta.env.VITE_API_URL;

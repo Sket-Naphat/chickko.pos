@@ -1,1 +1,5 @@
 @import "tailwindcss";
+/* เปิดธีมที่ต้องใช้ และตั้งค่า default = light */
+@plugin "daisyui" {
+  themes: light --default, autumn;
+}
