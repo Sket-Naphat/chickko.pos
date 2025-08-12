@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { MdLogout } from "react-icons/md";
 import { logout } from "../lib/api";
 import { jwtDecode } from "jwt-decode";
+import ThemeToggle from "../components/ThemeToggle";
 
 function Home() {
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ function Home() {
       <nav className="bg-base-100 shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-7 flex items-center justify-between relative">
           {/* ซ้าย = Logo */}
+          <ThemeToggle></ThemeToggle>
           <h1 className="text-xl font-bold absolute left-1/2 -translate-x-1/2 text-accent">
             Chick Ko POS
           </h1>

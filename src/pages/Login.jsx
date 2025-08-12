@@ -48,29 +48,19 @@ function Login() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-base-200 gap-4">
-      <div className="w-full max-w-sm p-8 bg-base-100 rounded-lg shadow-lg flex flex-col items-center gap-4">
-        <h1 className="text-2xl font-bold">เข้าสู่ระบบ</h1>
-        <input
-          type="text"
-          value={username}
-          placeholder="Username"
-          className="input input-bordered w-full"
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input
-          type="password"
-          value={password}
-          placeholder="Password"
-          className="input input-bordered w-full"
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button
-          onClick={handleLogin}
-          className="btn btn-primary w-full"
-        >
-          เข้าสู่ระบบ
-        </button>
-      </div>
+
+
+      <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+        <legend className="fieldset-legend">Login</legend>
+
+        <label className="label">Email</label>
+        <input type="text" className="input" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+
+        <label className="label">Password</label>
+        <input type="password" className="input" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+
+        <button className="btn btn-neutral mt-4" onClick={handleLogin}>Login</button>
+      </fieldset>
     </div>
   );
 }

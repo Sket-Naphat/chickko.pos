@@ -27,8 +27,7 @@ function Navbar() {
     const isDashboard = true; // แก้ไขให้เป็น true เพื่อแสดงเมนูเช็คสต็อกและต้นทุนเสมอ
     // util ทำคลาสลิงก์แบบ active
     const navLink = (to) =>
-        `text-black hover:text-black ${
-            location.pathname === to ? "font-semibold" : ""
+        `text-black hover:text-black ${location.pathname === to ? "font-semibold" : ""
         }`;
 
     return (
@@ -49,25 +48,34 @@ function Navbar() {
                     aria-expanded={open}
                     aria-label="Toggle navigation"
                 >
-                    {open ? <MdClose className="text-2xl" /> : <MdMenu className="text-2xl" />}
+                    {open ? (
+                        <MdClose className="text-2xl" />
+                    ) : (
+                        <MdMenu className="text-2xl" />
+                    )}
                 </button>
 
                 {/* เมนูแนวนอน (แสดงตั้งแต่ md ขึ้นไป) */}
-                <div className="hidden md:flex items-center space-x-4">
+                <div className="hidden md:flex items-center space-x-4 ">
                     {isDashboard && (
                         <>
-                            <Link to="/check-stock" className={navLink("/check-stock")}>
+                            <Link
+                                to="/check-stock"
+                                className="py-2 px-2 rounded hover:bg-accent"
+                            >
                                 เช็ค Stock
                             </Link>
-                            <Link to="/cost" className={navLink("/cost")}>
+                            <Link to="/cost" className="py-2 px-2 rounded hover:bg-accent">
                                 ไปดูต้นทุน
                             </Link>
                         </>
                     )}
-
+                    <div>
+                        <ThemeToggle></ThemeToggle>
+                    </div>
                     <button
                         onClick={handleLogout}
-                        className="bg-error text-white hover:bg-error w-10 h-10 flex items-center justify-center rounded-full transition"
+                        className="bg-error  hover:bg-error w-10 h-10 flex items-center justify-center rounded-full transition"
                         title="ออกจากระบบ"
                     >
                         <MdLogout className="text-lg" />
@@ -78,14 +86,16 @@ function Navbar() {
             {/* แผงเมนูมือถือ (dropdown) */}
             <div
                 id="mobile-menu"
-                className={`md:hidden overflow-hidden transition-[max-height] duration-300 ${
-                    open ? "max-h-96" : "max-h-0"
-                }`}
+                className={`md:hidden overflow-hidden transition-[max-height] duration-300 ${open ? "max-h-96" : "max-h-0"
+                    }`}
             >
                 <div className="border-t border-gray-100 px-4 py-3 flex flex-col space-y-2 bg-base-100">
                     {isDashboard && (
                         <>
-                            <Link to="/check-stock" className="py-2 px-2 rounded hover:bg-accent">
+                            <Link
+                                to="/check-stock"
+                                className="py-2 px-2 rounded hover:bg-accent"
+                            >
                                 เช็ค Stock
                             </Link>
                             <Link to="/cost" className="py-2 px-2 rounded hover:bg-accent">
@@ -93,8 +103,7 @@ function Navbar() {
                             </Link>
                         </>
                     )}
-                    
-                    
+
                     <div>
                         <ThemeToggle></ThemeToggle>
                     </div>
