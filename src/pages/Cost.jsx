@@ -1,7 +1,7 @@
 import ThemeToggle from "../components/ThemeToggle";
 import NewCostModal from "../components/Cost/NewCostModal";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "../lib/api";
 
 /**
  * ฟังก์ชัน React Component สำหรับดึงและแสดงรายการค่าใช้จ่ายคงค้างจาก API เส้นทาง /api/GetCostList
@@ -11,26 +11,37 @@ import axios from "axios";
  *
  * @returns {JSX.Element} องค์ประกอบ React ที่แสดงสถานะการโหลด, ข้อมูลว่าง หรือ ตารางข้อมูลค่าใช้จ่าย
  */
+
+// ฟังก์ชัน Component สำหรับแสดงรายการค่าใช้จ่ายคงค้าง
+
 function GetCostNoDischargeList() {
+  // สร้าง state สำหรับข้อมูลและสถานะการโหลด
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ดึงข้อมูลจาก API เมื่อ component mount
   useEffect(() => {
-    axios
-      .get("/api/GetCostList")
-      .then((res) => {
-        setData(res.data || []);
-      })
-      .catch(() => {
+    const fetchData = async () => {
+      try {
+        const res = await api.post("/cost/GetAllCostList",{}); // ✅ path ตาม Controller
+        const items = res.data ?? [];
+        setData(items);
+      } catch (err) {
         setData([]);
-      })
-      .finally(() => setLoading(false));
+        console.error("โหลดรายการค่าใช้จ่ายไม่สำเร็จ:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
+  // แสดงข้อความขณะกำลังโหลด
   if (loading) {
     return <div className="p-4">กำลังโหลดข้อมูล...</div>;
   }
 
+  // กรณีไม่มีข้อมูล
   if (!data || data.length === 0) {
     return (
       <div className="p-4 text-center text-gray-500">
@@ -39,6 +50,7 @@ function GetCostNoDischargeList() {
     );
   }
 
+  // แสดงตารางข้อมูล
   return (
     <div className="overflow-x-auto">
       <span>ตารางแสดงรายการค่าใช้จ่าย</span>
@@ -54,7 +66,7 @@ function GetCostNoDischargeList() {
           </tr>
         </thead>
         <tbody>
-          {/* {data.map((item, idx) => (
+          {data.map((item, idx) => (
             <tr key={item.id || idx}>
               <td>{idx + 1}</td>
               <td>{item.costdate}</td>
@@ -63,7 +75,7 @@ function GetCostNoDischargeList() {
               <td>{item.remark}</td>
               <td></td>
             </tr>
-          ))} */}
+          ))}
         </tbody>
       </table>
     </div>
@@ -71,7 +83,7 @@ function GetCostNoDischargeList() {
 }
 
 export default function Cost() {
-  const [items, setItems] = useState([]);
+  const [setItems] = useState([]);
 
   const handleCreated = (data) => {
     // เดโม่: แทรกเข้า state ให้เห็นผลทันที
