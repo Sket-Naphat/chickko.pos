@@ -14,7 +14,7 @@ import { api } from "../lib/api";
 
 // ฟังก์ชัน Component สำหรับแสดงรายการค่าใช้จ่ายคงค้าง
 
-function GetCostNoDischargeList() {
+function GetCostNoPurchase({ refreshKey }) {
   // สร้าง state สำหรับข้อมูลและสถานะการโหลด
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,8 +22,9 @@ function GetCostNoDischargeList() {
   // ดึงข้อมูลจาก API เมื่อ component mount
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true); // เพิ่มเพื่อให้ loading ทุกครั้งที่ refreshKey เปลี่ยน
       try {
-        const res = await api.post("/cost/GetAllCostList",{}); // ✅ path ตาม Controller
+        const res = await api.post("/cost/GetAllCostList", { IsPurchase: false }); // ✅ path ตาม Controller
         const items = res.data ?? [];
         setData(items);
       } catch (err) {
@@ -34,7 +35,7 @@ function GetCostNoDischargeList() {
       }
     };
     fetchData();
-  }, []);
+  }, [refreshKey]); // เปลี่ยนจาก [] เป็น [refreshKey]
 
   // แสดงข้อความขณะกำลังโหลด
   if (loading) {
@@ -53,7 +54,7 @@ function GetCostNoDischargeList() {
   // แสดงตารางข้อมูล
   return (
     <div className="overflow-x-auto">
-      <span>ตารางแสดงรายการค่าใช้จ่าย</span>
+
       <table className="table">
         <thead>
           <tr>
@@ -69,10 +70,10 @@ function GetCostNoDischargeList() {
           {data.map((item, idx) => (
             <tr key={item.id || idx}>
               <td>{idx + 1}</td>
-              <td>{item.costdate}</td>
-              <td>{item.category}</td>
-              <td>{item.costprice}</td>
-              <td>{item.remark}</td>
+              <td>{item.costDate}</td>
+              <td>{item.costCategory.description}</td>
+              <td>{item.costPrice}</td>
+              <td>{item.costDescription}</td>
               <td></td>
             </tr>
           ))}
@@ -82,12 +83,79 @@ function GetCostNoDischargeList() {
   );
 }
 
-export default function Cost() {
-  const [setItems] = useState([]);
+function GetCostIsPurchaseList({ refreshKey }) {
+  // สร้าง state สำหรับข้อมูลและสถานะการโหลด
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCreated = (data) => {
-    // เดโม่: แทรกเข้า state ให้เห็นผลทันที
-    setItems((prev) => [{ ...data }, ...prev]);
+  // ดึงข้อมูลจาก API เมื่อ component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true); // เพิ่มเพื่อให้ loading ทุกครั้งที่ refreshKey เปลี่ยน
+      try {
+        const res = await api.post("/cost/GetAllCostList", { IsPurchase: true }); // ✅ path ตาม Controller
+        const items = res.data ?? [];
+        setData(items);
+      } catch (err) {
+        setData([]);
+        console.error("โหลดรายการค่าใช้จ่ายไม่สำเร็จ:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [refreshKey]); // เปลี่ยนจาก [] เป็น [refreshKey]
+
+  // แสดงข้อความขณะกำลังโหลด
+  if (loading) {
+    return <div className="p-4">กำลังโหลดข้อมูล...</div>;
+  }
+
+  // กรณีไม่มีข้อมูล
+  if (!data || data.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        ไม่มีค่าใช้จ่ายคงค้าง
+      </div>
+    );
+  }
+
+  // แสดงตารางข้อมูล
+  return (
+    <div className="overflow-x-auto">
+      <table className="table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>วันที่</th>
+            <th>หมวดหมู่</th>
+            <th>ราคา</th>
+            <th>หมายเหตุ</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item, idx) => (
+            <tr key={item.id || idx}>
+              <td>{idx + 1}</td>
+              <td>{item.costDate}</td>
+              <td>{item.costCategory.description}</td>
+              <td>{item.costPrice}</td>
+              <td>{item.costDescription}</td>
+              <td></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+export default function Cost() {
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleCreated = () => {
+    // เมื่อมีการสร้างรายการใหม่ ให้ดึงข้อมูลใหม่
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -97,24 +165,21 @@ export default function Cost() {
         <h1 className="text-2xl font-bold text-info">
           บันทึกค่าใช้จ่าย
         </h1>
-
         <NewCostModal onCreated={handleCreated} />
       </div>
 
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">
-          {GetCostNoDischargeList()}
+          <div className="badge badge-outline badge-error">รายการค่าใช้จ่ายที่ยังไม่ชำระเงิน</div>
+          <GetCostNoPurchase refreshKey={refreshKey} /> {/* เปลี่ยนจาก key เป็น prop */}
         </div>
       </div>
 
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">
-          {/* <div className="overflow-x-auto">{table()}</div> */}
+          <div className="badge badge-outline badge-success">รายการค่าใช้จ่ายที่ชำระเงินแล้ว</div>
+          <GetCostIsPurchaseList refreshKey={refreshKey} /> {/* เปลี่ยนจาก key เป็น prop */}
         </div>
-      </div>
-
-      <div className="mockup-window bg-base-100 border border-base-300">
-        <div className="grid place-content-center h-80">Hello!</div>
       </div>
     </div>
   );

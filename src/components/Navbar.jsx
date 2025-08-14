@@ -26,9 +26,9 @@ function Navbar() {
     // const isDashboard = location.pathname === "/dashboard";
     const isDashboard = true; // แก้ไขให้เป็น true เพื่อแสดงเมนูเช็คสต็อกและต้นทุนเสมอ
     // util ทำคลาสลิงก์แบบ active
-    const navLink = (to) =>
-        `text-black hover:text-black ${location.pathname === to ? "font-semibold" : ""
-        }`;
+    // const navLink = (to) =>
+    //     `text-black hover:text-black ${location.pathname === to ? "font-semibold" : ""
+    //     }`;
 
     return (
         <nav className="shadow-md relative z-40">

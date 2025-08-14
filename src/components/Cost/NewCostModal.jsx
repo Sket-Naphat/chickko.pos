@@ -77,7 +77,7 @@ export default function NewCostModal({ onCreated }) {
             return alert("กรุณาเลือกหมวดหมู่");
         }
         try {
-            //await api.post("/cost/CreateCost", payload);
+            await api.post("/cost/CreateCost", payload);
             onCreated?.(); // ให้ parent ไป refresh list ถ้าต้องการ
 
             setAlert("บันทึกสำเร็จ!", "success");
