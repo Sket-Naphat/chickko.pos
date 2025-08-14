@@ -1,7 +1,8 @@
 import ThemeToggle from "../components/ThemeToggle";
-import NewCostModal from "../components/Cost/NewCostModal";
+import ModalNewCost from "../components/Cost/ModalNewCost";
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
+import ModalConfirmPayment from "../components/Cost/ModalConfirmPayment";
 
 /**
  * ฟังก์ชัน React Component สำหรับดึงและแสดงรายการค่าใช้จ่ายคงค้างจาก API เส้นทาง /api/GetCostList
@@ -18,7 +19,9 @@ function GetCostNoPurchase({ refreshKey }) {
   // สร้าง state สำหรับข้อมูลและสถานะการโหลด
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const handleConfirm = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
   // ดึงข้อมูลจาก API เมื่อ component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -59,22 +62,22 @@ function GetCostNoPurchase({ refreshKey }) {
         <thead>
           <tr>
             <th></th>
+            <th></th>
             <th>วันที่</th>
             <th>หมวดหมู่</th>
             <th>ราคา</th>
             <th>หมายเหตุ</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
           {data.map((item, idx) => (
             <tr key={item.id || idx}>
+              <td><ModalConfirmPayment onConfirm={handleConfirm} item={item} /></td>
               <td>{idx + 1}</td>
               <td>{item.costDate}</td>
               <td>{item.costCategory.description}</td>
               <td>{item.costPrice}</td>
               <td>{item.costDescription}</td>
-              <td></td>
             </tr>
           ))}
         </tbody>
@@ -165,7 +168,7 @@ export default function Cost() {
         <h1 className="text-2xl font-bold text-info">
           บันทึกค่าใช้จ่าย
         </h1>
-        <NewCostModal onCreated={handleCreated} />
+        <ModalNewCost onCreated={handleCreated} />
       </div>
 
       <div className="card bg-base-100 shadow-xl">

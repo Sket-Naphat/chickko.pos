@@ -1,7 +1,8 @@
 import { useRef, useState, useId, useEffect } from "react";
 import { api } from "../../lib/api";
+import {getCostCategories} from "../../services/costService";
 
-export default function NewCostModal({ onCreated }) {
+export default function ModalNewCost({ onCreated }) {
     const dialogRef = useRef(null); // Reference to the dialog element
     const num_costPriceId = useId();
     const dt_costDateId = useId();
@@ -27,14 +28,12 @@ export default function NewCostModal({ onCreated }) {
     // เปิด/ปิด dialog
     //const open = () => dialogRef.current?.showModal();
     // เปิด modal + โหลดหมวดหมู่
-    const open = async () => {
+    const openModal = async () => {
         try {
             setIsLoadingModal(true);
             setAlertMessage("");
             setAlertType("");
-            const res = await api.get("/cost/GetCostCategoryList"); // ✅ path ตาม Controller คุณ
-            const items = res.data ?? [];
-
+            const items = await getCostCategories();
             setCostCategory(items);
 
             if (!categoryId && items.length > 0) {
@@ -51,7 +50,7 @@ export default function NewCostModal({ onCreated }) {
         dialogRef.current?.showModal();
     };
 
-    const close = () => dialogRef.current?.close();
+    const closeModal = () => dialogRef.current?.close();
 
     const handleSubmit = async (e) => {
         if (isSaving) return;
@@ -82,7 +81,7 @@ export default function NewCostModal({ onCreated }) {
 
             setAlert("บันทึกสำเร็จ!", "success");
             resetForm();
-            close();
+            closeModal();
 
 
             //close();
@@ -149,7 +148,7 @@ export default function NewCostModal({ onCreated }) {
     return (
         <>
             {showAlert()}
-            <button className="btn btn-success text-white" onClick={open} disabled={isLoadingModal}>
+            <button className="btn btn-success text-white" onClick={openModal} disabled={isLoadingModal}>
                 {isLoadingModal ? "กำลังโหลด..." : "เพิ่มค่าใช้จ่าย"}
             </button>
 
@@ -225,7 +224,7 @@ export default function NewCostModal({ onCreated }) {
                         <label className="form-control md:col-span-2">
                             <div className="label">
                                 <span className="label-text" htmlFor={txt_costDescriptionId}>
-                                    บันทึกเพิ่มเติม (ถ้ามี)
+                                    รายละเอียดการซื้อ
                                 </span>&nbsp;
                             </div>
                             <textarea
@@ -260,7 +259,7 @@ export default function NewCostModal({ onCreated }) {
                             <button
                                 type="button"
                                 className="btn"
-                                onClick={close}
+                                onClick={closeModal}
                                 disabled={isSaving}
                             >
                                 ปิด
