@@ -7,6 +7,7 @@ import { api } from "../lib/api";
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -15,6 +16,7 @@ function Login() {
         alert("กรุณากรอก username และ password");
         return;
       }
+      setIsLoading(true);
       const response = await api.post("/auth/login", { username, password });
       const token =
         typeof response.data === "string" ? response.data :
@@ -29,20 +31,26 @@ function Login() {
       }
 
       const isHttps = window.location.protocol === "https:";
+      const cookieOpts = { expires: 1, secure: isHttps, sameSite: "Lax", path: "/" };
 
       Cookies.remove("authToken", { path: "/" });
-      Cookies.set("authToken", token, {
-        expires: 1,
-        secure: isHttps,
-        sameSite: "Lax",
-        path: "/",
-      });
+      Cookies.set("authToken", token, cookieOpts);
 
-      console.log("token len:", token.length);
-      console.log("cookie now:", Cookies.get("authToken"));
+      const { userId = null, name = "", userPermissionId = null } = response.data || {};
+      const authData = {
+        userId,
+        name,
+        userPermissionId,
+        issuedAt: Date.now(), // เผื่อไว้ใช้เช็กอายุ/ต่ออายุ
+      };
+      Cookies.remove("authData", { path: "/" });
+      Cookies.set("authData", JSON.stringify(authData), cookieOpts);
+
       navigate("/home");
     } catch (error) {
       alert("เข้าสู่ระบบไม่สำเร็จ: " + (error.response?.data?.message || error.message));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -59,7 +67,10 @@ function Login() {
         <label className="label">Password</label>
         <input type="password" className="input" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
 
-        <button className="btn btn-neutral mt-4" onClick={handleLogin}>Login</button>
+        <button className="btn btn-neutral mt-4" onClick={handleLogin} disabled={isLoading}>
+          {isLoading ? "Loading..." : "Login"}
+        </button>
+
       </fieldset>
     </div>
   );

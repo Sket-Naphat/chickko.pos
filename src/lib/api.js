@@ -24,6 +24,7 @@ function notifyLoading() { if (loadingListener) loadingListener(pending > 0); } 
 /** ฟังก์ชัน logout กลาง ใช้ซ้ำได้ทุกที่ */
 export function logout() {
   Cookies.remove("authToken", { path: "/" });                      // ลบคุกกี้
+  Cookies.remove("authData", { path: "/" });                       // ลบคุกกี้
   window.location.href = "/login";                                 // ส่งไปหน้า login
 }
 

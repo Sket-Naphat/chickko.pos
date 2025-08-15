@@ -1,9 +1,9 @@
 import ThemeToggle from "../components/ThemeToggle";
 import ModalNewCost from "../components/Cost/ModalNewCost";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
 import ModalConfirmPayment from "../components/Cost/ModalConfirmPayment";
-
+import Toast from "../components/ui/Toast";
 /**
  * ฟังก์ชัน React Component สำหรับดึงและแสดงรายการค่าใช้จ่ายคงค้างจาก API เส้นทาง /api/GetCostList
  * - หากกำลังโหลดข้อมูลจะแสดงข้อความ "กำลังโหลดข้อมูล..."
@@ -15,12 +15,13 @@ import ModalConfirmPayment from "../components/Cost/ModalConfirmPayment";
 
 // ฟังก์ชัน Component สำหรับแสดงรายการค่าใช้จ่ายคงค้าง
 
-function GetCostNoPurchase({ refreshKey }) {
+function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
   // สร้าง state สำหรับข้อมูลและสถานะการโหลด
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const handleConfirm = () => {
-    setRefreshKey((prev) => prev + 1);
+    onConfirm?.();
   };
   // ดึงข้อมูลจาก API เมื่อ component mount
   useEffect(() => {
@@ -62,18 +63,16 @@ function GetCostNoPurchase({ refreshKey }) {
         <thead>
           <tr>
             <th></th>
-            <th></th>
             <th>วันที่</th>
             <th>หมวดหมู่</th>
             <th>ราคา</th>
-            <th>หมายเหตุ</th>
+            <th>รายละเอียดการซื้อ</th>
           </tr>
         </thead>
         <tbody>
           {data.map((item, idx) => (
             <tr key={item.id || idx}>
-              <td><ModalConfirmPayment onConfirm={handleConfirm} item={item} /></td>
-              <td>{idx + 1}</td>
+              <td><ModalConfirmPayment onConfirm={handleConfirm} item={item} showToast={showToast} /></td>
               <td>{item.costDate}</td>
               <td>{item.costCategory.description}</td>
               <td>{item.costPrice}</td>
@@ -129,18 +128,16 @@ function GetCostIsPurchaseList({ refreshKey }) {
       <table className="table">
         <thead>
           <tr>
-            <th></th>
             <th>วันที่</th>
             <th>หมวดหมู่</th>
             <th>ราคา</th>
-            <th>หมายเหตุ</th>
+            <th>รายละเอียดการซื้อ</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           {data.map((item, idx) => (
             <tr key={item.id || idx}>
-              <td>{idx + 1}</td>
               <td>{item.costDate}</td>
               <td>{item.costCategory.description}</td>
               <td>{item.costPrice}</td>
@@ -154,32 +151,44 @@ function GetCostIsPurchaseList({ refreshKey }) {
   );
 }
 export default function Cost() {
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const hideTimer = useRef(null);
+
+  const showToast = (message, type = "success", duration = 2000) => {
+    // เคลียร์ timer เดิม (กันทับ)
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    setToast({ show: true, message, type });
+    hideTimer.current = setTimeout(() => setToast((t) => ({ ...t, show: false })), duration);
+  };
+
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleCreated = () => {
-    // เมื่อมีการสร้างรายการใหม่ ให้ดึงข้อมูลใหม่
+  const refreshData = () => {
+    // ฟังก์ชันสำหรับรีเฟรชข้อมูล
     setRefreshKey((prev) => prev + 1);
-  };
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-4 px-4 py-4 md:px-8 md:py-8 lg:px-80 ">
-      {/* แถบหัวเรื่อง + ปุ่มสลับธีม */}
+       {/* Global Toast */}
+      <Toast show={toast.show} message={toast.message} type={toast.type} position="bottom-center" />
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-info">
           บันทึกค่าใช้จ่าย
         </h1>
-        <ModalNewCost onCreated={handleCreated} />
+        <ModalNewCost onCreated={refreshData} showToast={showToast}/>
       </div>
 
       <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="badge badge-outline badge-error">รายการค่าใช้จ่ายที่ยังไม่ชำระเงิน</div>
-          <GetCostNoPurchase refreshKey={refreshKey} /> {/* เปลี่ยนจาก key เป็น prop */}
+        <div className="card-body p-4">
+              <div className="badge badge-outline badge-error">รายการค่าใช้จ่ายที่ยังไม่ชำระเงิน</div>
+              <GetCostNoPurchase refreshKey={refreshKey} onConfirm={refreshData} showToast={showToast} /> {/* เปลี่ยนจาก key เป็น prop */}
         </div>
       </div>
 
       <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
+        <div className="card-body p-4">
           <div className="badge badge-outline badge-success">รายการค่าใช้จ่ายที่ชำระเงินแล้ว</div>
           <GetCostIsPurchaseList refreshKey={refreshKey} /> {/* เปลี่ยนจาก key เป็น prop */}
         </div>

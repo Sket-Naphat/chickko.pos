@@ -1,55 +1,84 @@
 import { getCostCategories } from "../../services/costService";
-import { useRef, useState, useId } from "react";
+import { useRef, useState, useId, useEffect } from "react";
+import { api } from "../../lib/api";
+import Cookies from "js-cookie";
 
-export default function ModalConfirmPayment({ onConfirm, item }) {
+export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
     const num_costPriceId = useId();
     const dt_purchaseDateId = useId();
     const ddl_costCategoryId = useId();
     const dialogRef = useRef(null);
     const txt_costDescriptionId = useId();
-    const [alertMessage, setAlertMessage] = useState("");
-    const [alertType, setAlertType] = useState("");
+    // สถานะต่างๆ สำหรับ modal
 
+    const [isLoadingModal, setIsLoadingModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [costId, setCostId] = useId();
+    // สถานะต่างๆ สำหรับข้อมูลค่าใช้จ่าย
     const [costCategory, setCostCategory] = useState([]);
     const [costPrice, setCostPrice] = useState(item.costPrice);
-    const [purchaseDate, setPurchaseDate] = useState(item.costDate);
+    const [purchaseDate, setPurchaseDate] = useState(item.purchaseDate || new Date().toISOString().slice(0, 10));
     const [categoryId, setCategoryId] = useState(item.costCategory.id);
     const [costDescription, setCostDescription] = useState(item.costDescription);
+    const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
+    useEffect(() => {
+        // default วันนี้ถ้าไม่มีค่า
+        setPurchaseDate((prev) => prev || new Date().toISOString().slice(0, 10));
+    }, []);
 
     // เปิด modal เมื่อมีการคลิกปุ่ม
-    const openModal = (item) => async (e) => {
-
-        e.preventDefault();
+    const openModal = async () => {
         if (isSaving) return; // ป้องกันการเปิด modal ซ้ำในขณะที่กำลังบันทึก
+        try {
+            setIsLoadingModal(true);
 
-        const costCategory = await getCostCategories();
-        setCostCategory(costCategory);
-
-        dialogRef.current?.showModal();
+            const costCategory = await getCostCategories();
+            setCostCategory(costCategory);
+            if (!categoryId && costCategory.length > 0) {
+                setCategoryId(String(costCategory[0].costCategoryID));
+            }
+        }
+        catch (err) {
+            console.error("เปิด modal ไม่ได้:", err);
+        }
+        finally {
+            setIsLoadingModal(false);
+            if (dialogRef.current) dialogRef.current.showModal();
+        }
     }
-    
 
     const closeModal = () => dialogRef.current?.close();
-    const handleSubmit = async () => {
-        if (isSaving) return;
+
+    const handleSubmit = async (e) => {
         e.preventDefault(); // (A) กันการรีเฟรชหน้า/เปลี่ยนหน้า default ของฟอร์ม
+        if (isSaving) return;
         setIsSaving(true);
+
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, "0");
+        const purchaseTime = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(
+            now.getSeconds()
+        )}`;
+
+        // หาข้อความของ option ที่เลือกจาก dropdown
+        const categoryText = costCategory.find(
+            (c) => String(c.costCategoryID) === String(categoryId)
+        )?.description || "";
+
         const payload = {
-            CostID: item.id || costId, // ใช้ ID ของรายการที่ต้องการจ่าย
+            CostID: item.costID, // ใช้ ID ของรายการที่ต้องการจ่าย
             CostPrice: Number(costPrice || 0),
             PurchaseDate: purchaseDate,
-            PurchaseTime: new Date().toISOString("HH:mm:ss"), // ใช้เวลาปัจจุบัน
+            PurchaseTime: purchaseTime,
             CostCategoryID: categoryId,
-            CostDescription: costDescription.trim(),
-            IsPurchase: true // ยืนยันการจ่ายเงิน
+            CostDescription: (costDescription || categoryText).trim(),
+            IsPurchase: true, // ยืนยันการจ่ายเงิน
+            UpdateBy: authData?.userId || null, // ใช้ userId จาก authData ถ้ามี
         };
         if (!payload.CostPrice || payload.CostPrice <= 0) {
             setIsSaving(false);
             return alert("กรุณากรอกจำนวนเงินให้ถูกต้อง");
         }
-        if (!payload.CostDate) {
+        if (!payload.PurchaseDate) {
             setIsSaving(false);
             return alert("กรุณาเลือกวันที่");
         }
@@ -58,80 +87,30 @@ export default function ModalConfirmPayment({ onConfirm, item }) {
             return alert("กรุณาเลือกหมวดหมู่");
         }
         try {
-            //await api.post("/cost/CreateCost", payload);
-            alert(payload);
-            onCreated?.(); // ให้ parent ไป refresh list ถ้าต้องการ
+            await api.post("/cost/UpdatePurchaseCost", payload);
+            //alert(payload);
 
-            setAlert("บันทึกสำเร็จ!", "success");
-            resetForm();
+
+            showToast("บันทึกสำเร็จ!", "success", 2000);
+            onConfirm?.(); // ให้ parent ไป refresh list ถ้าต้องการ
             closeModal();
 
         } catch (err) {
             console.error(err);
             const apiMsg = err?.response?.data?.message || err?.message || "บันทึกไม่สำเร็จ";
-            setAlert(apiMsg, "error");
+            showToast(apiMsg, "error", 2000);
         } finally {
             setIsSaving(false);
             setTimeout(() => {
-                setAlertMessage("");
-                setAlertType("");
             }, 2500);
         }
-    };
-
-    const setAlert = (message, type) => {
-        setAlertMessage(message);
-        setAlertType(type); // "success" | "error"
-    };
-
-    const resetForm = () => {
-        setCostId(item.costId);
-        setCostPrice(item.costPrice || "");
-        setCategoryId(item.costCategory.id || "");
-        setCostDescription(item.costDescription || "");
-        setPurchaseDate(item.costDate || new Date().toISOString().slice(0, 10));
-        setIsPurchase(true);
-    };
-
-    const showAlert = () => {
-        if (!alertMessage) return null;
-        const alertTypeClass = alertType === "success" ? "alert alert-success" : "alert alert-error";
-        return (
-            <div className="toast toast-top toast-center z-[1000] w-4/5 py-16">
-                <div role="alert" className={alertTypeClass} aria-live="polite">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 shrink-0 stroke-current"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                    >
-                        {alertType === "success" ? (
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        ) : (
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        )}
-                    </svg>
-                    <span>{alertMessage}</span>
-                </div>
-            </div>
-        );
     };
 
 
     return (
         <>
-            <button className="btn btn-sm btn-primary" onClick={openModal(item)}>
-                จ่าย
+            <button className="btn btn-sm btn-primary" onClick={openModal} disabled={isLoadingModal}>
+                {isLoadingModal ? <span className="loading loading-spinner loading-sm"></span> : "จ่าย"}
             </button>
             {/* Modal Dialog */}
             <dialog ref={dialogRef} className="modal">
@@ -213,7 +192,7 @@ export default function ModalConfirmPayment({ onConfirm, item }) {
                                 id={txt_costDescriptionId}
                                 className="textarea textarea-bordered"
                                 rows={3}
-                                placeholder="หมายเหตุ"
+                                placeholder="รายละเอียดการซื้อ เช่น ซื้อวัตถุดิบ, ค่าบริการ, ค่าขนส่ง ฯลฯ"
                                 value={costDescription}
                                 onChange={(e) => setCostDescription(e.target.value)}
                             />

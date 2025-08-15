@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import Cost from "./pages/Cost";
 import Stock from "./pages/Stock";
 import WorkTime from "./pages/Worktime";
+import CheckStock from "./pages/CheckStock";
 
 function App() {
   const location = useLocation();
@@ -54,6 +55,7 @@ function App() {
                 <Route path="/cost" element={<Cost />} />
                 <Route path="/check-stock" element={<Stock />} />
                 <Route path="/worktime" element={<WorkTime />} />
+                <Route path="/checkstock/:orderId" element={<CheckStock />} />
               </Route>
 
               {/* ไป path แปลก ๆ ขณะอยู่ layout นี้ → ส่งไป /login */}

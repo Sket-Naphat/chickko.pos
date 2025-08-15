@@ -1,8 +1,9 @@
 import { useRef, useState, useId, useEffect } from "react";
 import { api } from "../../lib/api";
-import {getCostCategories} from "../../services/costService";
+import { getCostCategories } from "../../services/costService";
+import Cookies from "js-cookie";
 
-export default function ModalNewCost({ onCreated }) {
+export default function ModalNewCost({ onCreated, showToast }) {
     const dialogRef = useRef(null); // Reference to the dialog element
     const num_costPriceId = useId();
     const dt_costDateId = useId();
@@ -17,9 +18,7 @@ export default function ModalNewCost({ onCreated }) {
     const [categoryId, setCategoryId] = useState("");
     const [costCategory, setCostCategory] = useState([]);
     const [isPurchase, setIsPurchase] = useState(true); // Default to checked
-
-    const [alertMessage, setAlertMessage] = useState("");
-    const [alertType, setAlertType] = useState(""); // "success" หรือ "error"
+    const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
 
     useEffect(() => {
         // default วันที่วันนี้
@@ -31,23 +30,19 @@ export default function ModalNewCost({ onCreated }) {
     const openModal = async () => {
         try {
             setIsLoadingModal(true);
-            setAlertMessage("");
-            setAlertType("");
-            const items = await getCostCategories();
-            setCostCategory(items);
+            const costCategory = await getCostCategories();
+            setCostCategory(costCategory);
 
-            if (!categoryId && items.length > 0) {
-                setCategoryId(String(items[0].costCategoryID));
-            }
+            // if (!categoryId && costCategory.length > 0) {
+            //     setCategoryId(String(costCategory[0].costCategoryID));
+            // }
         } catch (err) {
             console.error("โหลด costCategory ไม่ได้:", err);
         }
         finally {
             setIsLoadingModal(false);
+            if (dialogRef.current) dialogRef.current.showModal();
         }
-
-        // เปิด dialog หลังจากจัดการ state แล้ว
-        dialogRef.current?.showModal();
     };
 
     const closeModal = () => dialogRef.current?.close();
@@ -56,12 +51,21 @@ export default function ModalNewCost({ onCreated }) {
         if (isSaving) return;
         e.preventDefault(); // (A) กันการรีเฟรชหน้า/เปลี่ยนหน้า default ของฟอร์ม
         setIsSaving(true);
+
+        // หาข้อความของ option ที่เลือกจาก dropdown
+        const categoryText = costCategory.find(
+            (c) => String(c.costCategoryID) === String(categoryId)
+        )?.description || "";
+        // สร้าง payload สำหรับ API
+
+
         const payload = {
             CostPrice: Number(costPrice || 0),
             CostDate: costDate,
             CostCategoryID: categoryId,
-            CostDescription: costDescription.trim(),
-            IsPurchase: isPurchase
+            CostDescription: (costDescription || categoryText).trim(),
+            IsPurchase: isPurchase,
+            UpdateBy: authData?.userId || null, // ใช้ userId จาก authData ถ้ามี
         };
         if (!payload.CostPrice || payload.CostPrice <= 0) {
             setIsSaving(false);
@@ -77,9 +81,9 @@ export default function ModalNewCost({ onCreated }) {
         }
         try {
             await api.post("/cost/CreateCost", payload);
+            //alert(payload.CostDescription);
             onCreated?.(); // ให้ parent ไป refresh list ถ้าต้องการ
-
-            setAlert("บันทึกสำเร็จ!", "success");
+            showToast?.("บันทึกสำเร็จ!", "success", 2000);
             resetForm();
             closeModal();
 
@@ -88,20 +92,14 @@ export default function ModalNewCost({ onCreated }) {
         } catch (err) {
             console.error(err);
             const apiMsg = err?.response?.data?.message || err?.message || "บันทึกไม่สำเร็จ";
-            setAlert(apiMsg, "error");
+            showToast?.(apiMsg, "error", 2000);
         } finally {
             setIsSaving(false);
-            setTimeout(() => {
-                setAlertMessage("");
-                setAlertType("");
-            }, 2500);
+ 
         }
     };
 
-    const setAlert = (message, type) => {
-        setAlertMessage(message);
-        setAlertType(type); // "success" | "error"
-    };
+   
 
     const resetForm = () => {
         setCostPrice("");
@@ -111,43 +109,9 @@ export default function ModalNewCost({ onCreated }) {
         setIsPurchase(true);
     };
 
-    const showAlert = () => {
-        if (!alertMessage) return null;
-        const alertTypeClass = alertType === "success" ? "alert alert-success" : "alert alert-error";
-        return (
-            <div className="toast toast-top toast-center z-[1000] w-4/5 py-16">
-                <div role="alert" className={alertTypeClass} aria-live="polite">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 shrink-0 stroke-current"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                    >
-                        {alertType === "success" ? (
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        ) : (
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        )}
-                    </svg>
-                    <span>{alertMessage}</span>
-                </div>
-            </div>
-        );
-    };
 
     return (
         <>
-            {showAlert()}
             <button className="btn btn-success text-white" onClick={openModal} disabled={isLoadingModal}>
                 {isLoadingModal ? "กำลังโหลด..." : "เพิ่มค่าใช้จ่าย"}
             </button>
@@ -231,7 +195,7 @@ export default function ModalNewCost({ onCreated }) {
                                 id={txt_costDescriptionId}
                                 className="textarea textarea-bordered"
                                 rows={3}
-                                placeholder="หมายเหตุ"
+                                placeholder="รายละเอียดการซื้อ เช่น ซื้อวัตถุดิบ, ค่าบริการ, ค่าขนส่ง ฯลฯ"
                                 value={costDescription}
                                 onChange={(e) => setCostDescription(e.target.value)}
                             />

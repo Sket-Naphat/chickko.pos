@@ -25,11 +25,14 @@ function Home() {
       const now = Date.now() / 1000;
       if (decoded.exp < now) {
         Cookies.remove("authToken");
+        Cookies.remove("authData");
+        console.log("Token expired, redirecting to login");
         navigate("/");
       }
     } catch (err) {
       console.log("Token decode error:", err);
       Cookies.remove("authToken");
+      Cookies.remove("authData");
       navigate("/");
     }
   }, [navigate]);
