@@ -60,7 +60,7 @@ function Navbar() {
                     {isDashboard && (
                         <>
                             <Link
-                                to="/check-stock"
+                                to="/stock"
                                 className="py-2 px-2 rounded hover:bg-accent"
                             >
                                 เช็ค Stock
@@ -93,7 +93,7 @@ function Navbar() {
                     {isDashboard && (
                         <>
                             <Link
-                                to="/check-stock"
+                                to="/stock"
                                 className="py-2 px-2 rounded hover:bg-accent"
                             >
                                 เช็ค Stock

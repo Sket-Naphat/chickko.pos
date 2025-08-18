@@ -1,7 +1,7 @@
 // src/pages/Stock.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-// import { api } from "../lib/api";
+import { api } from "../lib/api";
 
 export default function Stock() {
   const navigate = useNavigate();
@@ -23,18 +23,30 @@ export default function Stock() {
 
   useEffect(() => {
     setIsLoading(true);
-    // api.get("/stock/orders")
-    //   .then(res => setOrders(res.data))
-    //   .finally(() => setIsLoading(false));
+    api.post("/cost/GetStockCostRequest", {})
+      .then(res => {
+      const mappedData = res.data.map(item => ({
+        costID: item.costID,
+        costDate: item.costDate,
+        costStatus: item.costStatus.description,
+      }));
+      setOrders(mappedData);
+      })
+      .catch(error => {
+      console.error("Error fetching stock data:", error);
+      })
+      .finally(() => setIsLoading(false));
 
-    // Mock data
-    setTimeout(() => {
-      setOrders([
-        { id: 1, requisNumber: "REQ001", date: "2023-10-01", status: "Pending" },
-        { id: 2, requisNumber: "REQ002", date: "2023-10-02", status: "Approved" },
-      ]);
-      setIsLoading(false);
-    }, 600);
+    // // Mock data
+    // setTimeout(() => {
+    //   setOrders([
+    //     { id: 1, requisNumber: "REQ001", date: "2023-10-01", status: "Pending" },
+    //     { id: 2, requisNumber: "REQ002", date: "2023-10-02", status: "Approved" },
+    //   ]);
+    //   setIsLoading(false);
+    // }, 600);
+
+    setIsLoading(false);
   }, [refreshKey]);
 
   const openCheckStock = (orderId) => {
@@ -74,7 +86,7 @@ export default function Stock() {
               <thead>
                 <tr>
                   <th>เลขที่ใบสั่ง</th>
-                  <th>วันที่</th>
+                  <th>วันที่สั่งซื้อ</th>
                   <th>สถานะ</th>
                   <th className="text-right">เปิดรายการ</th>
                 </tr>
@@ -82,16 +94,16 @@ export default function Stock() {
               <tbody>
                 {!isLoading &&
                   orders.map((o) => (
-                    <tr key={o.id}>
-                      <td className="font-medium">{o.requisNumber}</td>
-                      <td>{o.date}</td>
+                    <tr key={o.costID}>
+                      <td className="font-medium">{o.costID}</td>
+                      <td>{o.costDate}</td>
                       <td>
-                        <div className="badge badge-outline">{o.status}</div>
+                        <div className="badge badge-outline">{o.costStatus}</div>
                       </td>
                       <td className="text-right">
                         <button
                           className="btn btn-sm btn-outline"
-                          onClick={() => openCheckStock(o.id)}
+                          onClick={() => openCheckStock(o.costID)}
                         >
                           เปิด
                         </button>

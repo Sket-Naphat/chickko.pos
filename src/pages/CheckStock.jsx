@@ -3,7 +3,6 @@ import { useEffect, useState, useMemo, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import Cookies from "js-cookie";
-import Toast from "../components/ui/Toast"
 
 export default function CheckStockDetail() {
     const { orderId } = useParams(); // "new" หรือเลข id จริง
@@ -60,15 +59,19 @@ export default function CheckStockDetail() {
             }));
     }, [items, groupBy]);
 
-    const [toast, setToast] = useState({ show: false, message: "", type: "info" });
+    // ...ใน component
+    const [alertOpen, setAlertOpen] = useState(false);
+    const [alertTitle, setAlertTitle] = useState("");
+    const [alertMessage, setAlertMessage] = useState("");
+    const [alertNext, setAlertNext] = useState(null); // callback หลัง OK
 
-    const showToast = (message, type = "info", timeout = 2000) => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast({ show: false, message: "", type });
-        }, timeout);
+    // ปุ่ม OK ของ modal
+    const handleAlertOk = () => {
+        setAlertOpen(false);
+        if (typeof alertNext === "function") {
+            alertNext();
+        }
     };
-
     useEffect(() => {
         const ac = new AbortController();     // ใช้ยกเลิก request เมื่อ component unmount
         setLoading(true);
@@ -97,12 +100,21 @@ export default function CheckStockDetail() {
 
                 } else {
                     // 🔹 โหมดแก้ไขใบเดิม: ดึงรายการของใบนี้ แล้วแสดง qty เดิม
-                    const res = await api.get(`/stock/orders/${orderId}/items`, { signal: ac.signal });
-                    const raw = res?.data?.data ?? [];
-                    const list = raw.map(r => ({
-                        id: r.id ?? r.itemId ?? r.stockId ?? r.StockId,
-                        name: r.name ?? r.itemName ?? r.stockName ?? r.StockName,
-                        qty: String(r.qty ?? r.Qty ?? r.quantity ?? 0)
+                    const res = await api.get("/stock/GetCurrentStock");
+                    const raw = res?.data?.data ?? [];  // backend ห่อใน { success, data, message }
+                    const list = raw.map(s => ({
+                        stockId: s.stockId,
+                        itemName: s.itemName,
+                        stockCategoryID: s.stockCategoryID,
+                        stockCategoryName: s.stockCategoryName,
+                        stockUnitTypeID: s.stockUnitTypeID,
+                        stockUnitTypeName: s.stockUnitTypeName,
+                        stockLocationID: s.stockLocationID,
+                        stockLocationName: s.stockLocationName,
+                        totalQTY: "", // ให้กรอกเอง"",
+                        requiredQTY: s.requiredQTY,
+                        stockInQTY: 0,
+                        remark: s.remark
                     }));
                     setItems(list);
                 }
@@ -159,44 +171,51 @@ export default function CheckStockDetail() {
         if (!validate()) return;
 
         setIsSaving(true);
-        // time HH:mm:ss แบบ 24 ชม.
+
         const nowTime = new Date().toLocaleTimeString("en-GB", {
             hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit",
         });
 
-        // helper แปลงตัวเลข (ว่าง -> null, มีค่า -> Number)
         const toIntOrNull = (v) =>
             v === "" || v === null || v === undefined ? null : Number(v);
 
-        // ✅ แปลง items -> List<StockCountDto>
         const payload = items.map((it) => ({
             stockId: Number(it.stockId),
-            stockInDate: orderDate,    // yyyy-MM-dd จาก input
-            stockInTime: nowTime,      // HH:mm:ss ปัจจุบัน
-            totalQTY: Number(it.totalQTY || 0),     // คงเหลือที่นับได้ (required)
+            stockInDate: orderDate,
+            stockInTime: nowTime,
+            totalQTY: Number(it.totalQTY || 0),
             requiredQTY: toIntOrNull(it.requiredQTY),
             stockInQTY: toIntOrNull(it.stockInQTY),
             remark: it.remark ?? "",
-            UpdateBy: authData?.userId ?? 0, // ใช้ userId จาก authData ถ้ามี
+            UpdateBy: authData?.userId ?? 0,
         }));
 
         try {
             if (isNew) {
-                //await api.post("/stock/CreateStockCount", payload);
-                navigate("/stock", { state: { shouldRefresh: true } });
+                // เดิม: navigate ทันที → ตัดออก
+                await api.post("/stock/CreateStockCount", payload);
             } else {
-                // ถ้าโหมดแก้ไขใช้ endpoint อื่น ก็สลับตามจริง
                 await api.post("/stock/CreateStockCount", payload);
             }
-            showToast?.("บันทึกสำเร็จ!", "success", 2000);
+
+            // ✅ แสดง alert แทน toast
+            setAlertTitle("บันทึกสำเร็จ");
+            setAlertMessage("ข้อมูลถูกบันทึกเรียบร้อยแล้ว");
+            setAlertNext(() => () => {
+                navigate("/stock", { state: { shouldRefresh: true } });
+            });
+            setAlertOpen(true);
+
         } catch (err) {
             console.error(err);
-            showToast?.("บันทึกไม่สำเร็จ กรุณาลองใหม่", "error", 3000);
-        }
-        finally {
+            // แสดง alert กรณี error ก็ได้ (ถ้าต้องการ)
+            setAlertTitle("บันทึกไม่สำเร็จ");
+            setAlertMessage("กรุณาลองใหม่อีกครั้ง");
+            setAlertNext(() => () => { }); // ไม่ต้องทำอะไรต่อ
+            setAlertOpen(true);
+        } finally {
             setIsSaving(false);
         }
-
     };
 
 
@@ -204,8 +223,7 @@ export default function CheckStockDetail() {
 
     return (
         <div className="p-4 space-y-4">
-            {/* Global Toast */}
-            <Toast show={toast.show} message={toast.message} type={toast.type} position="bottom-center" />
+
             <div className="flex items-center justify-between">
                 <h1 className="text-xl font-bold">
                     {isNew ? "สร้างรายการเช็ค Stock ใหม่" : `จัดการรายการใบสั่ง: ${orderId}`}
@@ -236,7 +254,7 @@ export default function CheckStockDetail() {
             )}
 
             <div className="card bg-base-100 shadow">
-                <div className="card-body">
+                <div className="card-body p-0">
                     {loading ? (
                         <div className="flex items-center gap-2">
                             <span className="loading loading-spinner loading-sm"></span> กำลังโหลด…
@@ -453,6 +471,21 @@ export default function CheckStockDetail() {
                     {isSaving ? "กำลังบันทึก..." : "บันทึก"}
                 </button>
             </div>
+            {alertOpen && (
+                <div className="modal modal-open">
+                    <div className="modal-box">
+                        <h3 className="font-bold text-lg">{alertTitle}</h3>
+                        <p className="py-2">{alertMessage}</p>
+                        <div className="modal-action">
+                            <button className="btn btn-primary" onClick={handleAlertOk}>
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                    {/* ไม่ใส่ปุ่ม/label บน backdrop → ผู้ใช้กดพื้นหลังแล้วจะไม่ปิด */}
+                    <div className="modal-backdrop"></div>
+                </div>
+            )}
         </div>
     );
 }
