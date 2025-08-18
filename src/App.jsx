@@ -53,7 +53,7 @@ function App() {
               <Route element={<RequireAuth />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/cost" element={<Cost />} />
-                <Route path="/check-stock" element={<Stock />} />
+                <Route path="/stock" element={<Stock />} />
                 <Route path="/worktime" element={<WorkTime />} />
                 <Route path="/checkstock/:orderId" element={<CheckStock />} />
               </Route>

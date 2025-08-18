@@ -1,5 +1,5 @@
 import ThemeToggle from "../components/ThemeToggle";
-import ModalNewCost from "../components/Cost/ModalNewCost";
+import ModalNewCost from "../components/cost/ModalNewCost";
 import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
 import ModalConfirmPayment from "../components/Cost/ModalConfirmPayment";

@@ -39,7 +39,7 @@ function Home() {
 
   const menuItems = [
     { title: "📊 Dashboard Summary", path: "/dashboard" },
-    { title: "📦 Check Stock", path: "/check-stock" },
+    { title: "📦 Check Stock", path: "/stock" },
     { title: "🕒 Work Time", path: "/worktime" },
     { title: "💰 Cost Management", path: "/cost" },
     { title: "🗒️ เว็บรับ order", URL: "https://chickkoapp.web.app/index.html" },
