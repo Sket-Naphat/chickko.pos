@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
-
+import Cookies from "js-cookie";
 export default function Stock() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -10,6 +10,8 @@ export default function Stock() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
+  const [userPermissionId] = useState(authData?.userPermissionId || []);
 
   const refreshData = () => setRefreshKey((prev) => prev + 1);
 
@@ -25,39 +27,32 @@ export default function Stock() {
     setIsLoading(true);
     api.post("/cost/GetStockCostRequest", {})
       .then(res => {
-      const mappedData = res.data.map(item => ({
-        costID: item.costID,
-        costDate: item.costDate,
-        costStatus: item.costStatus.description,
-      }));
-      setOrders(mappedData);
+        const mappedData = res.data.map(item => ({
+          costID: item.costID,
+          costDate: item.costDate,
+          costStatus: item.costStatus.description,
+        }));
+        setOrders(mappedData);
       })
       .catch(error => {
-      console.error("Error fetching stock data:", error);
+        console.error("Error fetching stock data:", error);
       })
       .finally(() => setIsLoading(false));
-
-    // // Mock data
-    // setTimeout(() => {
-    //   setOrders([
-    //     { id: 1, requisNumber: "REQ001", date: "2023-10-01", status: "Pending" },
-    //     { id: 2, requisNumber: "REQ002", date: "2023-10-02", status: "Approved" },
-    //   ]);
-    //   setIsLoading(false);
-    // }, 600);
-
     setIsLoading(false);
   }, [refreshKey]);
 
   const openCheckStock = (orderId) => {
     navigate(`/checkstock/${orderId}`);
   };
+  const openStockIn = (orderId) => {
+    navigate(`/stockin/${orderId}`);
+  };
 
   return (
     <div className="p-4 space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-base-200 p-4 rounded-lg shadow">
-        <h1 className="text-xl font-bold">Stock Management</h1>
+        <h1 className="text-xl font-bold">ระบบจัดการคลัง</h1>
         <div className="flex gap-2">
           <button className="btn btn-accent" onClick={refreshData}>
             รีเฟรช
@@ -66,9 +61,9 @@ export default function Stock() {
           <button
             className="btn btn-primary"
             onClick={() => navigate("/checkstock/new")}
-            title="สร้างรายการเช็ค Stock ใหม่"
+            title="สร้างรายการตรวจนับสต็อกใหม่"
           >
-            สร้างรายการเช็ค Stock
+            สร้างรายการตรวจนับสต็อกใหม่
           </button>
         </div>
       </div>
@@ -95,19 +90,33 @@ export default function Stock() {
                 {!isLoading &&
                   orders.map((o) => (
                     <tr key={o.costID}>
-                      <td className="font-medium">{o.costID}</td>
-                      <td>{o.costDate}</td>
+                      <td className="font-medium text-right">{o.costID}</td>
                       <td>
-                        <div className="badge badge-outline">{o.costStatus}</div>
+                        <div className="w-max">{o.costDate}</div>
                       </td>
-                      <td className="text-right">
+                      <td>
+                        <div className="badge badge-outline w-max">{o.costStatus}</div>
+                      </td>
+                      <td className="text-right inline-flex gap-2">
                         <button
-                          className="btn btn-sm btn-outline"
+                          className="btn btn-sm btn-warning"
                           onClick={() => openCheckStock(o.costID)}
                         >
-                          เปิด
+                          แก้ไข
                         </button>
+                        {userPermissionId !== 3 && (
+                          <>
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={() => openStockIn(o.costID)}
+                            >
+                              นำเข้า
+                            </button>
+                          </>
+                        )}
+
                       </td>
+
                     </tr>
                   ))}
                 {isLoading && (

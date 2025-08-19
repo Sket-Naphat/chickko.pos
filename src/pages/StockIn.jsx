@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import Cookies from "js-cookie";
 
-export default function CheckStockDetail() {
+export default function StockInDetail() {
     const { orderId } = useParams(); // "new" หรือเลข id จริง
     const isNew = orderId === "new";
     const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
@@ -23,12 +23,12 @@ export default function CheckStockDetail() {
         const day = String(d.getDate()).padStart(2, "0");
         return `${y}-${m}-${day}`;
     };
-
+    const [costPrice, setCostPrice] = useState(0);
     const [orderDate, setOrderDate] = useState(todayLocal());
     const markModified = (id) => {
         setModifiedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
     };
-    const [groupBy, setGroupBy] = useState("location"); // "location" | "category"
+    const [groupBy, setGroupBy] = useState("category"); // "location" | "category"
     // กลุ่มรายการตามสถานที่เก็บ พร้อมเรียงตาม StockLocationID และเรียงชื่อสินค้าในกลุ่ม
     const groups = useMemo(() => {
         if (!items || items.length === 0) return [];
@@ -94,14 +94,17 @@ export default function CheckStockDetail() {
                         totalQTY: "", // ให้กรอกเอง"",
                         requiredQTY: s.requiredQTY,
                         stockInQTY: 0,
-                        remark: s.remark
+                        remark: s.remark,
+                        price: 0, // ให้กรอกเอง
+                        purchaseQTY: "", // ให้กรอกเอง
                     }));
                     setItems(list);
 
                 } else {
                     // 🔹 โหมดแก้ไขใบเดิม: ดึงรายการของใบนี้ แล้วแสดง qty เดิม
                     const res = await api.post("/stock/GetStockCountLogByCostId", {
-                       costId: orderId 
+                        costId: orderId,
+                        IsStockIn: true, // แสดงรายการที่ซื้อเข้า
                     });
                     const raw = res?.data ?? [];  // backend ห่อใน { success, data, message }
                     const list = raw.map(s => ({
@@ -117,7 +120,9 @@ export default function CheckStockDetail() {
                         totalQTY: s.totalQTY,
                         requiredQTY: s.requiredQTY,
                         stockInQTY: s.stockInQTY,
-                        remark: s.remark
+                        remark: s.remark,
+                        price: 0, // ให้กรอกเอง
+                        purchaseQTY: "", // ให้กรอกเอง
                     }));
                     setItems(list);
                     setOrderDate(raw[0]?.stockCountDate || todayLocal()); // ตั้งวันที่ตามใบสั่ง
@@ -146,17 +151,9 @@ export default function CheckStockDetail() {
     const onQtyChange = (stockId, value) => {
         // อนุญาตค่าว่างชั่วคราว + ตัวเลขบวกเท่านั้น
         if (value === "" || (/^\d+$/.test(value) && Number(value) >= 0)) {
-            setItems((prev) => prev.map((x) => (x.stockId === stockId ? { ...x, totalQTY: value } : x)));
+            setItems((prev) => prev.map((x) => (x.stockId === stockId ? { ...x, purchaseQTY: value } : x)));
             setInvalidIds((prev) => prev.filter((x) => x !== stockId)); // ถ้าพิมพ์แล้วถูกต้อง เอาออกจาก invalid
             markModified(stockId);
-        }
-        //ถ้าเป็นตัวเลขให้คิดค่า stockInQTY อัตโนมัติ
-        if (/^\d+$/.test(value)) {
-            const requiredQTY = items.find(it => it.stockId === stockId)?.requiredQTY || 0;
-            const stockInQTY = requiredQTY - Number(value);
-            setItems((prev) =>
-                prev.map((x) => (x.stockId === stockId ? { ...x, stockInQTY: String(stockInQTY < 0 ? 0 : stockInQTY) } : x))
-            );
         }
     };
 
@@ -225,7 +222,7 @@ export default function CheckStockDetail() {
     };
 
 
-    const isSaveDisabled = isNew && items.some((it) => it.totalQTY === "");
+    const isSaveDisabled = items.some((it) => it.purchaseQTY === "");
 
     return (
         <div className="p-4 space-y-4">
@@ -273,9 +270,11 @@ export default function CheckStockDetail() {
                                         <th className="sticky left-0 bg-base-100 z-20">รายการ</th>
 
                                         <th className="text-right">จำนวนที่ต้องใช้</th>
-                                        <th className="text-right bg-secondary text-secondary-content">จำนวนที่นับได้</th>
-                                        <th className="text-right bg-success text-success-content">จำนวนที่ต้องซื้อเข้า</th>
+                                        <th className="text-right">จำนวนที่นับได้</th>
+                                        <th className="text-right bg-warning text-warning-content">จำนวนที่ต้องซื้อเข้า</th>
+                                        <th className="text-right bg-success text-success-content">จำนวนที่ซื้อจริง</th>
                                         <th>หน่วย</th>
+                                        <th className="text-right">ราคาซื้อเข้า</th>
                                         <th>หมายเหตุ</th>
                                         <th className="text-right">จัดการ</th>
                                     </tr>
@@ -291,7 +290,7 @@ export default function CheckStockDetail() {
                                         <Fragment key={`grp-${group.id}`}>
                                             {/* หัวข้อกลุ่ม */}
                                             <tr className="bg-base-200">
-                                                <td colSpan={7} className="font-bold text-lg bg-info">
+                                                <td colSpan={9} className="font-bold text-lg bg-info">
                                                     {group.name}
                                                 </td>
                                             </tr>
@@ -306,66 +305,17 @@ export default function CheckStockDetail() {
                                                     <tr key={it.stockId} className={rowClass}>
                                                         <td className={`sticky left-0 bg-base-100 z-10 ${rowClassItemName}`}>{it.itemName}</td>
                                                         <td className="text-right text-lg">{it.requiredQTY}</td>
-
-                                                        {/* นับได้ */}
-                                                        <td className="text-right bg-secondary/10 text-info-content">
-                                                            <div className="flex items-center justify-end gap-2">
-                                                                <button
-                                                                    className="btn btn-xs btn-outline btn-error"
-                                                                    onClick={() => {
-                                                                        const n = Math.max(0, Number(it.totalQTY || 0) - 1);
-                                                                        let stockInQTY = it.requiredQTY - n;
-                                                                        stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
-                                                                        setItems((prev) =>
-                                                                            prev.map((x) =>
-                                                                                x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
-                                                                            )
-                                                                        );
-                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
-                                                                        markModified(it.stockId);
-                                                                    }}
-                                                                >
-                                                                    -
-                                                                </button>
-
-                                                                <input
-                                                                    type="number"
-                                                                    min="0"
-                                                                    max="99"
-                                                                    className="input input-bordered input-xs w-14 text-center text-lg"
-                                                                    value={it.totalQTY}
-                                                                    onChange={(e) => onQtyChange(it.stockId, e.target.value)}
-                                                                />
-
-                                                                <button
-                                                                    className="btn btn-xs btn-outline btn-success"
-                                                                    onClick={() => {
-                                                                        const n = Number(it.totalQTY || 0) + 1;
-                                                                        let stockInQTY = it.requiredQTY - n;
-                                                                        stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
-                                                                        setItems((prev) =>
-                                                                            prev.map((x) =>
-                                                                                x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
-                                                                            )
-                                                                        );
-                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
-                                                                        markModified(it.stockId);
-                                                                    }}
-                                                                >
-                                                                    +
-                                                                </button>
-                                                            </div>
-                                                        </td>
-
+                                                        <td className="text-right">{it.totalQTY}</td>
+                                                        <td className="text-right bg-warning/10">{it.stockInQTY}</td>
                                                         {/* ต้องซื้อเข้า */}
                                                         <td className="text-right bg-success/10">
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <button
                                                                     className="btn btn-xs btn-outline btn-error"
                                                                     onClick={() => {
-                                                                        const n = Math.max(0, Number(it.stockInQTY || 0) - 1);
+                                                                        const n = Math.max(0, Number(it.purchaseQTY || 0) - 1);
                                                                         setItems((prev) =>
-                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, purchaseQTY: String(n) } : x))
                                                                         );
                                                                         setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
                                                                         markModified(it.stockId);
@@ -378,26 +328,17 @@ export default function CheckStockDetail() {
                                                                     type="number"
                                                                     min="0"
                                                                     max="99"
-                                                                    className="input input-bordered input-xs w-14 text-center text-lg"
-                                                                    value={it.stockInQTY}
-                                                                    onChange={(e) => {
-                                                                        const v = e.target.value;
-                                                                        if (v === "" || (/^\d+$/.test(v) && Number(v) >= 0)) {
-                                                                            setItems((prev) =>
-                                                                                prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: v } : x))
-                                                                            );
-                                                                            setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
-                                                                            markModified(it.stockId);
-                                                                        }
-                                                                    }}
+                                                                    className="input input-bordered input-sm w-14 text-center text-lg"
+                                                                    value={it.purchaseQTY ?? ""}
+                                                                    onChange={(e) => onQtyChange(it.stockId, e.target.value)}
                                                                 />
 
                                                                 <button
                                                                     className="btn btn-xs btn-outline btn-success"
                                                                     onClick={() => {
-                                                                        const n = Number(it.stockInQTY || 0) + 1;
+                                                                        const n = Number(it.purchaseQTY || 0) + 1;
                                                                         setItems((prev) =>
-                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, purchaseQTY: String(n) } : x))
                                                                         );
                                                                         setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
                                                                         markModified(it.stockId);
@@ -410,6 +351,23 @@ export default function CheckStockDetail() {
                                                         {/* หน่วย */}
                                                         <td className="text-left">
                                                             {it.unitTypeName || it.stockUnitTypeName || "หน่วยไม่ระบุ"}
+                                                        </td>
+                                                        {/* ราคา */}
+                                                        <td className="text-right">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                step="0.01"
+                                                                className="input input-bordered input-primary input-sm w-24 text-right text-lg"
+                                                                value={it.price || ""}
+                                                                onChange={(e) => {
+                                                                    const v = e.target.value;
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, price: v } : x))
+                                                                    );
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            />
                                                         </td>
                                                         {/* หมายเหตุ */}
                                                         <td className="text-left">
@@ -435,7 +393,7 @@ export default function CheckStockDetail() {
                                                                 className="btn btn-xs btn-outline btn-error"
                                                                 onClick={() => {
                                                                     setItems((prev) =>
-                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, totalQTY: "", stockInQTY: 0, remark: "" } : x))
+                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, purchaseQTY: "", price: 0, } : x))
                                                                     );
                                                                     setModifiedIds((prev) => prev.filter((x) => x !== it.stockId));
                                                                     setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
@@ -457,41 +415,58 @@ export default function CheckStockDetail() {
                     )}
                 </div>
             </div>
-            <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">
-                    วันที่สั่งซื้อ:{" "}
-                    <input
-                        type="date"
-                        className="input input-bordered input-sm w-40"
-                        value={orderDate}
-                        onChange={(e) => setOrderDate(e.target.value)}
-                    />
-
-                </span>
-                <button
-                    className="btn btn-primary w-30"
-                    onClick={save}
-                    disabled={isSaveDisabled || isSaving}
-                    title={isSaveDisabled ? "กรุณากรอกจำนวนให้ครบก่อนบันทึก" : ""}
-                >
-                    {isSaving ? "กำลังบันทึก..." : "บันทึก"}
-                </button>
-            </div>
-            {alertOpen && (
-                <div className="modal modal-open">
-                    <div className="modal-box">
-                        <h3 className="font-bold text-lg">{alertTitle}</h3>
-                        <p className="py-2">{alertMessage}</p>
-                        <div className="modal-action">
-                            <button className="btn btn-primary" onClick={handleAlertOk}>
-                                OK
-                            </button>
-                        </div>
+            <div className="card bg-base-100 shadow">
+                <div className="card-body">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <span className="text-sm">
+                            วันที่ซื้อเข้า:{" "}
+                            <input
+                                type="date"
+                                className="input input-bordered input-sm w-40"
+                                value={orderDate}
+                                onChange={(e) => setOrderDate(e.target.value)}
+                            />
+                        </span>
+                        <span className="text-sm  flex items-center gap-2">
+                            ราคารวม:{" "}
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                className="input input-bordered input-sm text-lg w-32 text-right"
+                                value={costPrice || 0}
+                                onChange={(e) => setCostPrice(e.target.value)}
+                                tabIndex={-1}
+                            />
+                            <span className="text-sm">บาท</span>
+                        </span>
+                        <button
+                            className="btn btn-primary w-50"
+                            onClick={save}
+                            disabled={isSaveDisabled || isSaving}
+                            title={isSaveDisabled ? "กรุณากรอกจำนวนให้ครบก่อนบันทึก" : ""}
+                        >
+                            {isSaving ? "กำลังบันทึก..." : "บันทึกนำเข้า"}
+                        </button>
                     </div>
-                    {/* ไม่ใส่ปุ่ม/label บน backdrop → ผู้ใช้กดพื้นหลังแล้วจะไม่ปิด */}
-                    <div className="modal-backdrop"></div>
+                    {alertOpen && (
+                        <div className="modal modal-open">
+                            <div className="modal-box">
+                                <h3 className="font-bold text-lg">{alertTitle}</h3>
+                                <p className="py-2">{alertMessage}</p>
+                                <div className="modal-action">
+                                    <button className="btn btn-primary" onClick={handleAlertOk}>
+                                        OK
+                                    </button>
+                                </div>
+                            </div>
+                            {/* ไม่ใส่ปุ่ม/label บน backdrop → ผู้ใช้กดพื้นหลังแล้วจะไม่ปิด */}
+                            <div className="modal-backdrop"></div>
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
+
         </div>
     );
 }
