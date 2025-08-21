@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
 import ModalConfirmPayment from "../components/Cost/ModalConfirmPayment";
 import Toast from "../components/ui/Toast";
+import { useNavigate } from "react-router-dom";
 /**
  * ฟังก์ชัน React Component สำหรับดึงและแสดงรายการค่าใช้จ่ายคงค้างจาก API เส้นทาง /api/GetCostList
  * - หากกำลังโหลดข้อมูลจะแสดงข้อความ "กำลังโหลดข้อมูล..."
@@ -20,6 +21,10 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const openStockIn = (orderId) => {
+    navigate(`/stockin/${orderId}`);
+  };
   const handleConfirm = () => {
     onConfirm?.();
   };
@@ -58,7 +63,6 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
   // แสดงตารางข้อมูล
   return (
     <div className="overflow-x-auto">
-
       <table className="table">
         <thead>
           <tr>
@@ -70,15 +74,40 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
           </tr>
         </thead>
         <tbody>
-          {data.map((item, idx) => (
-            <tr key={item.id || idx}>
-              <td><ModalConfirmPayment onConfirm={handleConfirm} item={item} showToast={showToast} /></td>
-              <td>{item.costDate}</td>
-              <td>{item.costCategory.description}</td>
-              <td>{item.costPrice}</td>
-              <td>{item.costDescription}</td>
-            </tr>
-          ))}
+          {data.map((item, idx) => {
+            let badgeClass = "badge-accent";
+            switch (item.costCategoryID) {
+              case 1:
+                badgeClass = "badge-primary";
+                break;
+              case 2:
+                badgeClass = "badge-error";
+                break;
+              case 3:
+                badgeClass = "badge-success";
+                break;
+              // เพิ่ม case อื่นๆ ตามต้องการ
+              default:
+                badgeClass = "badge-accent";
+            }
+            return (
+              <tr key={item.id || idx}>
+                <td>
+                  {item.costCategoryID == 1
+                    ? <button className="btn btn-sm btn-primary" onClick={() => openStockIn(item.costID)}>รายการ</button>
+                    : <ModalConfirmPayment onConfirm={handleConfirm} item={item} showToast={showToast} />}
+                </td>
+                <td>{item.costDate}</td>
+                <td>
+                  <span className={`badge badge-dash ${badgeClass} w-max`}>
+                    {item.costCategory.description}
+                  </span>
+                </td>
+                <td>{item.costPrice}</td>
+                <td>{item.costDescription}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

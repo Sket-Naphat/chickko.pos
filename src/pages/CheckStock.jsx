@@ -103,7 +103,7 @@ export default function CheckStockDetail() {
                     const res = await api.post("/stock/GetStockCountLogByCostId", {
                        costId: orderId 
                     });
-                    const raw = res?.data ?? [];  // backend ห่อใน { success, data, message }
+                    const raw = res?.data.stockCountDtos ?? [];  // backend ห่อใน { success, data, message }
                     const list = raw.map(s => ({
                         stockLogId: s.stockLogId,
                         stockId: s.stockId,

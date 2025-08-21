@@ -31,6 +31,7 @@ export default function Stock() {
           costID: item.costID,
           costDate: item.costDate,
           costStatus: item.costStatus.description,
+          costStatusID : item.costStatusID 
         }));
         setOrders(mappedData);
       })
@@ -101,6 +102,8 @@ export default function Stock() {
                         <button
                           className="btn btn-sm btn-warning"
                           onClick={() => openCheckStock(o.costID)}
+                          disabled={o.costStatusID !== 1} // ปุ่มจะไม่ทำงานถ้าไม่ใช่สถานะ "รออนุมัติ"
+
                         >
                           แก้ไข
                         </button>
