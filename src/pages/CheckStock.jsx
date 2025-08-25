@@ -101,7 +101,7 @@ export default function CheckStockDetail() {
                 } else {
                     // 🔹 โหมดแก้ไขใบเดิม: ดึงรายการของใบนี้ แล้วแสดง qty เดิม
                     const res = await api.post("/stock/GetStockCountLogByCostId", {
-                       costId: orderId 
+                        costId: orderId
                     });
                     const raw = res?.data.stockCountDtos ?? [];  // backend ห่อใน { success, data, message }
                     const list = raw.map(s => ({
@@ -360,7 +360,7 @@ export default function CheckStockDetail() {
                                                         {/* ต้องซื้อเข้า */}
                                                         <td className="text-right bg-success/10">
                                                             <div className="flex items-center justify-end gap-2">
-                                                                <button
+                                                            <button
                                                                     className="btn btn-xs btn-outline btn-error"
                                                                     onClick={() => {
                                                                         const n = Math.max(0, Number(it.stockInQTY || 0) - 1);
