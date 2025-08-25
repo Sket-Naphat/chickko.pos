@@ -1,5 +1,5 @@
 // src/pages/Home.jsx
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { MdLogout } from "react-icons/md";
@@ -8,17 +8,23 @@ import { jwtDecode } from "jwt-decode";
 import ThemeToggle from "../components/ThemeToggle";
 
 function Home() {
+  const [site, setSite] = useState("");
   const navigate = useNavigate();
   const handleLogout = () => {
     logout();
   };
   useEffect(() => {
     const token = Cookies.get("authToken");
+    const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
 
-    if (!token) {
+
+    if (!token || !authData) {
+      console.log("No auth token or auth data, redirecting to login");
       navigate("/");
       return;
     }
+
+    setSite(authData.site);
 
     try {
       const decoded = jwtDecode(token);
@@ -42,7 +48,7 @@ function Home() {
     { title: "📦 Check Stock", path: "/stock" },
     { title: "🕒 Work Time", path: "/worktime" },
     { title: "💰 Cost Management", path: "/cost" },
-    { title: "🗒️ เว็บรับ order", URL: "https://chickkoapp.web.app/index.html" },
+    { title: "🗒️ เว็บรับ order", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
   ];
 
   return (
