@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 import Cookies from "js-cookie";
+
 export default function Stock() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,9 +56,9 @@ export default function Stock() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-base-200 p-4 rounded-lg shadow">
         <h1 className="text-xl font-bold">ระบบจัดการคลัง</h1>
         <div className="flex gap-2">
-          <button className="btn btn-accent" onClick={refreshData}>
+          {/* <button className="btn btn-accent" onClick={refreshData}>
             รีเฟรช
-          </button>
+          </button> */}
           {/* 👉 ปุ่มสร้างรายการเช็คสต๊อกใหม่ */}
           <button
             className="btn btn-primary"
@@ -65,6 +66,13 @@ export default function Stock() {
             title="สร้างรายการตรวจนับสต็อกใหม่"
           >
             สร้างรายการตรวจนับสต็อกใหม่
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("/stockitem")}
+            title="ดูรายการสินค้าในคลัง"
+          >
+            รายการคลัง
           </button>
         </div>
       </div>

@@ -44,10 +44,10 @@ function Home() {
   }, [navigate]);
 
   const menuItems = [
-    { title: "📊 Dashboard Summary", path: "/dashboard" },
-    { title: "📦 Check Stock", path: "/stock" },
+    { title: "📊 Dashboard", path: "/dashboard" },
+    { title: "📦 Stock", path: "/stock" },
     { title: "🕒 Work Time", path: "/worktime" },
-    { title: "💰 Cost Management", path: "/cost" },
+    { title: "💰 Cost", path: "/cost" },
     { title: "🗒️ เว็บรับ order", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
   ];
 
