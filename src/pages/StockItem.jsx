@@ -1,17 +1,22 @@
 // src/pages/CheckStockDetail.jsx
-import { useEffect, useState, useMemo, Fragment } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState, useMemo, Fragment, useRef } from "react";
+import ModalUpdateStockItem from "../components/stock/ModalUpdateStockItem"
+// import { useParams } from "react-router-dom";
 import { api } from "../lib/api";
-
+import Toast from "../components/ui/Toast";
 export default function CheckStockDetail() {
-    const { getdata } = useParams(0); 
 
     const [loading, setLoading] = useState(true);
     const [items, setItems] = useState([]); // [{id, name, qty: string}]
     const [modifiedIds, setModifiedIds] = useState([]);
     const [invalidIds, setInvalidIds] = useState([]); // แถวที่ qty ว่าง/ไม่ถูกต้อง
     const [errorMsg, setErrorMsg] = useState("");
+    const [refreshKey, setRefreshKey] = useState(0);
 
+    const refreshData = () => {
+        // ฟังก์ชันสำหรับรีเฟรชข้อมูล
+        setRefreshKey((prev) => prev + 1);
+    };
 
     const markModified = (id) => {
         setModifiedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
@@ -92,7 +97,7 @@ export default function CheckStockDetail() {
         })();
 
         return () => ac.abort();              // cleanup: ยกเลิก request เมื่อ unmount
-    }, [getdata]);
+    }, [refreshKey]);
 
 
 
@@ -115,9 +120,9 @@ export default function CheckStockDetail() {
 
 
     // Modal alert state
-    const [alertOpen, setAlertOpen] = useState(false);
-    const [alertTitle, setAlertTitle] = useState("");
-    const [alertMessage, setAlertMessage] = useState("");
+    // const [alertOpen, setAlertOpen] = useState(false);
+    // const [alertTitle, setAlertTitle] = useState("");
+    // const [alertMessage, setAlertMessage] = useState("");
 
     // Unit list state
     const [unitList, setUnitList] = useState([]);
@@ -159,9 +164,9 @@ export default function CheckStockDetail() {
         return () => ac.abort();
     }, []);
 
-    const handleAlertOk = () => {
-        setAlertOpen(false);
-    };
+    // const handleAlertOk = () => {
+    //     setAlertOpen(false);
+    // };
 
     const handleSave = async (item) => {
         if (!item) return;
@@ -171,7 +176,7 @@ export default function CheckStockDetail() {
             setLoading(true);
             const payload = {
                 stockId: item.stockId,
-                itemName: item.itemName,
+                itemName: item.itemName.trim(),
                 stockCategoryID: item.stockCategoryID,
                 stockLocationID: item.stockLocationID,
                 stockUnitTypeID: item.stockUnitTypeID,
@@ -183,43 +188,56 @@ export default function CheckStockDetail() {
             //alert(JSON.stringify(payload, null, 2));
             await api.post("/stock/UpdateStockDetail", payload);
             setModifiedIds(prev => prev.filter(id => id !== item.stockId));
-            setAlertTitle("บันทึกข้อมูล "+item.itemName+" สำเร็จ ✅");
-            setAlertMessage("ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว");
-            setAlertOpen(true);
+            // setAlertTitle("บันทึกข้อมูล " + item.itemName + " สำเร็จ ✅");
+            // setAlertMessage("ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว");
+            // setAlertOpen(true);
+            showToast("บันทึกข้อมูล " + item.itemName + " สำเร็จ ✅", "success");
         } catch (err) {
-            setAlertOpen(true);
+            showToast("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" + err.message, "error");
             setErrorMsg("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" + err.message);
         } finally {
             setLoading(false);
         }
     };
-
-   
+    const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+    const hideTimer = useRef(null);
+    const showToast = (message, type = "success", duration = 2000) => {
+        // เคลียร์ timer เดิม (กันทับ)
+        if (hideTimer.current) clearTimeout(hideTimer.current);
+        setToast({ show: true, message, type });
+        hideTimer.current = setTimeout(() => setToast((t) => ({ ...t, show: false })), duration);
+    };
 
     return (
         <div className="p-4 space-y-4">
-
+            {/* Global Toast */}
+            <Toast show={toast.show} message={toast.message} type={toast.type} position="bottom-center" />
             <div className="flex items-center justify-between">
                 <h1 className="text-xl font-bold">
                     จัดการรายการใบสั่ง
                 </h1>
 
             </div>
-            <div className="join">
-                <button
-                    className={`btn btn-sm join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
-                    onClick={() => setGroupBy("location")}
-                    title="จัดเรียงตามตำแหน่งเก็บ"
-                >
-                    ตามตำแหน่งเก็บ
-                </button>
-                <button
-                    className={`btn btn-sm join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
-                    onClick={() => setGroupBy("category")}
-                    title="จัดเรียงตามหมวดหมู่"
-                >
-                    ตามหมวดหมู่
-                </button>
+            <div className="flex items-center justify-between">
+                <div className="join">
+                    <button
+                        className={`btn btn-sm join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
+                        onClick={() => setGroupBy("location")}
+                        title="จัดเรียงตามตำแหน่งเก็บ"
+                    >
+                        ตามตำแหน่งเก็บ
+                    </button>
+                    <button
+                        className={`btn btn-sm join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
+                        onClick={() => setGroupBy("category")}
+                        title="จัดเรียงตามหมวดหมู่"
+                    >
+                        ตามหมวดหมู่
+                    </button>
+                </div>
+                <div>
+                    <ModalUpdateStockItem onCreated={refreshData} showToast={showToast} />
+                </div>
             </div>
 
             {errorMsg && (
@@ -514,19 +532,19 @@ export default function CheckStockDetail() {
                                                         {/* {active} */}
                                                         <td>
                                                             <label className="swap">
-                                                                <input type="checkbox" 
-                                                                checked={it.active}
-                                                                onChange={(e) => {
-                                                                const newIsActive = e.target.checked;
-                                                                setItems((prev) =>
-                                                                    prev.map((x) => (x.stockId === it.stockId ? { ...x, active: newIsActive } : x))
-                                                                );
-                                                                markModified(it.stockId);
-                                                            }} />
+                                                                <input type="checkbox"
+                                                                    checked={it.active}
+                                                                    onChange={(e) => {
+                                                                        const newIsActive = e.target.checked;
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, active: newIsActive } : x))
+                                                                        );
+                                                                        markModified(it.stockId);
+                                                                    }} />
                                                                 <div className="swap-on">✅</div>
                                                                 <div className="swap-off">❌</div>
                                                             </label>
-                                                            
+
                                                         </td>
                                                         {/* บันทึก */}
                                                         <td className="text-right">
@@ -554,7 +572,7 @@ export default function CheckStockDetail() {
                 </div>
             </div>
 
-            {alertOpen && (
+            {/* {alertOpen && (
                 <div className="modal modal-open">
                     <div className="modal-box">
                         <h3 className="font-bold text-lg">{alertTitle}</h3>
@@ -565,10 +583,9 @@ export default function CheckStockDetail() {
                             </button>
                         </div>
                     </div>
-                    {/* ไม่ใส่ปุ่ม/label บน backdrop → ผู้ใช้กดพื้นหลังแล้วจะไม่ปิด */}
                     <div className="modal-backdrop"></div>
                 </div>
-            )}
+            )} */}
         </div>
     );
 }
