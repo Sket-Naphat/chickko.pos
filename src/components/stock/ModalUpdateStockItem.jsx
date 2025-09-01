@@ -27,7 +27,8 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
     const [locationId, setLocationId] = useState("");
     const [categoryId, setCategoryId] = useState("");
     const [newCategoryName, setNewCategoryName] = useState("");
-
+    const [newLocationName, setNewLocationName] = useState("");
+    const [newUnitName, setNewUnitName] = useState("");
 
     useEffect(() => {
         // default วันที่วันนี้
@@ -95,9 +96,9 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
             StockUnitTypeID: unitId ? Number(unitId) : null,
             StockLocationID: locationId ? Number(locationId) : null,
             StockCategoryID: categoryId ? Number(categoryId) : null,
-            StockCategoryName: categoryId === "__new__" ? newCategoryName.trim() : selectedCategory?.description || "",
-            StockUnitTypeName: selectedUnit?.description || "",
-            StockLocationName: selectedLocation?.stockLocationName || "",
+            StockCategoryName: categoryId === "0" ? newCategoryName.trim() : selectedCategory?.description || "",
+            StockUnitTypeName: unitId === "0" ? newUnitName.trim() : selectedUnit?.description || "",
+            StockLocationName: locationId === "0" ? newLocationName.trim() : selectedLocation?.stockLocationName || "",
         };
         if (!payload.ItemName || payload.ItemName.trim() === "") {
             setIsSaving(false);
@@ -169,7 +170,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 <span className="label-text" htmlFor={txt_itemName}>
                                     ชื่อรายการ
                                 </span>&nbsp;
-                            </div>
+                            </div><br />
                             <input
                                 id={txt_itemName}
                                 type="text"
@@ -186,7 +187,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 <span className="label-text" htmlFor={ddl_stockCategoryId}>
                                     ประเภทหมวดหมู่
                                 </span> &nbsp;
-                            </div>
+                            </div><br />
                                  <select
                                 id={ddl_stockCategoryId}
                                 className="select select-bordered"
@@ -195,7 +196,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 required
                             >
                                 <option value="" disabled>— เลือกประเภทหมวดหมู่ —</option>
-                                <option value="__new__">+ เพิ่มหมวดหมู่ใหม่</option>
+                                <option value="0">+ เพิ่มหมวดหมู่ใหม่</option>
                                 {categoryList.map((category) => (
                                     <option
                                         key={category.stockCategoryID}
@@ -205,7 +206,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                     </option>
                                 ))}
                             </select>
-                            {categoryId === "__new__" && (
+                            {categoryId === "0" && (
                                 <input
                                     type="text"
                                     className="input input-bordered mt-2"
@@ -222,7 +223,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 <span className="label-text" htmlFor={ddl_stockLocationId}>
                                     สถานที่จัดเก็บ
                                 </span> &nbsp;
-                            </div>
+                            </div><br />
                             <select
                                 id={ddl_stockLocationId}
                                 className="select select-bordered"
@@ -231,6 +232,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 required
                             >
                                 <option value="" disabled>— เลือกสถานที่จัดเก็บ —</option>
+                                <option value="0">+ เพิ่มสถานที่จัดเก็บใหม่</option>
                                 {locationList.map((location) => (
                                     <option
                                         key={location.stockLocationID}
@@ -240,6 +242,16 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                     </option>
                                 ))}
                             </select>
+                            {locationId === "0" && (
+                                <input
+                                    type="text"
+                                    className="input input-bordered mt-2"
+                                    placeholder="กรอกชื่อสถานที่จัดเก็บใหม่"
+                                    value={newLocationName}
+                                    onChange={(e) => setNewLocationName(e.target.value)}
+                                    required
+                                />
+                            )}
                         </label>
 
                         <label className="form-control md:col-span-2">
@@ -247,7 +259,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 <span className="label-text" htmlFor={ddl_stockUnitId}>
                                     หน่วย
                                 </span> &nbsp;
-                            </div>
+                            </div><br />
                             <select
                                 id={ddl_stockUnitId}
                                 className="select select-bordered"
@@ -256,6 +268,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 required
                             >
                                 <option value="" disabled>— เลือกหน่วย —</option>
+                                <option value="0">+ เพิ่มหน่วยใหม่</option>
                                 {unitList.map((unit) => (
                                     <option
                                         key={unit.stockUnitTypeID}
@@ -265,6 +278,16 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                     </option>
                                 ))}
                             </select>
+                            {unitId === "0" && (
+                                <input
+                                    type="text"
+                                    className="input input-bordered mt-2"
+                                    placeholder="กรอกชื่อหน่วยใหม่"
+                                    value={newUnitName}
+                                    onChange={(e) => setNewUnitName(e.target.value)}
+                                    required
+                                />
+                            )}
                         </label>
 
                         <label className="form-control md:col-span-2">
@@ -272,7 +295,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 <span className="label-text" htmlFor={txt_requiredQTY}>
                                     จำนวนที่ต้องใช้
                                 </span>&nbsp;
-                            </div>
+                            </div><br />
                             <input
                                 id={txt_requiredQTY}
                                 type="number"
@@ -290,7 +313,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 <span className="label-text" htmlFor={txt_totalQTY}>
                                     จำนวนคงเหลือ
                                 </span>&nbsp;
-                            </div>
+                            </div><br />
                             <input
                                 id={txt_totalQTY}
                                 type="number"
@@ -308,7 +331,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 <span className="label-text" htmlFor={txt_StockInQTY}>
                                     จำนวนที่สั่งซื้อ
                                 </span>&nbsp;
-                            </div>
+                            </div><br />
                             <input
                                 id={txt_StockInQTY}
                                 type="number"
@@ -328,7 +351,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 disabled={isSaving}
                             >
                                 {isSaving ? "กำลังบันทึก..." : "บันทึก"}
-                            </button>
+                            </button><br />
                             <button
                                 type="button"
                                 className="btn"
