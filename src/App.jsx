@@ -16,6 +16,9 @@ import Dashboard from "./pages/Dashboard";
 import Cost from "./pages/Cost";
 import Stock from "./pages/Stock";
 import WorkTime from "./pages/Worktime";
+import CheckStock from "./pages/CheckStock";
+import StockIn from "./pages/StockIn"; // 👉 เปลี่ยนชื่อเป็น StockInDetail เพื่อความชัดเจน
+import StockItem from "./pages/StockItem";
 
 function App() {
   const location = useLocation();
@@ -44,7 +47,7 @@ function App() {
 
       {shouldShowNavbar ? (
         /* ======================= Layout ที่ “มี Navbar” (หลังล็อกอิน) ======================= */
-        <div className="flex flex-col min-h-screen bg-gray-100">
+        <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-1">
             <Routes>
@@ -52,8 +55,11 @@ function App() {
               <Route element={<RequireAuth />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/cost" element={<Cost />} />
-                <Route path="/check-stock" element={<Stock />} />
+                <Route path="/stock" element={<Stock />} />
                 <Route path="/worktime" element={<WorkTime />} />
+                <Route path="/checkstock/:orderId" element={<CheckStock />} />
+                <Route path="/stockin/:orderId" element={<StockIn />} />
+                <Route path="/stockitem" element={<StockItem />} />
               </Route>
 
               {/* ไป path แปลก ๆ ขณะอยู่ layout นี้ → ส่งไป /login */}
