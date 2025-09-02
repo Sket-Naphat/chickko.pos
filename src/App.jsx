@@ -19,12 +19,13 @@ import WorkTime from "./pages/Worktime";
 import CheckStock from "./pages/CheckStock";
 import StockIn from "./pages/StockIn"; // 👉 เปลี่ยนชื่อเป็น StockInDetail เพื่อความชัดเจน
 import StockItem from "./pages/StockItem";
+import Register from "./pages/Register"; 
 
 function App() {
   const location = useLocation();
 
-  // ✅ โชว์/ซ่อน Navbar ตาม path (คงรูปแบบเดิมไว้)
-  const hideNavbarPaths = ["/", "/login", "/home"];             // หน้าเหล่านี้ “ไม่มี Navbar”
+  // ✅ เพิ่ม "/register" ใน hideNavbarPaths
+  const hideNavbarPaths = ["/", "/login", "/home", "/register"];
   const shouldShowNavbar = !hideNavbarPaths.includes(location.pathname);
 
   // ✅ สายข้อมูลจาก axios interceptors → แถบโหลด + toast
@@ -46,7 +47,7 @@ function App() {
       <Toast message={toast} onClose={() => setToast("")} />
 
       {shouldShowNavbar ? (
-        /* ======================= Layout ที่ “มี Navbar” (หลังล็อกอิน) ======================= */
+        /* ======================= Layout ที่ "มี Navbar" (หลังล็อกอิน) ======================= */
         <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-1">
@@ -68,18 +69,18 @@ function App() {
           </main>
         </div>
       ) : (
-        /* ======================= หน้า “ไม่มี Navbar” (login + home) ======================= */
+        /* ======================= หน้า "ไม่มี Navbar" (login + register + home) ======================= */
         <Routes>
-          {/* หน้า login เปิดได้เสมอ */}
+          {/* ✅ Public routes - ไม่ต้อง login */}
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-          {/* ✅ หน้า Home ต้องล็อกอิน แต่ “ไม่แสดง Navbar” ตามที่กำหนด */}
+          {/* ✅ Protected routes - ต้อง login แต่ไม่มี Navbar */}
           <Route element={<RequireAuth />}>
             <Route path="/home" element={<Home />} />
           </Route>
 
-          {/* 404 */}
           <Route path="*" element={<div className="p-6">Not Found</div>} />
         </Routes>
       )}
