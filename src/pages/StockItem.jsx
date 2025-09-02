@@ -383,7 +383,7 @@ export default function CheckStockDetail() {
                                                         <td className={`sticky left-0 bg-base-100 z-10 ${rowClassItemName}`}>
                                                             <input 
                                                                 type="text" 
-                                                                className="input input-ghost input-sm w-full min-w-max" 
+                                                                className="input input-ghost input-sm w-full min-w-30" 
                                                                 value={it.itemName || ""}
                                                                 placeholder="ชื่อรายการ"
                                                                 onChange={e => {
@@ -549,7 +549,7 @@ export default function CheckStockDetail() {
                                                         <td className="text-left">
                                                             <div className="flex flex-col gap-1">
                                                                 <select
-                                                                    className="select select-bordered select-xs w-24"
+                                                                    className="select select-bordered select-sm w-full min-w-24"
                                                                     value={newUnitRows.has(it.stockId) ? 0 : (it.stockUnitTypeID || "")}
                                                                     onChange={async (e) => {
                                                                         const selectedValue = e.target.value;
@@ -636,7 +636,7 @@ export default function CheckStockDetail() {
                                                         <td>
                                                             <div className="flex flex-col gap-1">
                                                                 <select
-                                                                    className="select select-bordered select-sm w-full"
+                                                                    className="select select-bordered select-sm w-full min-w-24"
                                                                     value={newLocationRows.has(it.stockId) ? "0" : (it.stockLocationID || "")}
                                                                     onChange={(e) => {
                                                                         const selectedValue = e.target.value;
@@ -721,7 +721,7 @@ export default function CheckStockDetail() {
                                                         <td>
                                                             <div className="flex flex-col gap-1">
                                                                 <select
-                                                                    className="select select-bordered select-sm w-full"
+                                                                    className="select select-bordered select-sm w-full min-w-30"
                                                                     value={newCategoryRows.has(it.stockId) ? "0" : (it.stockCategoryID || "")}
                                                                     onChange={(e) => {
                                                                         const selectedValue = e.target.value;
