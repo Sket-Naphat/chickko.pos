@@ -258,7 +258,6 @@ export default function CheckStockDetail() {
                                 <thead>
                                     <tr>
                                         <th className="sticky left-0 bg-base-100 z-20">รายการ</th>
-
                                         <th className="text-right">จำนวนที่ต้องใช้</th>
                                         <th className="text-right">จำนวนที่นับได้</th>
                                         <th className="text-right">จำนวนที่ต้องซื้อเข้า</th>
@@ -294,7 +293,7 @@ export default function CheckStockDetail() {
                                                 return (
                                                     <tr key={it.stockId} className={rowClass}>
                                                         <td className={`sticky left-0 bg-base-100 z-10 ${rowClassItemName}`}>
-                                                            <input type="text" className="input input-ghost input-sm w-full max-w-xs" value={it.itemName}
+                                                            <input type="text" className="input input-ghost input-sm w-full min-w-max" value={it.itemName}
                                                                 onChange={e => {
                                                                     const newName = e.target.value;
                                                                     setItems((prev) =>
@@ -572,20 +571,6 @@ export default function CheckStockDetail() {
                 </div>
             </div>
 
-            {/* {alertOpen && (
-                <div className="modal modal-open">
-                    <div className="modal-box">
-                        <h3 className="font-bold text-lg">{alertTitle}</h3>
-                        <p className="py-2">{alertMessage}</p>
-                        <div className="modal-action">
-                            <button className="btn btn-primary" onClick={handleAlertOk}>
-                                OK
-                            </button>
-                        </div>
-                    </div>
-                    <div className="modal-backdrop"></div>
-                </div>
-            )} */}
         </div>
     );
 }

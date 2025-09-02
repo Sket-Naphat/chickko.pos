@@ -60,7 +60,7 @@ function Login() {
       const authData = {
         userId: userObj.userId ?? null,
         name: userObj.name ?? "",
-        userPermissionId: userObj.userPermissionId ?? null,
+        userPermissionId: userObj.userPermistionID ?? null,
         site: siteFromApi,
         issuedAt: Date.now(),
       };

@@ -9,6 +9,9 @@ function Navbar() {
     const location = useLocation();
     const navigate = useNavigate();
     const [open, setOpen] = useState(false); // สถานะเมนูมือถือ
+    const [permission, setPermission] = useState(null);
+    const [isManager, setIsManager] = useState(false);
+    const [isEmployee, setIsEmployee] = useState(false);
 
     const handleLogout = async () => {
         try {
@@ -21,15 +24,20 @@ function Navbar() {
 
     useEffect(() => {
         setOpen(false);
+
+        const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
+        if (authData && authData.userPermissionId !== undefined) {
+            setPermission(authData.userPermissionId);
+        }
     }, [location.pathname]);
 
-    // const isDashboard = location.pathname === "/dashboard";
-    const isDashboard = true; // แก้ไขให้เป็น true เพื่อแสดงเมนูเช็คสต็อกและต้นทุนเสมอ
-    // util ทำคลาสลิงก์แบบ active
-    // const navLink = (to) =>
-    //     `text-black hover:text-black ${location.pathname === to ? "font-semibold" : ""
-    //     }`;
-
+    useEffect(() => {
+        if (permission !== null) {
+            setIsManager(permission !== 3); // admin, manager
+            setIsEmployee(true); // employee, admin
+        }
+    }, [permission]);
+    
     return (
         <nav className="shadow-md relative z-40">
             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -57,25 +65,35 @@ function Navbar() {
 
                 {/* เมนูแนวนอน (แสดงตั้งแต่ md ขึ้นไป) */}
                 <div className="hidden md:flex items-center space-x-4 ">
-                    {isDashboard && (
+                    {isManager && (
                         <>
-                            <Link
-                                to="/stock"
-                                className="py-2 px-2 rounded hover:bg-accent"
-                            >
-                                เช็ค Stock
-                            </Link>
                             <Link to="/cost" className="py-2 px-2 rounded hover:bg-accent">
-                                ไปดูต้นทุน
+                                ต้นทุน
                             </Link>
                         </>
                     )}
+                    {/* ✅ Employee สามารถเช็ค Stock */}
+                    {isEmployee && (
+                        <>
+                            <Link to="/stock" className="py-2 px-2 rounded hover:bg-accent">
+                                เช็ค Stock
+                            </Link>
+                            <Link to="/worktime" className="py-2 px-2 rounded hover:bg-accent">
+                                เวลางาน
+                            </Link>
+                        </>
+                    )}
+                    {/* ✅ หรือทุก role สามารถเช็ค Stock */}
+                    {/* <Link to="/stock" className="py-2 px-2 rounded hover:bg-accent">
+                        เช็ค Stock
+                    </Link> */}
+                    
                     <div>
                         <ThemeToggle></ThemeToggle>
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="bg-error  hover:bg-error w-10 h-10 flex items-center justify-center rounded-full transition"
+                        className="bg-error hover:bg-error w-10 h-10 flex items-center justify-center rounded-full transition"
                         title="ออกจากระบบ"
                     >
                         <MdLogout className="text-lg" />
@@ -86,20 +104,25 @@ function Navbar() {
             {/* แผงเมนูมือถือ (dropdown) */}
             <div
                 id="mobile-menu"
-                className={`md:hidden overflow-hidden transition-[max-height] duration-300 ${open ? "max-h-96" : "max-h-0"
-                    }`}
+                className={`md:hidden overflow-hidden transition-[max-height] duration-300 ${open ? "max-h-96" : "max-h-0"}`}
             >
                 <div className="border-t border-gray-100 px-4 py-3 flex flex-col space-y-2 bg-base-100">
-                    {isDashboard && (
+                    {isManager && (
                         <>
-                            <Link
-                                to="/stock"
-                                className="py-2 px-2 rounded hover:bg-accent"
-                            >
-                                เช็ค Stock
-                            </Link>
                             <Link to="/cost" className="py-2 px-2 rounded hover:bg-accent">
                                 ไปดูต้นทุน
+                            </Link>
+                        </>
+                    )}
+                    
+                    {/* ✅ แก้ไข: Employee สามารถเช็ค Stock */}
+                    {isEmployee && (
+                        <>
+                            <Link to="/stock" className="py-2 px-2 rounded hover:bg-accent">
+                                เช็ค Stock
+                            </Link>
+                            <Link to="/worktime" className="py-2 px-2 rounded hover:bg-accent">
+                                เวลางาน
                             </Link>
                         </>
                     )}
