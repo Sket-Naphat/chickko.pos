@@ -18,6 +18,9 @@ export default function CheckStockDetail() {
         setRefreshKey((prev) => prev + 1);
     };
 
+    // State for refreshing dropdowns
+    const [refreshDropdownKey, setRefreshDropdownKey] = useState(0);
+
     const markModified = (id) => {
         setModifiedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
     };
@@ -118,12 +121,6 @@ export default function CheckStockDetail() {
         }
     };
 
-
-    // Modal alert state
-    // const [alertOpen, setAlertOpen] = useState(false);
-    // const [alertTitle, setAlertTitle] = useState("");
-    // const [alertMessage, setAlertMessage] = useState("");
-
     // Unit list state
     const [unitList, setUnitList] = useState([]);
     // Location list state
@@ -167,16 +164,30 @@ export default function CheckStockDetail() {
     // const handleAlertOk = () => {
     //     setAlertOpen(false);
     // };
-
+    
     const handleSave = async (item) => {
         if (!item) return;
 
-        // ตัวอย่างการส่งข้อมูลไป backend
+        // ✅ เพิ่ม validation สำหรับทุก dropdown ใหม่
+        if (newUnitRows.has(item.stockId) && !newUnitNames[item.stockId]?.trim()) {
+            showToast("กรุณากรอกชื่อหน่วยใหม่", "error");
+            return;
+        }
+        if (newLocationRows.has(item.stockId) && !newLocationNames[item.stockId]?.trim()) {
+            showToast("กรุณากรอกชื่อตำแหน่งใหม่", "error");
+            return;
+        }
+        if (newCategoryRows.has(item.stockId) && !newCategoryNames[item.stockId]?.trim()) {
+            showToast("กรุณากรอกชื่อหมวดใหม่", "error");
+            return;
+        }
+
         try {
             setLoading(true);
+            
             const payload = {
                 stockId: item.stockId,
-                itemName: item.itemName.trim(),
+                itemName: item.itemName?.trim(),
                 stockCategoryID: item.stockCategoryID,
                 stockLocationID: item.stockLocationID,
                 stockUnitTypeID: item.stockUnitTypeID,
@@ -184,17 +195,52 @@ export default function CheckStockDetail() {
                 totalQTY: item.totalQTY,
                 stockInQTY: item.stockInQTY,
                 active: item.active,
+                // ✅ เพิ่มข้อมูลใหม่
+                StockUnitTypeName: newUnitNames[item.stockId]?.trim() || "ไม่ระบุ",
+                StockLocationName: newLocationNames[item.stockId]?.trim() || "ไม่ระบุ",
+                StockCategoryName: newCategoryNames[item.stockId]?.trim() || "ไม่ระบุ"
             };
-            //alert(JSON.stringify(payload, null, 2));
+
             await api.post("/stock/UpdateStockDetail", payload);
+            
+            // ✅ เคลียร์ข้อมูลใหม่ทั้งหมดหลังบันทึกสำเร็จ
+            setNewUnitRows(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(item.stockId);
+                return newSet;
+            });
+            setNewUnitNames(prev => {
+                const { [item.stockId]: _, ...rest } = prev;
+                return rest;
+            });
+            setNewLocationRows(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(item.stockId);
+                return newSet;
+            });
+            setNewLocationNames(prev => {
+                const { [item.stockId]: _, ...rest } = prev;
+                return rest;
+            });
+            setNewCategoryRows(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(item.stockId);
+                return newSet;
+            });
+            setNewCategoryNames(prev => {
+                const { [item.stockId]: _, ...rest } = prev;
+                return rest;
+            });
+            
             setModifiedIds(prev => prev.filter(id => id !== item.stockId));
-            // setAlertTitle("บันทึกข้อมูล " + item.itemName + " สำเร็จ ✅");
-            // setAlertMessage("ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว");
-            // setAlertOpen(true);
             showToast("บันทึกข้อมูล " + item.itemName + " สำเร็จ ✅", "success");
+            
+            refreshData();
+            setRefreshDropdownKey(prev => prev + 1);
+            
         } catch (err) {
-            showToast("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" + err.message, "error");
-            setErrorMsg("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" + err.message);
+            showToast("บันทึกข้อมูลไม่สำเร็จ: " + err.message, "error");
+            setErrorMsg("บันทึกข้อมูลไม่สำเร็จ: " + err.message);
         } finally {
             setLoading(false);
         }
@@ -207,6 +253,48 @@ export default function CheckStockDetail() {
         setToast({ show: true, message, type });
         hideTimer.current = setTimeout(() => setToast((t) => ({ ...t, show: false })), duration);
     };
+
+    // เพิ่ม state สำหรับเก็บ stockId ที่เลือก "เพิ่มรายการใหม่"
+    const [newUnitRows, setNewUnitRows] = useState(new Set());
+    const [newUnitNames, setNewUnitNames] = useState({}); // { stockId: "ชื่อหน่วยใหม่" }
+
+    // ✅ เพิ่ม state สำหรับ Location และ Category ใหม่
+    const [newLocationRows, setNewLocationRows] = useState(new Set());
+    const [newLocationNames, setNewLocationNames] = useState({}); // { stockId: "ชื่อตำแหน่งใหม่" }
+    const [newCategoryRows, setNewCategoryRows] = useState(new Set());
+    const [newCategoryNames, setNewCategoryNames] = useState({}); // { stockId: "ชื่อหมวดใหม่" }
+
+    // ✅ อัปเดต useEffect dropdown ให้รับ dependency
+    useEffect(() => {
+        let ac = new AbortController();
+        (async () => {
+            try {
+                const unitRes = await api.get("/stock/GetStockUnitType", {}, { signal: ac.signal });
+                setUnitList(unitRes?.data ?? []);
+            } catch (err) {
+                if (!ac.signal.aborted) {
+                    console.error("โหลดข้อมูลหน่วยไม่สำเร็จ", err);
+                }
+            }
+            try {
+                const locationRes = await api.get("/stock/GetStockLocation", {}, { signal: ac.signal });
+                setLocationList(locationRes?.data ?? []);
+            } catch (err) {
+                if (!ac.signal.aborted) {
+                    console.error("โหลดข้อมูลตำแหน่งไม่สำเร็จ", err);
+                }
+            }
+            try {
+                const categoryRes = await api.get("/stock/GetStockCategory", {}, { signal: ac.signal });
+                setCategoryList(categoryRes?.data ?? []);
+            } catch (err) {
+                if (!ac.signal.aborted) {
+                    console.error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ", err);
+                }
+            }
+        })();
+        return () => ac.abort();
+    }, [refreshDropdownKey]); // ✅ เพิ่ม dependency
 
     return (
         <div className="p-4 space-y-4">
@@ -293,14 +381,19 @@ export default function CheckStockDetail() {
                                                 return (
                                                     <tr key={it.stockId} className={rowClass}>
                                                         <td className={`sticky left-0 bg-base-100 z-10 ${rowClassItemName}`}>
-                                                            <input type="text" className="input input-ghost input-sm w-full min-w-max" value={it.itemName}
+                                                            <input 
+                                                                type="text" 
+                                                                className="input input-ghost input-sm w-full min-w-max" 
+                                                                value={it.itemName || ""}
+                                                                placeholder="ชื่อรายการ"
                                                                 onChange={e => {
                                                                     const newName = e.target.value;
                                                                     setItems((prev) =>
                                                                         prev.map((x) => (x.stockId === it.stockId ? { ...x, itemName: newName } : x))
                                                                     );
                                                                     markModified(it.stockId);
-                                                                }} />
+                                                                }} 
+                                                            />
                                                         </td>
 
                                                         <td className="text-right bg-success/10">
@@ -454,79 +547,261 @@ export default function CheckStockDetail() {
                                                         </td>
                                                         {/* หน่วย */}
                                                         <td className="text-left">
-                                                            <select
-                                                                className="select select-bordered select-xs w-24"
-                                                                value={it.stockUnitTypeID || ""}
-                                                                onChange={async (e) => {
-                                                                    const newUnitId = Number(e.target.value);
-                                                                    // หา unit name จาก unitList
-                                                                    const selectedUnit = unitList.find(u => u.stockUnitTypeID === newUnitId);
-                                                                    setItems(prev =>
-                                                                        prev.map(x =>
-                                                                            x.stockId === it.stockId
-                                                                                ? {
-                                                                                    ...x,
-                                                                                    stockUnitTypeID: newUnitId,
-                                                                                    stockUnitTypeName: selectedUnit?.stockUnitTypeName || ""
-                                                                                }
-                                                                                : x
-                                                                        )
-                                                                    );
-                                                                    markModified(it.stockId);
-                                                                }}
-                                                            >
-                                                                {unitList.map(unit => (
-                                                                    <option key={unit.stockUnitTypeID} value={unit.stockUnitTypeID}>
-                                                                        {unit.stockUnitTypeName}
+                                                            <div className="flex flex-col gap-1">
+                                                                <select
+                                                                    className="select select-bordered select-xs w-24"
+                                                                    value={newUnitRows.has(it.stockId) ? 0 : (it.stockUnitTypeID || "")}
+                                                                    onChange={async (e) => {
+                                                                        const selectedValue = e.target.value;
+                                                                        
+                                                                        if (selectedValue === "0") {
+                                                                            // เลือก "เพิ่มรายการใหม่"
+                                                                            setNewUnitRows(prev => new Set([...prev, it.stockId]));
+                                                                            setNewUnitNames(prev => ({ ...prev, [it.stockId]: "" }));
+                                                                            
+                                                                            // ✅ เพิ่มการอัปเดต stockUnitTypeID เป็น 0
+                                                                            setItems(prev =>
+                                                                                prev.map(x =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockUnitTypeID: 0,
+                                                                                            stockUnitTypeName: "หน่วยใหม่"
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        } else {
+                                                                            // เลือกหน่วยที่มีอยู่
+                                                                            const newUnitId = Number(selectedValue);
+                                                                            const selectedUnit = unitList.find(u => u.stockUnitTypeID === newUnitId);
+                                                                            
+                                                                            // ลบออกจาก newUnitRows ถ้ามี
+                                                                            setNewUnitRows(prev => {
+                                                                                const newSet = new Set(prev);
+                                                                                newSet.delete(it.stockId);
+                                                                                return newSet;
+                                                                            });
+                                                                            setNewUnitNames(prev => {
+                                                                                const { [it.stockId]: _removed, ...rest } = prev;
+                                                                                return rest;
+                                                                            });
+                                                                            
+                                                                            setItems(prev =>
+                                                                                prev.map(x =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockUnitTypeID: newUnitId,
+                                                                                            stockUnitTypeName: selectedUnit?.stockUnitTypeName || ""
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {/* ตัวเลือกที่มีอยู่ */}
+                                                                    {unitList.map(unit => (
+                                                                        <option key={unit.stockUnitTypeID} value={unit.stockUnitTypeID}>
+                                                                            {unit.stockUnitTypeName}
+                                                                        </option>
+                                                                    ))}
+                                                                    {/* ตัวเลือกเพิ่มรายการใหม่ */}
+                                                                    <option value="0" className="text-primary font-semibold">
+                                                                        + เพิ่มหน่วยใหม่
                                                                     </option>
-                                                                ))}
-                                                            </select>
+                                                                </select>
+                                                                
+                                                                {/* Input สำหรับชื่อหน่วยใหม่ */}
+                                                                {newUnitRows.has(it.stockId) && (
+                                                                    <input
+                                                                        type="text"
+                                                                        className="input input-bordered input-xs w-full"
+                                                                        placeholder="ชื่อหน่วยใหม่"
+                                                                        value={newUnitNames[it.stockId] || ""}
+                                                                        onChange={(e) => {
+                                                                            setNewUnitNames(prev => ({
+                                                                                ...prev,
+                                                                                [it.stockId]: e.target.value
+                                                                            }));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td>
-                                                            <select
-                                                                className="select select-bordered select-sm w-full"
-                                                                value={it.stockLocationID}
-                                                                onChange={(e) => {
-                                                                    const newLocationId = e.target.value;
-                                                                    setItems((prev) =>
-                                                                        prev.map((x) =>
-                                                                            x.stockId === it.stockId
-                                                                                ? { ...x, stockLocationID: newLocationId }
-                                                                                : x
-                                                                        )
-                                                                    );
-                                                                    markModified(it.stockId);
-                                                                }}
-                                                            >
-                                                                {locationList.map(location => (
-                                                                    <option key={location.stockLocationID} value={location.stockLocationID}>
-                                                                        {location.stockLocationName}
+                                                            <div className="flex flex-col gap-1">
+                                                                <select
+                                                                    className="select select-bordered select-sm w-full"
+                                                                    value={newLocationRows.has(it.stockId) ? "0" : (it.stockLocationID || "")}
+                                                                    onChange={(e) => {
+                                                                        const selectedValue = e.target.value;
+                                                                        
+                                                                        if (selectedValue === "0") {
+                                                                            // เลือก "เพิ่มตำแหน่งใหม่"
+                                                                            setNewLocationRows(prev => new Set([...prev, it.stockId]));
+                                                                            setNewLocationNames(prev => ({ ...prev, [it.stockId]: "" }));
+                                                                            
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockLocationID: 0,
+                                                                                            stockLocationName: "ตำแหน่งใหม่"
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        } else {
+                                                                            // เลือกตำแหน่งที่มีอยู่
+                                                                            const newLocationId = Number(selectedValue);
+                                                                            const selectedLocation = locationList.find(l => l.stockLocationID === newLocationId);
+                                                                            
+                                                                            // ลบออกจาก newLocationRows ถ้ามี
+                                                                            setNewLocationRows(prev => {
+                                                                                const newSet = new Set(prev);
+                                                                                newSet.delete(it.stockId);
+                                                                                return newSet;
+                                                                            });
+                                                                            setNewLocationNames(prev => {
+                                                                                const { [it.stockId]: _, ...rest } = prev;
+                                                                                return rest;
+                                                                            });
+                                                                            
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockLocationID: newLocationId,
+                                                                                            stockLocationName: selectedLocation?.stockLocationName || ""
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <option value="">-- เลือกตำแหน่งเก็บ --</option>
+                                                                    {locationList.map(location => (
+                                                                        <option key={location.stockLocationID} value={location.stockLocationID}>
+                                                                            {location.stockLocationName}
+                                                                        </option>
+                                                                    ))}
+                                                                    <option value="0" className="text-primary font-semibold">
+                                                                        + เพิ่มตำแหน่งใหม่
                                                                     </option>
-                                                                ))}
-                                                            </select>
+                                                                </select>
+                                                                
+                                                                {/* Input สำหรับชื่อตำแหน่งใหม่ */}
+                                                                {newLocationRows.has(it.stockId) && (
+                                                                    <input
+                                                                        type="text"
+                                                                        className="input input-bordered input-xs w-full"
+                                                                        placeholder="ชื่อตำแหน่งใหม่"
+                                                                        value={newLocationNames[it.stockId] || ""}
+                                                                        onChange={(e) => {
+                                                                            setNewLocationNames(prev => ({
+                                                                                ...prev,
+                                                                                [it.stockId]: e.target.value
+                                                                            }));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td>
-                                                            <select
-                                                                className="select select-bordered select-sm w-full"
-                                                                value={it.stockCategoryID}
-                                                                onChange={(e) => {
-                                                                    const newCategoryId = e.target.value;
-                                                                    setItems((prev) =>
-                                                                        prev.map((x) =>
-                                                                            x.stockId === it.stockId
-                                                                                ? { ...x, stockCategoryID: newCategoryId }
-                                                                                : x
-                                                                        )
-                                                                    );
-                                                                    markModified(it.stockId);
-                                                                }}
-                                                            >
-                                                                {categoryList.map(category => (
-                                                                    <option key={category.stockCategoryID} value={category.stockCategoryID}>
-                                                                        {category.stockCategoryName}
+                                                            <div className="flex flex-col gap-1">
+                                                                <select
+                                                                    className="select select-bordered select-sm w-full"
+                                                                    value={newCategoryRows.has(it.stockId) ? "0" : (it.stockCategoryID || "")}
+                                                                    onChange={(e) => {
+                                                                        const selectedValue = e.target.value;
+                                                                        
+                                                                        if (selectedValue === "0") {
+                                                                            // เลือก "เพิ่มหมวดใหม่"
+                                                                            setNewCategoryRows(prev => new Set([...prev, it.stockId]));
+                                                                            setNewCategoryNames(prev => ({ ...prev, [it.stockId]: "" }));
+                                                                            
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockCategoryID: 0,
+                                                                                            stockCategoryName: "หมวดใหม่"
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        } else {
+                                                                            // เลือกหมวดที่มีอยู่
+                                                                            const newCategoryId = Number(selectedValue);
+                                                                            const selectedCategory = categoryList.find(c => c.stockCategoryID === newCategoryId);
+                                                                            
+                                                                            // ลบออกจาก newCategoryRows ถ้ามี
+                                                                            setNewCategoryRows(prev => {
+                                                                                const newSet = new Set(prev);
+                                                                                newSet.delete(it.stockId);
+                                                                                return newSet;
+                                                                            });
+                                                                            setNewCategoryNames(prev => {
+                                                                                const { [it.stockId]: _, ...rest } = prev;
+                                                                                return rest;
+                                                                            });
+                                                                            
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockCategoryID: newCategoryId,
+                                                                                            stockCategoryName: selectedCategory?.stockCategoryName || ""
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <option value="">-- เลือกหมวดหมู่ --</option>
+                                                                    {categoryList.map(category => (
+                                                                        <option key={category.stockCategoryID} value={category.stockCategoryID}>
+                                                                            {category.stockCategoryName}
+                                                                        </option>
+                                                                    ))}
+                                                                    <option value="0" className="text-primary font-semibold">
+                                                                        + เพิ่มหมวดใหม่
                                                                     </option>
-                                                                ))}
-                                                            </select>
+                                                                </select>
+                                                                
+                                                                {/* Input สำหรับชื่อหมวดใหม่ */}
+                                                                {newCategoryRows.has(it.stockId) && (
+                                                                    <input
+                                                                        type="text"
+                                                                        className="input input-bordered input-xs w-full"
+                                                                        placeholder="ชื่อหมวดใหม่"
+                                                                        value={newCategoryNames[it.stockId] || ""}
+                                                                        onChange={(e) => {
+                                                                            setNewCategoryNames(prev => ({
+                                                                                ...prev,
+                                                                                [it.stockId]: e.target.value
+                                                                            }));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         {/* {active} */}
                                                         <td>
