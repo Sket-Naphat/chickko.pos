@@ -43,13 +43,36 @@ function Home() {
     }
   }, [navigate]);
 
+  const [permission, setPermission] = useState(null);
+
+  useEffect(() => {
+    const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
+    if (authData && authData.userPermissionId !== undefined) {
+      setPermission(authData.userPermissionId);
+    }
+  }, []);
+
   const menuItems = [
-    { title: "📊 Dashboard", path: "/dashboard" },
-    { title: "📦 Stock", path: "/stock" },
-    { title: "🕒 Work Time", path: "/worktime" },
-    { title: "💰 Cost", path: "/cost" },
-    { title: "🗒️ เว็บรับ order", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
   ];
+  if (permission === 1) { // admin
+    menuItems.push(
+      { title: "📊 Dashboard", path: "/dashboard" },
+      { title: "💰 Cost", path: "/cost" },
+    );
+  }
+
+  if (permission !== 3) { // admin, manager
+    menuItems.push(
+      { title: "💰 Cost", path: "/cost" },
+    );
+  }
+
+  menuItems.push(
+    { title: "📦 Stock", path: "/stock" },
+    { title: "🕒 เวลางาน", path: "/worktime", disabled: true }, // ✅ เพิ่ม disabled
+    { title: "🗒️ เว็บรับ order", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
+  )
+
 
   return (
     <div className="flex flex-col min-h-screen bg-base-200">
@@ -75,7 +98,13 @@ function Home() {
       <div className="p-4 flex-1 bg-base-200">
         <div className="grid grid-cols-2 sm:grid-cols-2 px-4 md:grid-cols-2 gap-4 md:h-96 md:px-20">
           {menuItems.map((item, index) => (
-            <MenuCard key={index} title={item.title} path={item.path} url={item.URL} />
+            <MenuCard 
+              key={index} 
+              title={item.title} 
+              path={item.path} 
+              url={item.URL} 
+              disabled={item.disabled} // ✅ ส่ง disabled prop
+            />
           ))}
         </div>
       </div>
@@ -83,22 +112,33 @@ function Home() {
   );
 }
 
-function MenuCard({ title, path = "", url = "" }) {
+// ✅ อัปเดต MenuCard รับ disabled prop
+function MenuCard({ title, path = "", url = "", disabled = false }) {
   const navigate = useNavigate();
+  
   const handleClick = () => {
+    if (disabled) return; // ✅ ถ้า disabled ไม่ทำอะไร
+    
     if (url) {
       window.open(url, "_blank");
     } else if (path) {
       navigate(path);
     }
   };
+
   return (
     <div
       onClick={handleClick}
-      className="card bg-base-100 shadow-md cursor-pointer hover:bg-primary/10 transition h-full min-h-[160px] sm:min-h-[200px] flex items-center justify-center"
+      className={`card bg-base-100 shadow-md transition h-full min-h-[160px] sm:min-h-[200px] flex items-center justify-center ${
+        disabled 
+          ? "cursor-not-allowed opacity-50" // ✅ disabled style
+          : "cursor-pointer hover:bg-primary/10" // ✅ normal style
+      }`}
     >
       <div className="card-body flex items-center justify-center p-4">
-        <span className="text-lg font-semibold text-accent">{title}</span>
+        <span className={`text-lg font-semibold ${disabled ? "text-base-content/50" : "text-accent"}`}>
+          {title}
+        </span>
       </div>
     </div>
   );
