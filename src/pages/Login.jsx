@@ -115,6 +115,12 @@ function Login() {
         >
           {isLoading ? "Loading..." : "Login"}
         </button>
+        <button
+          className="btn btn-link mt-2"
+          onClick={() => navigate("/register")}
+        >
+          สมัครสมาชิก
+        </button>
       </fieldset>
     </div>
   );
