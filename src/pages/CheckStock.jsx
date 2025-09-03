@@ -132,7 +132,7 @@ export default function CheckStockDetail() {
                 if (ac.signal.aborted) return;    // ถ้าถูกยกเลิก ไม่ต้องทำอะไรต่อ
                 console.error(err);
                 setItems([]);
-                setErrorMsg?.("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+                setErrorMsg?.("❌ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
             } finally {
                 if (!ac.signal.aborted) setLoading(false);
             }
@@ -231,8 +231,8 @@ export default function CheckStockDetail() {
         <div className="p-4 space-y-4">
 
             <div className="flex items-center justify-between">
-                <h1 className="text-xl font-bold">
-                    {isNew ? "สร้างรายการเช็ค Stock ใหม่" : `จัดการรายการใบสั่ง: ${orderId}`}
+                <h1 className="text-xl font-bold text-primary">
+                    {isNew ? "✏️ สร้างรายการเช็ค Stock ใหม่" : `จัดการรายการใบสั่ง: ${orderId}`}
                 </h1>
 
             </div>
@@ -263,7 +263,7 @@ export default function CheckStockDetail() {
                 <div className="card-body p-0">
                     {loading ? (
                         <div className="flex items-center gap-2">
-                            <span className="loading loading-spinner loading-sm"></span> กำลังโหลด…
+                            <span className="loading loading-spinner loading-sm"></span> ⏳ กำลังโหลด…
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -273,8 +273,8 @@ export default function CheckStockDetail() {
                                         <th className="sticky left-0 bg-base-100 z-20">รายการ</th>
 
                                         <th className="text-right">จำนวนที่ต้องใช้</th>
-                                        <th className="text-right bg-secondary text-secondary-content">จำนวนที่นับได้</th>
-                                        <th className="text-right bg-success text-success-content">จำนวนที่ต้องซื้อเข้า</th>
+                                        <th className="text-right bg-secondary text-secondary-content">☝️ จำนวนที่นับได้</th>
+                                        <th className="text-right bg-success text-success-content">✅ จำนวนที่ต้องซื้อเข้า</th>
                                         <th>หน่วย</th>
                                         <th>หมายเหตุ</th>
                                         <th className="text-right">จัดการ</th>
@@ -459,7 +459,7 @@ export default function CheckStockDetail() {
             </div>
             <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">
-                    วันที่สั่งซื้อ:{" "}
+                    📅 วันที่สั่งซื้อ:{" "}
                     <input
                         type="date"
                         className="input input-bordered input-sm w-40"
@@ -474,7 +474,7 @@ export default function CheckStockDetail() {
                     disabled={isSaveDisabled || isSaving}
                     title={isSaveDisabled ? "กรุณากรอกจำนวนให้ครบก่อนบันทึก" : ""}
                 >
-                    {isSaving ? "กำลังบันทึก..." : "บันทึก"}
+                    {isSaving ? "กำลังบันทึก..." : " 💾 บันทึก"}
                 </button>
             </div>
             {alertOpen && (

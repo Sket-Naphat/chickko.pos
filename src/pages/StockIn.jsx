@@ -208,7 +208,7 @@ export default function StockInDetail() {
                 if (ac.signal.aborted) return;    // ถ้าถูกยกเลิก ไม่ต้องทำอะไรต่อ
                 console.error(err);
                 setItems([]);
-                setErrorMsg?.("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+                setErrorMsg?.("❌ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
             } finally {
                 if (!ac.signal.aborted) setLoading(false);
             }
@@ -453,7 +453,7 @@ export default function StockInDetail() {
                 <div className="card-body p-0">
                     {loading ? (
                         <div className="flex items-center gap-2">
-                            <span className="loading loading-spinner loading-sm"></span> กำลังโหลด…
+                            <span className="loading loading-spinner loading-sm"></span> ⏳ กำลังโหลด…
                         </div>
                     ) : (
                         <div className="overflow-x-auto">

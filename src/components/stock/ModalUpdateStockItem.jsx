@@ -48,7 +48,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                     setUnitList(unitRes?.data ?? []);
                 } catch (err) {
                     if (!ac.signal.aborted) {
-                        console.error("โหลดข้อมูลหน่วยไม่สำเร็จ", err);
+                        console.error("❌ โหลดข้อมูลหน่วยไม่สำเร็จ", err);
                     }
                 }
                 try {
@@ -56,7 +56,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                     setLocationList(locationRes?.data ?? []);
                 } catch (err) {
                     if (!ac.signal.aborted) {
-                        console.error("โหลดข้อมูลตำแหน่งไม่สำเร็จ", err);
+                        console.error("❌ โหลดข้อมูลตำแหน่งไม่สำเร็จ", err);
                     }
                 }
                 try {
@@ -64,12 +64,12 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                     setCategoryList(categoryRes?.data ?? []);
                 } catch (err) {
                     if (!ac.signal.aborted) {
-                        console.error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ", err);
+                        console.error("❌ โหลดข้อมูลหมวดหมู่ไม่สำเร็จ", err);
                     }
                 }
             })();
         } catch (err) {
-            console.error("โหลด costCategory ไม่ได้:", err);
+            console.error("❌ โหลด costCategory ไม่ได้:", err);
         }
         finally {
             setIsLoadingModal(false);
@@ -108,15 +108,15 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
             setIsSaving(false);
             return alert("กรุณากรอกจำนวนที่ต้องใช้ให้ถูกต้อง");
         }
-        if (isNaN(payload.TotalQTY) ) {
+        if (isNaN(payload.TotalQTY)) {
             setIsSaving(false);
             return alert("กรุณากรอกจำนวนคงเหลือให้ถูกต้อง");
         }
-        if (isNaN(payload.StockInQTY) ) {
+        if (isNaN(payload.StockInQTY)) {
             setIsSaving(false);
             return alert("กรุณากรอกจำนวนเงินให้ถูกต้อง");
         }
-        
+
 
         try {
             await api.post("/stock/CreateStockDetail", payload);
@@ -153,13 +153,13 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
     return (
         <>
             <button className="btn btn-success text-white" onClick={openModal} disabled={isLoadingModal}>
-                {isLoadingModal ? "กำลังโหลด..." : "เพิ่มรายการใหม่"}
+                {isLoadingModal ? "⏳ กำลังโหลด..." : "✏️ เพิ่มรายการใหม่"}
             </button>
 
             <dialog ref={dialogRef} className="modal">
                 <div className="modal-box w-11/12 max-w-2xl">
 
-                    <h3 className="font-bold text-lg">สร้างรายการวัตถุดิบใหม่</h3>
+                    <h3 className="font-bold text-lg"> ✏️ สร้างรายการวัตถุดิบใหม่</h3>
 
                     <form
                         className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3"
@@ -188,7 +188,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                     ประเภทหมวดหมู่
                                 </span> &nbsp;
                             </div><br />
-                                 <select
+                            <select
                                 id={ddl_stockCategoryId}
                                 className="select select-bordered"
                                 value={categoryId}
@@ -196,7 +196,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 required
                             >
                                 <option value="" disabled>— เลือกประเภทหมวดหมู่ —</option>
-                                <option value="0">+ เพิ่มหมวดหมู่ใหม่</option>
+                                <option value="0">✏️ เพิ่มหมวดหมู่ใหม่</option>
                                 {categoryList.map((category) => (
                                     <option
                                         key={category.stockCategoryID}
@@ -221,7 +221,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                         <label className="form-control md:col-span-2">
                             <div className="label">
                                 <span className="label-text" htmlFor={ddl_stockLocationId}>
-                                    สถานที่จัดเก็บ
+                                    ตำแหน่งจัดเก็บ
                                 </span> &nbsp;
                             </div><br />
                             <select
@@ -231,8 +231,8 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 onChange={(e) => setLocationId(e.target.value)}
                                 required
                             >
-                                <option value="" disabled>— เลือกสถานที่จัดเก็บ —</option>
-                                <option value="0">+ เพิ่มสถานที่จัดเก็บใหม่</option>
+                                <option value="" disabled>— เลือกตำแหน่งจัดเก็บ —</option>
+                                <option value="0">✏️ เพิ่มตำแหน่งใหม่</option>
                                 {locationList.map((location) => (
                                     <option
                                         key={location.stockLocationID}
@@ -268,7 +268,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 required
                             >
                                 <option value="" disabled>— เลือกหน่วย —</option>
-                                <option value="0">+ เพิ่มหน่วยใหม่</option>
+                                <option value="0">✏️ เพิ่มหน่วยใหม่</option>
                                 {unitList.map((unit) => (
                                     <option
                                         key={unit.stockUnitTypeID}
@@ -350,7 +350,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 className={`btn btn-success ${isSaving ? "loading" : ""}`}
                                 disabled={isSaving}
                             >
-                                {isSaving ? "กำลังบันทึก..." : "บันทึก"}
+                                {isSaving ? "กำลังบันทึก..." : "💾 บันทึก"}
                             </button><br />
                             <button
                                 type="button"
@@ -358,7 +358,7 @@ const ModalUpdateStockItem = ({ onCreated, showToast }) => {
                                 onClick={closeModal}
                                 disabled={isSaving}
                             >
-                                ปิด
+                                ❌ ปิด
                             </button>
                         </div>
                     </form>

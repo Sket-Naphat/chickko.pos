@@ -61,18 +61,18 @@ export default function Stock() {
           </button> */}
           {/* 👉 ปุ่มสร้างรายการเช็คสต๊อกใหม่ */}
           <button
-            className="btn btn-primary"
+            className="btn btn-primary text-lg"
             onClick={() => navigate("/checkstock/new")}
-            title="สร้างรายการตรวจนับสต็อกใหม่"
+            title="สร้างรายการนับสต็อกใหม่"
           >
-            สร้างรายการตรวจนับสต็อกใหม่
+            📝 สร้างรายการนับสต็อกใหม่
           </button>
           <button
-            className="btn btn-secondary"
+            className="btn btn-warning"
             onClick={() => navigate("/stockitem")}
             title="ดูรายการสินค้าในคลัง"
           >
-            รายการคลัง
+            ⚙️ แก้ไขคลัง
           </button>
         </div>
       </div>
@@ -133,7 +133,7 @@ export default function Stock() {
                 {isLoading && (
                   <tr>
                     <td colSpan="4">
-                      กำลังโหลด &nbsp;
+                      ⏳ กำลังโหลด &nbsp;
                       <span className="loading loading-dots loading-sm"></span>
                     </td>
                   </tr>
@@ -141,7 +141,7 @@ export default function Stock() {
                 {!isLoading && orders.length === 0 && (
                   <tr>
                     <td colSpan="4" className="text-center text-base-content/60">
-                      ยังไม่มีหัวใบสั่งซื้อ
+                      🤷‍♂️ ยังไม่มีหัวใบสั่งซื้อ
                     </td>
                   </tr>
                 )}

@@ -93,7 +93,7 @@ export default function CheckStockDetail() {
                 if (ac.signal.aborted) return;    // ถ้าถูกยกเลิก ไม่ต้องทำอะไรต่อ
                 console.error(err);
                 setItems([]);
-                setErrorMsg?.("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+                setErrorMsg?.("❌ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
             } finally {
                 if (!ac.signal.aborted) setLoading(false);
             }
@@ -137,7 +137,7 @@ export default function CheckStockDetail() {
                 setUnitList(unitRes?.data ?? []);
             } catch (err) {
                 if (!ac.signal.aborted) {
-                    console.error("โหลดข้อมูลหน่วยไม่สำเร็จ", err);
+                    console.error("❌ โหลดข้อมูลหน่วยไม่สำเร็จ", err);
                 }
             }
             try {
@@ -145,7 +145,7 @@ export default function CheckStockDetail() {
                 setLocationList(locationRes?.data ?? []);
             } catch (err) {
                 if (!ac.signal.aborted) {
-                    console.error("โหลดข้อมูลตำแหน่งไม่สำเร็จ", err);
+                    console.error("❌ โหลดข้อมูลตำแหน่งไม่สำเร็จ", err);
                 }
             }
             try {
@@ -153,7 +153,7 @@ export default function CheckStockDetail() {
                 setCategoryList(categoryRes?.data ?? []);
             } catch (err) {
                 if (!ac.signal.aborted) {
-                    console.error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ", err);
+                    console.error("❌ โหลดข้อมูลหมวดหมู่ไม่สำเร็จ", err);
                 }
             }
 
@@ -273,7 +273,7 @@ export default function CheckStockDetail() {
                 setUnitList(unitRes?.data ?? []);
             } catch (err) {
                 if (!ac.signal.aborted) {
-                    console.error("โหลดข้อมูลหน่วยไม่สำเร็จ", err);
+                    console.error("❌ โหลดข้อมูลหน่วยไม่สำเร็จ", err);
                 }
             }
             try {
@@ -281,7 +281,7 @@ export default function CheckStockDetail() {
                 setLocationList(locationRes?.data ?? []);
             } catch (err) {
                 if (!ac.signal.aborted) {
-                    console.error("โหลดข้อมูลตำแหน่งไม่สำเร็จ", err);
+                    console.error("❌ โหลดข้อมูลตำแหน่งไม่สำเร็จ", err);
                 }
             }
             try {
@@ -289,7 +289,7 @@ export default function CheckStockDetail() {
                 setCategoryList(categoryRes?.data ?? []);
             } catch (err) {
                 if (!ac.signal.aborted) {
-                    console.error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ", err);
+                    console.error("❌ โหลดข้อมูลหมวดหมู่ไม่สำเร็จ", err);
                 }
             }
         })();
@@ -302,7 +302,7 @@ export default function CheckStockDetail() {
             <Toast show={toast.show} message={toast.message} type={toast.type} position="bottom-center" />
             <div className="flex items-center justify-between">
                 <h1 className="text-xl font-bold">
-                    จัดการรายการใบสั่ง
+                    🗒️ จัดการต่างๆ ในคลัง
                 </h1>
 
             </div>
@@ -338,7 +338,7 @@ export default function CheckStockDetail() {
                 <div className="card-body p-0">
                     {loading ? (
                         <div className="flex items-center gap-2">
-                            <span className="loading loading-spinner loading-sm"></span> กำลังโหลด…
+                            <span className="loading loading-spinner loading-sm"></span> ⏳ กำลังโหลด…
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -350,8 +350,8 @@ export default function CheckStockDetail() {
                                         <th className="text-right">จำนวนที่นับได้</th>
                                         <th className="text-right">จำนวนที่ต้องซื้อเข้า</th>
                                         <th>หน่วย</th>
-                                        <th>หมวดหมู่</th>
                                         <th>ตำแหน่งเก็บ</th>
+                                        <th>หมวดหมู่</th>
                                         <th>ใช้งาน</th>
                                         <th className="text-right">จัดการ</th>
                                     </tr>
@@ -611,7 +611,7 @@ export default function CheckStockDetail() {
                                                                     ))}
                                                                     {/* ตัวเลือกเพิ่มรายการใหม่ */}
                                                                     <option value="0" className="text-primary font-semibold">
-                                                                        + เพิ่มหน่วยใหม่
+                                                                        ✏️ เพิ่มหน่วยใหม่
                                                                     </option>
                                                                 </select>
                                                                 
@@ -696,7 +696,7 @@ export default function CheckStockDetail() {
                                                                         </option>
                                                                     ))}
                                                                     <option value="0" className="text-primary font-semibold">
-                                                                        + เพิ่มตำแหน่งใหม่
+                                                                        ✏️ เพิ่มตำแหน่งใหม่
                                                                     </option>
                                                                 </select>
                                                                 
@@ -781,7 +781,7 @@ export default function CheckStockDetail() {
                                                                         </option>
                                                                     ))}
                                                                     <option value="0" className="text-primary font-semibold">
-                                                                        + เพิ่มหมวดใหม่
+                                                                        ✏️ เพิ่มหมวดใหม่
                                                                     </option>
                                                                 </select>
                                                                 

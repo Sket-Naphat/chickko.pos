@@ -38,7 +38,7 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
         setData(items);
       } catch (err) {
         setData([]);
-        console.error("โหลดรายการค่าใช้จ่ายไม่สำเร็จ:", err);
+        console.error("❌ โหลดรายการค่าใช้จ่ายไม่สำเร็จ:", err);
       } finally {
         setLoading(false);
       }
@@ -48,14 +48,14 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
 
   // แสดงข้อความขณะกำลังโหลด
   if (loading) {
-    return <div className="p-4">กำลังโหลดข้อมูล...</div>;
+    return <div className="p-4">⏳ กำลังโหลดข้อมูล...</div>;
   }
 
   // กรณีไม่มีข้อมูล
   if (!data || data.length === 0) {
     return (
       <div className="p-4 text-center text-gray-500">
-        ไม่มีค่าใช้จ่ายคงค้าง
+        👍🏻 ไม่มีค่าใช้จ่ายคงค้าง
       </div>
     );
   }
@@ -139,14 +139,14 @@ function GetCostIsPurchaseList({ refreshKey }) {
 
   // แสดงข้อความขณะกำลังโหลด
   if (loading) {
-    return <div className="p-4">กำลังโหลดข้อมูล...</div>;
+    return <div className="p-4">⏳ กำลังโหลดข้อมูล...</div>;
   }
 
   // กรณีไม่มีข้อมูล
   if (!data || data.length === 0) {
     return (
       <div className="p-4 text-center text-gray-500">
-        ไม่มีค่าใช้จ่ายคงค้าง
+        👍🏻 ไม่มีค่าใช้จ่ายคงค้าง
       </div>
     );
   }
@@ -157,10 +157,10 @@ function GetCostIsPurchaseList({ refreshKey }) {
       <table className="table">
         <thead>
           <tr>
-            <th>วันที่</th>
-            <th>หมวดหมู่</th>
-            <th>ราคา</th>
-            <th>รายละเอียดการซื้อ</th>
+            <th>📅 วันที่</th>
+            <th>🏷️ หมวดหมู่</th>
+            <th>💰 ราคา</th>
+            <th>📝 รายละเอียดการซื้อ</th>
             <th></th>
           </tr>
         </thead>
@@ -204,21 +204,21 @@ export default function Cost() {
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-info">
-          บันทึกค่าใช้จ่าย
+          💰 บันทึกค่าใช้จ่าย
         </h1>
         <ModalNewCost onCreated={refreshData} showToast={showToast}/>
       </div>
 
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body p-4">
-              <div className="badge badge-outline badge-error">รายการค่าใช้จ่ายที่ยังไม่ชำระเงิน</div>
+              <div className="badge badge-outline badge-error">☝️ รายการค่าใช้จ่ายที่ยังไม่ชำระเงิน</div>
               <GetCostNoPurchase refreshKey={refreshKey} onConfirm={refreshData} showToast={showToast} /> {/* เปลี่ยนจาก key เป็น prop */}
         </div>
       </div>
 
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body p-4">
-          <div className="badge badge-outline badge-success">รายการค่าใช้จ่ายที่ชำระเงินแล้ว</div>
+          <div className="badge badge-outline badge-success">✅ รายการค่าใช้จ่ายที่ชำระเงินแล้ว</div>
           <GetCostIsPurchaseList refreshKey={refreshKey} /> {/* เปลี่ยนจาก key เป็น prop */}
         </div>
       </div>

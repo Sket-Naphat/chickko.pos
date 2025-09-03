@@ -77,9 +77,9 @@ function Login() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-base-200 gap-4">
       <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
-        <legend className="fieldset-legend">Login</legend>
+        <legend className="fieldset-legend text-2xl text-primary">🐓 CHICK-KO-POS 🗒️</legend>
 
-        <label className="label">Email</label>
+        <label className="label">🙋🏼‍♀️ Username</label>
         <input
           type="text"
           className="input"
@@ -88,7 +88,7 @@ function Login() {
           onChange={(e) => setUsername(e.target.value)}
         />
 
-        <label className="label">Password</label>
+        <label className="label">🔑 Password</label>
         <input
           type="password"
           className="input"
@@ -97,15 +97,15 @@ function Login() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <label className="label">สาขา</label>
+        <label className="label">🌎 สาขา</label>
         <select
           className="select"
           value={selectedSite}
           onChange={(e) => setSelectedSite(e.target.value)}
         >
-          <option value="">เลือกสาขา</option>
-          <option value="HKT">ภูเก็ต</option>
-          <option value="BKK">กรุงเทพฯ</option>
+          <option value="" disabled>🏢 เลือกสาขา</option>
+          <option value="HKT">🏝️ ภูเก็ต</option>
+          <option value="BKK">🏙️ กรุงเทพฯ</option>
         </select>
 
         <button
@@ -113,13 +113,13 @@ function Login() {
           onClick={handleLogin}
           disabled={isLoading}
         >
-          {isLoading ? "Loading..." : "Login"}
+          {isLoading ? "⏳ กำลังโหลด..." : "🔐 เข้าสู่ระบบ"}
         </button>
         <button
           className="btn btn-link mt-2"
           onClick={() => navigate("/register")}
         >
-          สมัครสมาชิก
+          ✏️ สมัครสมาชิก
         </button>
       </fieldset>
     </div>
