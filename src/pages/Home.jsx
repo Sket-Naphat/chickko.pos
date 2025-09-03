@@ -57,7 +57,6 @@ function Home() {
   if (permission === 1) { // admin
     menuItems.push(
       { title: "📊 Dashboard", path: "/dashboard" },
-      { title: "💰 Cost", path: "/cost" },
     );
   }
 
