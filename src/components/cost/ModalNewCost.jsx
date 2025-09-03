@@ -113,13 +113,13 @@ export default function ModalNewCost({ onCreated, showToast }) {
     return (
         <>
             <button className="btn btn-success text-white" onClick={openModal} disabled={isLoadingModal}>
-                {isLoadingModal ? "กำลังโหลด..." : "เพิ่มค่าใช้จ่าย"}
+                {isLoadingModal ? "⏳ กำลังโหลด..." : "✏️ เพิ่มค่าใช้จ่าย"}
             </button>
 
             <dialog ref={dialogRef} className="modal">
                 <div className="modal-box w-11/12 max-w-2xl">
 
-                    <h3 className="font-bold text-lg">สร้างรายการค่าใช้จ่ายใหม่</h3>
+                    <h3 className="font-bold text-lg">✏️ สร้างรายการค่าใช้จ่ายใหม่</h3>
 
                     <form
                         className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3"
@@ -131,6 +131,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                                     จำนวนเงิน (บาท)
                                 </span>
                             </div>
+                            <br />
                             <input
                                 id={num_costPriceId}
                                 type="number"
@@ -150,6 +151,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                                     วันที่
                                 </span>
                             </div>
+                            <br />
                             <input
                                 id={dt_costDateId}
                                 type="date"
@@ -165,7 +167,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                                 <span className="label-text" htmlFor={ddl_costCategoryId}>
                                     ประเภท
                                 </span> &nbsp;
-                            </div>
+                            </div><br />
                             <select
                                 id={ddl_costCategoryId}
                                 className="select select-bordered"
@@ -191,6 +193,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                                     รายละเอียดการซื้อ
                                 </span>&nbsp;
                             </div>
+                            <br />
                             <textarea
                                 id={txt_costDescriptionId}
                                 className="textarea textarea-bordered"
@@ -218,7 +221,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                                 className={`btn btn-success ${isSaving ? "loading" : ""}`}
                                 disabled={isSaving}
                             >
-                                {isSaving ? "กำลังบันทึก..." : "บันทึก"}
+                                {isSaving ? "⏳ กำลังบันทึก..." : "💾 บันทึก"}
                             </button>
                             <button
                                 type="button"
@@ -226,7 +229,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                                 onClick={closeModal}
                                 disabled={isSaving}
                             >
-                                ปิด
+                                ❌ ปิด
                             </button>
                         </div>
                     </form>

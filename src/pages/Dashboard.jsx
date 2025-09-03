@@ -118,7 +118,7 @@ function Dashboard() {
             {salesLoading ? (
               <div className="flex items-center justify-center py-8">
                 <span className="loading loading-spinner loading-lg"></span>
-                <span className="ml-2">กำลังโหลดข้อมูล...</span>
+                <span className="ml-2">⏳ กำลังโหลดข้อมูล...</span>
               </div>
             ) : (
               <div className="overflow-x-auto">
