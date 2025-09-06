@@ -10,12 +10,16 @@ const UserName = authData ? authData.name : "-";
 // }
 const getCurrentTime = () => {
     const now = new Date();
-    return now.toLocaleTimeString('en-GB', { hour12: false });
+    var currentTime =  now.toLocaleTimeString('en-GB', { hour12: false });
+     return currentTime;
 };
 
 const getTodayDate = () => {
     const now = new Date();
-    return now.toISOString().split('T')[0];
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 const TimeClock = () => {

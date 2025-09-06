@@ -286,14 +286,14 @@ function ManagementWorktime() {
           <div className="mb-4 flex flex-col sm:flex-row items-center gap-2 justify-center">
             <label className="font-semibold">ดูข้อมูลแบบ:</label>
             <div className="flex items-center gap-2">
-              <span className="">{/* ซ้าย */}ครั้งละครึ่งเดือน</span>
+              <span className="">ครั้งละครึ่งเดือน</span>
               <input
                 type="checkbox"
                 className="toggle toggle-primary"
                 checked={filterType === "daily"}
                 onChange={e => setFilterType(e.target.checked ? "daily" : "halfmonth")}
               />
-              <span className="">{/* ขวา */}รายวัน</span>
+              <span className="">รายวัน</span>
             </div>
           </div>
           {filterType === "halfmonth" && (
@@ -319,7 +319,7 @@ function ManagementWorktime() {
                   value={selectedDate}
                   onChange={e => setSelectedDate(e.target.value)}
                   className="input input-bordered input-sm w-full sm:w-auto"
-                  max={now.toISOString().slice(0, 10)}
+                  // ลบ max เพื่อให้เลือกวันปัจจุบันได้
                 />
               </div>
             </div>
