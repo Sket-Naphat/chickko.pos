@@ -198,10 +198,9 @@ export default function CheckStockDetail() {
 
         try {
             if (isNew) {
-                // เดิม: navigate ทันที → ตัดออก
-                await api.post("/stock/CreateStockCount", payload);
+                await api.post("/stock/CreateStockCount", payload, { timeout: 120000 });
             } else {
-                await api.post("/stock/UpdateStockCount", payload);
+                await api.post("/stock/UpdateStockCount", payload, { timeout: 120000 });
             }
 
             // ✅ แสดง alert แทน toast
@@ -238,14 +237,14 @@ export default function CheckStockDetail() {
             </div>
             <div className="join">
                 <button
-                    className={`btn btn-sm join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
+                    className={`btn btn-sm text-lg join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
                     onClick={() => setGroupBy("location")}
                     title="จัดเรียงตามตำแหน่งเก็บ"
                 >
                     ตามตำแหน่งเก็บ
                 </button>
                 <button
-                    className={`btn btn-sm join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
+                    className={`btn btn-sm text-lg join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
                     onClick={() => setGroupBy("category")}
                     title="จัดเรียงตามหมวดหมู่"
                 >
@@ -270,14 +269,14 @@ export default function CheckStockDetail() {
                             <table className="table">
                                 <thead>
                                     <tr>
-                                        <th className="sticky left-0 bg-base-100 z-20">รายการ</th>
+                                        <th className="sticky left-0 bg-base-100 z-20 text-lg">รายการ</th>
 
-                                        <th className="text-right">จำนวนที่ต้องใช้</th>
-                                        <th className="text-right bg-secondary text-secondary-content">☝️ จำนวนที่นับได้</th>
-                                        <th className="text-right bg-success text-success-content">✅ จำนวนที่ต้องซื้อเข้า</th>
-                                        <th>หน่วย</th>
-                                        <th>หมายเหตุ</th>
-                                        <th className="text-right">จัดการ</th>
+                                        <th className="text-right text-lg">จำนวนที่ต้องใช้</th>
+                                        <th className="text-right bg-secondary text-secondary-content text-lg">☝️ จำนวนที่นับได้</th>
+                                        <th className="text-right bg-success text-success-content text-lg">✅ จำนวนที่ต้องซื้อเข้า</th>
+                                        <th className="text-lg">หน่วย</th>
+                                        <th className="text-lg">หมายเหตุ</th>
+                                        <th className="text-right text-lg">จัดการ</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -291,7 +290,7 @@ export default function CheckStockDetail() {
                                         <Fragment key={`grp-${group.id}`}>
                                             {/* หัวข้อกลุ่ม */}
                                             <tr className="bg-base-200">
-                                                <td colSpan={7} className="font-bold text-lg bg-info">
+                                                <td colSpan={7} className="font-bold text-lg bg-info" style={{ padding: "4px" }}>
                                                     {group.name}
                                                 </td>
                                             </tr>
@@ -304,14 +303,14 @@ export default function CheckStockDetail() {
                                                 const rowClassItemName = invalid ? "bg-error" : modified ? "bg-warning" : "";
                                                 return (
                                                     <tr key={it.stockId} className={rowClass}>
-                                                        <td className={`sticky left-0 bg-base-100 z-10 ${rowClassItemName}`}>{it.itemName}</td>
+                                                        <td className={`sticky text-lg p-1 left-0 bg-base-100 z-10 ${rowClassItemName}`}>{it.itemName}</td>
                                                         <td className="text-right text-lg">{it.requiredQTY}</td>
 
                                                         {/* นับได้ */}
                                                         <td className="text-right bg-secondary/10 text-info-content">
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <button
-                                                                    className="btn btn-xs btn-outline btn-error"
+                                                                    className="btn btn-md btn-outline btn-error"
                                                                     onClick={() => {
                                                                         const n = Math.max(0, Number(it.totalQTY || 0) - 1);
                                                                         let stockInQTY = it.requiredQTY - n;
@@ -332,13 +331,13 @@ export default function CheckStockDetail() {
                                                                     type="number"
                                                                     min="0"
                                                                     max="99"
-                                                                    className="input input-bordered input-xs w-14 text-center text-lg"
+                                                                    className="input input-bordered input-md w-14 text-center text-lg"
                                                                     value={it.totalQTY}
                                                                     onChange={(e) => onQtyChange(it.stockId, e.target.value)}
                                                                 />
 
                                                                 <button
-                                                                    className="btn btn-xs btn-outline btn-success"
+                                                                    className="btn btn-md btn-outline btn-success"
                                                                     onClick={() => {
                                                                         const n = Number(it.totalQTY || 0) + 1;
                                                                         let stockInQTY = it.requiredQTY - n;
@@ -361,7 +360,7 @@ export default function CheckStockDetail() {
                                                         <td className="text-right bg-success/10">
                                                             <div className="flex items-center justify-end gap-2">
                                                             <button
-                                                                    className="btn btn-xs btn-outline btn-error"
+                                                                    className="btn btn-md btn-outline btn-error"
                                                                     onClick={() => {
                                                                         const n = Math.max(0, Number(it.stockInQTY || 0) - 1);
                                                                         setItems((prev) =>
@@ -378,7 +377,7 @@ export default function CheckStockDetail() {
                                                                     type="number"
                                                                     min="0"
                                                                     max="99"
-                                                                    className="input input-bordered input-xs w-14 text-center text-lg"
+                                                                    className="input input-bordered input-md w-14 text-center text-lg"
                                                                     value={it.stockInQTY}
                                                                     onChange={(e) => {
                                                                         const v = e.target.value;
@@ -393,7 +392,7 @@ export default function CheckStockDetail() {
                                                                 />
 
                                                                 <button
-                                                                    className="btn btn-xs btn-outline btn-success"
+                                                                    className="btn btn-md btn-outline btn-success"
                                                                     onClick={() => {
                                                                         const n = Number(it.stockInQTY || 0) + 1;
                                                                         setItems((prev) =>
@@ -408,15 +407,15 @@ export default function CheckStockDetail() {
                                                             </div>
                                                         </td>
                                                         {/* หน่วย */}
-                                                        <td className="text-left">
+                                                        <td className="text-left text-lg">
                                                             {it.unitTypeName || it.stockUnitTypeName || "หน่วยไม่ระบุ"}
                                                         </td>
                                                         {/* หมายเหตุ */}
-                                                        <td className="text-left">
+                                                        <td className="text-left text-lg">
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <input
                                                                     type="text"
-                                                                    className="input input-bordered input-xs w-40 text-left"
+                                                                    className="input input-bordered input-md w-40 text-left"
                                                                     value={it.remark}
                                                                     onChange={(e) => {
                                                                         const newRemark = e.target.value;
@@ -432,7 +431,7 @@ export default function CheckStockDetail() {
                                                         {/* เคลียร์ */}
                                                         <td className="text-right">
                                                             <button
-                                                                className="btn btn-xs btn-outline btn-error"
+                                                                className="btn btn-md btn-outline btn-error"
                                                                 onClick={() => {
                                                                     setItems((prev) =>
                                                                         prev.map((x) => (x.stockId === it.stockId ? { ...x, totalQTY: "", stockInQTY: 0, remark: "" } : x))

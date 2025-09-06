@@ -62,13 +62,6 @@ function Dashboard() {
     }).format(num);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("th-TH", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  };
 
   return (
     <>
@@ -146,8 +139,8 @@ function Dashboard() {
                       salesData.map((item, index) => (
                         <tr key={index} className="hover">
                           <td className="text-center font-semibold">{index + 1}</td>
-                          <td className="text-center">
-                            {formatDate(item.saleDate)}
+                          <td className="text-left">
+                            {formatDateWithDay(item.saleDate)}
                           </td>
                           <td className="text-center">
                             <div className="badge badge-primary">{item.orders}</div>
@@ -195,6 +188,27 @@ function Dashboard() {
       </div>
     </>
   );
+
+// เพิ่มฟังก์ชันนี้ไว้ใน component ด้วย
+function formatDateWithDay(dateString) {
+  const date = new Date(dateString);
+  const days = [
+    "วันอาทิตย์",
+    "วันจันทร์",
+    "วันอังคาร",
+    "วันพุธ",
+    "วันพฤหัสบดี",
+    "วันศุกร์",
+    "วันเสาร์",
+  ];
+  const dayName = days[date.getDay()];
+  const formattedDate = date.toLocaleDateString("th-TH", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return `${dayName} ที่ ${formattedDate}`;
+}
 }
 
 export default Dashboard;

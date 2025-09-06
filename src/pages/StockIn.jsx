@@ -418,14 +418,14 @@ export default function StockInDetail() {
             <div className="flex items-center justify-between">
                 <div className="join">
                     <button
-                        className={`btn btn-sm join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
+                        className={`btn btn-sm text-md join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
                         onClick={() => setGroupBy("location")}
                         title="จัดเรียงตามตำแหน่งเก็บ"
                     >
                         ตามตำแหน่งเก็บ
                     </button>
                     <button
-                        className={`btn btn-sm join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
+                        className={`btn btn-sm text-md join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
                         onClick={() => setGroupBy("category")}
                         title="จัดเรียงตามหมวดหมู่"
                     >
@@ -460,16 +460,15 @@ export default function StockInDetail() {
                             <table className="table">
                                 <thead>
                                     <tr>
-                                        <th className="sticky left-0 bg-base-100 z-20">รายการ</th>
-
-                                        <th className="text-right">จำนวนที่ต้องใช้</th>
-                                        <th className="text-right">จำนวนที่นับได้</th>
-                                        <th className="text-right bg-warning text-warning-content">จำนวนที่ต้องซื้อเข้า</th>
-                                        <th className="text-right bg-success text-success-content">จำนวนที่ซื้อจริง</th>
-                                        <th>หน่วย</th>
-                                        <th className="text-right">ราคาซื้อเข้า</th>
-                                        <th>หมายเหตุ</th>
-                                        <th className="text-right">จัดการ</th>
+                                        <th className="sticky left-0 bg-base-100 z-20 text-lg">รายการ</th>
+                                        <th className="text-right text-lg">ที่ต้องใช้</th>
+                                        <th className="text-right text-lg">ที่นับได้</th>
+                                        <th className="text-right text-lg bg-warning text-warning-content">ต้องซื้อเข้า</th>
+                                        <th className="text-right text-lg bg-success text-success-content">ที่ซื้อจริง</th>
+                                        <th className="text-lg">หน่วย</th>
+                                        <th className="text-right text-lg">ราคาซื้อเข้า</th>
+                                        <th className="text-lg">หมายเหตุ</th>
+                                        <th className="text-right text-lg">จัดการ</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -483,7 +482,7 @@ export default function StockInDetail() {
                                         <Fragment key={`grp-${group.id}`}>
                                             {/* หัวข้อกลุ่ม */}
                                             <tr className="bg-base-200">
-                                                <td colSpan={9} className="font-bold text-lg bg-info">
+                                                <td colSpan={9} className="font-bold text-lg bg-info p-1 text-info-content">
                                                     {group.name}
                                                 </td>
                                             </tr>
@@ -492,19 +491,19 @@ export default function StockInDetail() {
                                             {group.items.map((it) => {
                                                 const modified = modifiedIds.includes(it.stockId);
                                                 const invalid = invalidIds.includes(it.stockId);
-                                                const rowClass = invalid ? "bg-error/30" : modified ? "bg-warning/20" : "";
+                                                const rowClass = invalid ? "bg-error/30 border-error" : modified ? "bg-warning/20 border-warning" : "border-info";
                                                 const rowClassItemName = invalid ? "bg-error" : modified ? "bg-warning" : "";
                                                 return (
                                                     <tr key={it.stockId} className={rowClass}>
-                                                        <td className={`sticky left-0 bg-base-100 z-10 ${rowClassItemName}`}>{it.itemName}</td>
+                                                        <td className={`sticky text-lg p-1 left-0 bg-base-100 z-10  ${rowClassItemName}`}>{it.itemName}</td>
                                                         <td className="text-right text-lg">{it.requiredQTY}</td>
-                                                        <td className="text-right">{it.totalQTY}</td>
+                                                        <td className="text-right text-lg">{it.totalQTY}</td>
 
-                                                        <td className="text-right bg-warning/10">
+                                                        <td className="text-right text-lg bg-warning/10">
                                                             <div className="flex items-center justify-between">
                                                                 <button
                                                                     onClick={() => { onClickCopyQTYtoPurchaseQTY(it.stockId, it.stockInQTY) }}
-                                                                    className="btn btn-xs btn-outline btn-warning"
+                                                                    className="btn btn-md btn-outline btn-warning"
                                                                     title="คัดลอกจำนวนที่ต้องซื้อเข้า"
                                                                 >
                                                                     📋
@@ -517,7 +516,7 @@ export default function StockInDetail() {
                                                         <td className="text-right bg-success/10">
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <button
-                                                                    className="btn btn-xs btn-outline btn-error"
+                                                                    className="btn btn-md btn-outline btn-error"
                                                                     onClick={() => {
                                                                         const n = Math.max(0, Number(it.purchaseQTY || 0) - 1);
                                                                         setItems((prev) =>
@@ -534,13 +533,13 @@ export default function StockInDetail() {
                                                                     type="number"
                                                                     min="0"
                                                                     max="99"
-                                                                    className="input input-bordered input-sm w-14 text-center text-lg"
+                                                                    className="input input-bordered input-md w-14 text-center text-lg"
                                                                     value={it.purchaseQTY ?? ""}
                                                                     onChange={(e) => onQtyChange(it.stockId, e.target.value)}
                                                                 />
 
                                                                 <button
-                                                                    className="btn btn-xs btn-outline btn-success"
+                                                                    className="btn btn-md btn-outline btn-success"
                                                                     onClick={() => {
                                                                         const n = Number(it.purchaseQTY || 0) + 1;
                                                                         setItems((prev) =>
@@ -564,7 +563,7 @@ export default function StockInDetail() {
                                                                 type="number"
                                                                 min="0"
                                                                 step="0.01"
-                                                                className="input input-bordered input-primary input-sm w-24 text-right text-lg"
+                                                                className="input input-bordered input-primary input-md w-24 text-right text-lg"
                                                                 value={it.price || ""}
                                                                 onChange={(e) => {
                                                                     const v = e.target.value;
@@ -596,7 +595,7 @@ export default function StockInDetail() {
                                                         {/* เคลียร์ */}
                                                         <td className="text-right">
                                                             <button
-                                                                className="btn btn-xs btn-outline btn-error"
+                                                                className="btn btn-md btn-outline btn-error"
                                                                 onClick={() => {
                                                                     setItems((prev) =>
                                                                         prev.map((x) => (x.stockId === it.stockId ? { ...x, purchaseQTY: "", price: 0, } : x))
@@ -639,10 +638,10 @@ export default function StockInDetail() {
                                 <thead>
                                     <tr>
                                         <th className="sticky left-0 bg-base-100 z-20">รายการ</th>
-                                        <th className="text-right">จำนวนที่ต้องใช้</th>
-                                        <th className="text-right">จำนวนที่นับได้</th>
-                                        <th className="text-right bg-warning text-warning-content">จำนวนที่ต้องซื้อเข้า</th>
-                                        <th className="text-right bg-success text-success-content">จำนวนที่ซื้อจริง</th>
+                                        <th className="text-right">ที่ต้องใช้</th>
+                                        <th className="text-right">ที่นับได้</th>
+                                        <th className="text-right bg-warning text-warning-content">ต้องซื้อเข้า</th>
+                                        <th className="text-right bg-success text-success-content">ซื้อจริง</th>
                                         <th>หน่วย</th>
                                         <th className="text-right">ราคาซื้อเข้า</th>
                                         <th>หมายเหตุ</th>
@@ -669,7 +668,7 @@ export default function StockInDetail() {
                                             {group.items.map((it) => {
                                                 const modified = modifiedIds.includes(it.stockId);
                                                 const hasValue = it.purchaseQTY !== "";
-                                                const rowClass = hasValue ? "bg-success/20" : modified ? "bg-warning/20" : "";
+                                                const rowClass = hasValue ? "bg-success/20" : modified ? "bg-warning/20" : "border-warning";
                                                 const rowClassItemName = hasValue ? "bg-success/30" : modified ? "bg-warning" : "";
                                                 return (
                                                     <tr key={it.stockId} className={rowClass}>
@@ -681,7 +680,7 @@ export default function StockInDetail() {
                                                             <div className="flex items-center justify-between">
                                                                 <button
                                                                     onClick={() => { onClickCopyQTYtoPurchaseQTY(it.stockId, it.stockInQTY) }}
-                                                                    className="btn btn-xs btn-outline btn-warning"
+                                                                    className="btn btn-md btn-outline btn-warning"
                                                                     title="คัดลอกจำนวนที่ต้องซื้อเข้า"
                                                                 >
                                                                     📋
@@ -694,7 +693,7 @@ export default function StockInDetail() {
                                                         <td className="text-right bg-success/10">
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <button
-                                                                    className="btn btn-xs btn-outline btn-error"
+                                                                    className="btn btn-md btn-outline btn-error"
                                                                     onClick={() => {
                                                                         const n = Math.max(0, Number(it.purchaseQTY || 0) - 1);
                                                                         setZeroItems((prev) =>
@@ -710,13 +709,13 @@ export default function StockInDetail() {
                                                                     type="number"
                                                                     min="0"
                                                                     max="99"
-                                                                    className="input input-bordered input-sm w-14 text-center text-lg"
+                                                                    className="input input-bordered input-md w-14 text-center text-lg"
                                                                     value={it.purchaseQTY ?? ""}
                                                                     onChange={(e) => onQtyChange(it.stockId, e.target.value)}
                                                                 />
 
                                                                 <button
-                                                                    className="btn btn-xs btn-outline btn-success"
+                                                                    className="btn btn-md btn-outline btn-success"
                                                                     onClick={() => {
                                                                         const n = Number(it.purchaseQTY || 0) + 1;
                                                                         setZeroItems((prev) =>
@@ -739,7 +738,7 @@ export default function StockInDetail() {
                                                                 type="number"
                                                                 min="0"
                                                                 step="0.01"
-                                                                className="input input-bordered input-primary input-sm w-24 text-right text-lg"
+                                                                className="input input-bordered input-primary input-md w-24 text-right text-lg"
                                                                 value={it.price || ""}
                                                                 onChange={(e) => {
                                                                     const v = e.target.value;
@@ -755,7 +754,7 @@ export default function StockInDetail() {
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <input
                                                                     type="text"
-                                                                    className="input input-bordered input-xs w-40 text-left"
+                                                                    className="input input-bordered input-md w-40 text-left"
                                                                     value={it.remark}
                                                                     onChange={(e) => {
                                                                         const newRemark = e.target.value;
@@ -771,7 +770,7 @@ export default function StockInDetail() {
                                                         {/* เคลียร์ */}
                                                         <td className="text-right">
                                                             <button
-                                                                className="btn btn-xs btn-outline btn-error"
+                                                                className="btn btn-md btn-outline btn-error"
                                                                 onClick={() => {
                                                                     setZeroItems((prev) =>
                                                                         prev.map((x) => (x.stockId === it.stockId ? { ...x, purchaseQTY: "", price: 0, } : x))
@@ -801,7 +800,7 @@ export default function StockInDetail() {
                             วันที่ซื้อเข้า:{" "}
                             <input
                                 type="date"
-                                className="input input-bordered input-sm w-40"
+                                className="input input-bordered input-md w-40"
                                 value={orderDate}
                                 onChange={(e) => setOrderDate(e.target.value)}
                             />
@@ -812,7 +811,7 @@ export default function StockInDetail() {
                                 type="number"
                                 min="0"
                                 step="0.01"
-                                className="input input-bordered input-sm text-lg w-32 text-right"
+                                className="input input-bordered input-md text-lg w-32 text-right"
                                 value={costPrice || ""}
                                 onChange={(e) => setCostPrice(e.target.value)}
                                 tabIndex={-1}
