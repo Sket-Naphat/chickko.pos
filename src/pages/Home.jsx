@@ -57,18 +57,20 @@ function Home() {
   if (permission === 1) { // admin
     menuItems.push(
       { title: "📊 Dashboard", path: "/dashboard" },
+          
     );
   }
 
   if (permission !== 3) { // admin, manager
     menuItems.push(
       { title: "💰 Cost", path: "/cost" },
+      { title: "🕒 เวลางาน", path: "/worktime" }, // ✅ เพิ่ม disabled
     );
   }
 
   menuItems.push(
     { title: "📦 Stock", path: "/stock" },
-    { title: "🕒 เวลางาน", path: "/worktime", disabled: true }, // ✅ เพิ่ม disabled
+    { title: "🕑 Time Clock", path: "/timeclock" },
     { title: "🗒️ เว็บรับ order", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
   )
 
