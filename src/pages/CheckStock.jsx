@@ -271,7 +271,7 @@ export default function CheckStockDetail() {
                                     <tr>
                                         <th className="sticky left-0 bg-base-100 z-20 text-lg">รายการ</th>
 
-                                        <th className="text-right text-lg">จำนวนที่ต้องใช้</th>
+                                        <th className="text-right text-lg">ที่ต้องใช้</th>
                                         <th className="text-right bg-secondary text-secondary-content text-lg">☝️ จำนวนที่นับได้</th>
                                         <th className="text-right bg-success text-success-content text-lg">✅ จำนวนที่ต้องซื้อเข้า</th>
                                         <th className="text-lg">หน่วย</th>
@@ -290,7 +290,7 @@ export default function CheckStockDetail() {
                                         <Fragment key={`grp-${group.id}`}>
                                             {/* หัวข้อกลุ่ม */}
                                             <tr className="bg-base-200">
-                                                <td colSpan={7} className="font-bold text-lg bg-info" style={{ padding: "4px" }}>
+                                                <td colSpan={7} className="font-bold text-lg bg-info p-2 pl-10" >
                                                     {group.name}
                                                 </td>
                                             </tr>
@@ -299,12 +299,12 @@ export default function CheckStockDetail() {
                                             {group.items.map((it) => {
                                                 const modified = modifiedIds.includes(it.stockId);
                                                 const invalid = invalidIds.includes(it.stockId);
-                                                const rowClass = invalid ? "bg-error/30" : modified ? "bg-warning/20" : "";
+                                                const rowClass = invalid ? "bg-error/30" : modified ? "bg-warning/20" : "border-info";
                                                 const rowClassItemName = invalid ? "bg-error" : modified ? "bg-warning" : "";
                                                 return (
                                                     <tr key={it.stockId} className={rowClass}>
                                                         <td className={`sticky text-lg p-1 left-0 bg-base-100 z-10 ${rowClassItemName}`}>{it.itemName}</td>
-                                                        <td className="text-right text-lg">{it.requiredQTY}</td>
+                                                        <td className="text-right text-xl">{it.requiredQTY}</td>
 
                                                         {/* นับได้ */}
                                                         <td className="text-right bg-secondary/10 text-info-content">
