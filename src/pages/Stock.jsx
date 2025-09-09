@@ -55,11 +55,10 @@ export default function Stock() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-base-200 p-4 rounded-lg shadow">
         <h1 className="text-xl font-bold">ระบบจัดการคลัง</h1>
-        <div className="flex gap-2">
-          {/* <button className="btn btn-accent" onClick={refreshData}>
-            รีเฟรช
-          </button> */}
-          {/* 👉 ปุ่มสร้างรายการเช็คสต๊อกใหม่ */}
+        
+        {/* ✅ แก้ไขให้ปุ่มแยกซ้าย-ขวา */}
+        <div className="flex justify-between items-center gap-2 w-full sm:w-auto">
+          {/* ปุ่มซ้าย */}
           <button
             className="btn btn-primary text-lg"
             onClick={() => navigate("/checkstock/new")}
@@ -67,12 +66,14 @@ export default function Stock() {
           >
             📝 สร้างรายการนับสต็อกใหม่
           </button>
+          
+          {/* ปุ่มขวา */}
           <button
             className="btn btn-warning"
             onClick={() => navigate("/stockitem")}
             title="ดูรายการสินค้าในคลัง"
           >
-            ⚙️ แก้ไขคลัง
+            ⚙️ <span className="hidden md:inline">ดูรายการคลัง</span>
           </button>
         </div>
       </div>

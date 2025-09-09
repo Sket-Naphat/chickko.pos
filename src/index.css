@@ -1,5 +1,14 @@
 @import "tailwindcss";
+
+/* ✅ เพิ่ม font Kanit */
+@layer base {
+  html {
+    font-family: 'Kanit', sans-serif;
+  }
+}
+
 /* เปิดธีมที่ต้องใช้ และตั้งค่า default = autumn */
 @plugin "daisyui" {
   themes: light , autumn --default, business;
+
 }
