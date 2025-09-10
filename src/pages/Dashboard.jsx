@@ -1,10 +1,45 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
+import React from "react";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+const months = [
+  "มกราคม",
+  "กุมภาพันธ์",
+  "มีนาคม",
+  "เมษายน",
+  "พฤษภาคม",
+  "มิถุนายน",
+  "กรกฎาคม",
+  "สิงหาคม",
+  "กันยายน",
+  "ตุลาคม",
+  "พฤศจิกายน",
+  "ธันวาคม",
+];
+
+const getCurrentMonth = () => new Date().getMonth();
+const getCurrentYear = () => new Date().getFullYear();
+
+
 
 function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [salesData, setSalesData] = useState([]);
   const [salesLoading, setSalesLoading] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+  const [selectedYear, setSelectedYear] = useState(getCurrentYear());
 
   // ✅ ดึงข้อมูลยอดขายรายวันตอนเปิดหน้า
   useEffect(() => {
@@ -62,6 +97,65 @@ function Dashboard() {
     }).format(num);
   };
 
+  const handleMonthChange = (e) => {
+    setSelectedMonth(Number(e.target.value));
+  };
+  const handleYearChange = (e) => {
+    setSelectedYear(Number(e.target.value));
+  };
+
+  const themeColors = {
+    success: 'oklch(20.8% 0.042 265.755)',
+    base: 'rgba(245, 245, 245, 1)', // tailwind base-100
+  };  
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: { display: false },
+      tooltip: {
+        callbacks: { label: (ctx) => `${ctx.parsed.y} บาท` },
+        backgroundColor: themeColors.base,
+        titleColor: themeColors.success,
+        bodyColor: themeColors.success,
+        borderColor: themeColors.success,
+        borderWidth: 1,
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: themeColors.success },
+      },
+      y: {
+        grid: { display: false },
+        beginAtZero: true,
+        ticks: { color: themeColors.success },
+      },
+    },
+  };
+
+  const data = {
+    labels: months,
+    datasets: [
+      {
+        label: "ยอดขายรายเดือน",
+        data: months.map((_, monthIdx) =>
+          salesData
+            .filter(item => {
+              const date = new Date(item.saleDate);
+              return (
+                date.getMonth() === monthIdx &&
+                date.getFullYear() === selectedYear
+              );
+            })
+            .reduce((sum, item) => sum + item.totalAmount, 0)
+        ),
+        backgroundColor: "oklch(60% 0.118 184.704)", // สีกราฟ
+      },
+    ],
+  };
 
   return (
     <>
@@ -91,6 +185,62 @@ function Dashboard() {
             <span>กำลังดึงข้อมูลกรุณารอสักครู่...</span>
           </div>
         )}
+        {/* ✅ กราฟยอดขายรายเดือน */}
+        <div className="bg-base-100 rounded-xl shadow p-4">
+          <h2 className="text-xl font-semibold mb-4">
+            📈 กราฟยอดขายรายเดือน
+          </h2>
+          <div className="flex gap-4 mb-4">
+            <select
+              className="select select-bordered"
+              value={selectedMonth}
+              onChange={handleMonthChange}
+            >
+              {months.map((m, idx) => (
+                <option key={m} value={idx}>
+                  {m}
+                </option>
+              ))}
+            </select>
+            <select
+              className="select select-bordered"
+              value={selectedYear}
+              onChange={handleYearChange}
+            >
+              {/* สร้างปีจากข้อมูล salesData จริง */}
+              {[...new Set(salesData.map(item => new Date(item.saleDate).getFullYear()))]
+                .sort((a, b) => b - a)
+                .map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+            </select>
+          </div>
+          {/* สร้างข้อมูลกราฟจาก salesData จริง */}
+          <Bar
+            data={data}
+            options={options}
+          />
+          <div className="mt-4 text-center">
+            <span className="text-lg font-semibold block sm:inline">
+              ยอดขายเดือน {months[selectedMonth]} {selectedYear} :{" "}
+            </span>
+            <span className="text-2xl block sm:inline">
+              {formatNumber(
+                salesData
+                  .filter(item => {
+                    const date = new Date(item.saleDate);
+                    return (
+                      date.getMonth() === selectedMonth &&
+                      date.getFullYear() === selectedYear
+                    );
+                  })
+                  .reduce((sum, item) => sum + item.totalAmount, 0)
+              )} บาท
+            </span>
+          </div>
+        </div>
 
         {/* ✅ ตารางแสดงยอดขายรายวัน */}
         <div className="card bg-base-100 shadow">
@@ -115,100 +265,153 @@ function Dashboard() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="table table-zebra">
-                  <thead>
-                    <tr>
-                      <th className="text-center">#</th>
-                      <th className="text-center">📅 วันที่ขาย</th>
-                      <th className="text-center">🧾 จำนวนบิล</th>
-                      <th className="text-right">💰 ยอดขายรวม</th>
-                      <th className="text-right">📊 ค่าเฉลี่ยต่อบิล</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {salesData.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan="5"
-                          className="text-center text-base-content/60 py-8"
-                        >
-                          ไม่มีข้อมูลยอดขาย
-                        </td>
-                      </tr>
-                    ) : (
-                      salesData.map((item, index) => (
-                        <tr key={index} className="hover">
-                          <td className="text-center font-semibold">{index + 1}</td>
-                          <td className="text-left">
-                            {formatDateWithDay(item.saleDate)}
-                          </td>
-                          <td className="text-center">
-                            <div className="badge badge-primary">{item.orders}</div>
-                          </td>
-                          <td className="text-right font-semibold text-success">
-                            ฿{formatNumber(item.totalAmount)}
-                          </td>
-                          <td className="text-right text-info">
-                            ฿{formatNumber(item.avgPerOrder)}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                  {salesData.length > 0 && (
-                    <tfoot>
-                      <tr className="bg-base-200 font-bold">
-                        <td colSpan="2" className="text-center">
-                          📈 รวมทั้งหมด
-                        </td>
-                        <td className="text-center">
-                          <div className="badge badge-secondary">
-                            {salesData.reduce((sum, item) => sum + item.orders, 0)}
+                {salesData.length > 0 && (
+                  <div className="card bg-base-200 font-bold p-4 mt-4 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span>📈 รวมบิลทั้งหมด</span>
+                      <span className="badge badge-secondary">
+                        {salesData
+                          .filter((item) => {
+                            const date = new Date(item.saleDate);
+                            return (
+                              date.getMonth() === selectedMonth &&
+                              date.getFullYear() === selectedYear
+                            );
+                          })
+                          .reduce((sum, item) => sum + item.orders, 0)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>ยอดขายรวม</span>
+                      <span className="text-success font-bold">
+                        ฿{formatNumber(
+                          salesData
+                            .filter((item) => {
+                              const date = new Date(item.saleDate);
+                              return (
+                                date.getMonth() === selectedMonth &&
+                                date.getFullYear() === selectedYear
+                              );
+                            })
+                            .reduce((sum, item) => sum + item.totalAmount, 0)
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>ค่าเฉลี่ยต่อบิล</span>
+                      <span className="text-info">
+                        ฿{formatNumber(
+                          (salesData
+                            .filter((item) => {
+                              const date = new Date(item.saleDate);
+                              return (
+                                date.getMonth() === selectedMonth &&
+                                date.getFullYear() === selectedYear
+                              );
+                            })
+                            .reduce((sum, item) => sum + item.totalAmount, 0)) /
+                            (salesData
+                              .filter((item) => {
+                                const date = new Date(item.saleDate);
+                                return (
+                                  date.getMonth() === selectedMonth &&
+                                  date.getFullYear() === selectedYear
+                                );
+                                })
+                                .reduce((sum, item) => sum + item.orders, 0) || 1)
+                            )}
+                            </span>
                           </div>
-                        </td>
-                        <td className="text-right text-success">
-                          ฿{formatNumber(
-                            salesData.reduce((sum, item) => sum + item.totalAmount, 0)
-                          )}
-                        </td>
-                        <td className="text-right text-info">
-                          ฿{formatNumber(
-                            salesData.reduce((sum, item) => sum + item.totalAmount, 0) /
-                              salesData.reduce((sum, item) => sum + item.orders, 0) || 0
-                          )}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
+                          <div className="flex items-center justify-between">
+                            <span>จำนวนวันที่เปิดขาย</span>
+                            <span className="text-info">
+                            {salesData.filter((item) => {
+                              const date = new Date(item.saleDate);
+                              return (
+                              date.getMonth() === selectedMonth &&
+                              date.getFullYear() === selectedYear
+                              );
+                            }).length} วัน
+                            </span>
+                          </div>
+                          </div>
+                        )}
+                        {salesData.length === 0 ? (
+                          <div className="text-center text-base-content/60 py-8">
+                          ไม่มีข้อมูลยอดขาย
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                          {salesData
+                            .filter((item) => {
+                        const date = new Date(item.saleDate);
+                        return (
+                          date.getMonth() === selectedMonth &&
+                          date.getFullYear() === selectedYear
+                        );
+                      })
+                      .map((item, index, arr) => (
+                        <div
+                          key={index}
+                          className="card bg-base-100 shadow p-4 flex flex-col gap-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-lg">#{arr.length - index}</span>
+                            <span className="badge badge-primary">
+                              {formatDateWithDay(item.saleDate)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>จำนวนบิล</span>
+                            <span className="badge badge-info">{item.orders}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>ยอดขายรวม</span>
+                            <span className="text-success font-bold">
+                              ฿{formatNumber(item.totalAmount)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>ค่าเฉลี่ยต่อบิล</span>
+                            <span className="text-info">
+                              ฿{formatNumber(item.avgPerOrder)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+                
               </div>
             )}
           </div>
         </div>
+
+        
       </div>
     </>
   );
 
-// เพิ่มฟังก์ชันนี้ไว้ใน component ด้วย
-function formatDateWithDay(dateString) {
-  const date = new Date(dateString);
-  const days = [
-    "วันอาทิตย์",
-    "วันจันทร์",
-    "วันอังคาร",
-    "วันพุธ",
-    "วันพฤหัสบดี",
-    "วันศุกร์",
-    "วันเสาร์",
-  ];
-  const dayName = days[date.getDay()];
-  const formattedDate = date.toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  return `${dayName} ที่ ${formattedDate}`;
-}
+  // เพิ่มฟังก์ชันนี้ไว้ใน component ด้วย
+  function formatDateWithDay(dateString) {
+    const date = new Date(dateString);
+    const days = [
+      "วันอาทิตย์",
+      "วันจันทร์",
+      "วันอังคาร",
+      "วันพุธ",
+      "วันพฤหัสบดี",
+      "วันศุกร์",
+      "วันเสาร์",
+    ];
+    const dayName = days[date.getDay()];
+    const formattedDate = date.toLocaleDateString("th-TH", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return `${dayName} ที่ ${formattedDate}`;
+  }
 }
 
 export default Dashboard;

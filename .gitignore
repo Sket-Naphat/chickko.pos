@@ -63,3 +63,30 @@ coverage/
 firebase.json
 .netlify/
 netlify.toml
+
+# Node.js
+node_modules/
+
+# Build output
+dist/
+
+# Environment
+.env
+
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Others
+*.log
+
+# ไม่ควร ignore package-lock.json
+# ถ้าต้องการ ignore จริง ให้เพิ่มบรรทัดนี้ (แต่แนะนำให้ commit ไว้)
+# package-lock.json
