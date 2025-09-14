@@ -21,6 +21,7 @@ import StockIn from "./pages/StockIn"; // 👉 เปลี่ยนชื่อ
 import StockItem from "./pages/StockItem";
 import Register from "./pages/Register"; 
 import TimeClock from "./pages/TimeClock";
+import Delivery from "./pages/Delivery";
 
 function App() {
   const location = useLocation();
@@ -63,6 +64,7 @@ function App() {
                 <Route path="/checkstock/:orderId" element={<CheckStock />} />
                 <Route path="/stockin/:orderId" element={<StockIn />} />
                 <Route path="/stockitem" element={<StockItem />} />
+                <Route path="/delivery" element={<Delivery/>}/>
               </Route>
 
               {/* ไป path แปลก ๆ ขณะอยู่ layout นี้ → ส่งไป /login */}

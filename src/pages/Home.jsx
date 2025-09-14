@@ -56,9 +56,10 @@ function Home() {
   ];
 
   switch (permission) {
-    case 1: // admin
+    case 1: // owner
       menuItems.push(
         { title: "📊 Dashboard", path: "/dashboard" },
+        { title: "🚛 Delivery", path: "/delivery" },
         { title: "💰 Cost", path: "/cost" },
         { title: "🕒 ประวัติการเข้าออกงาน", path: "/worktime" }, // ✅ เพิ่ม disabled
         { title: "📦 Stock", path: "/stock" },
