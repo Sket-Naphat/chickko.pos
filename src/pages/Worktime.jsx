@@ -414,6 +414,7 @@ function ManagementWorktime() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [data, setData] = React.useState([]);
+  const [paidWorktimes, setPaidWorktimes] = React.useState([]);
 
   // ✅ MOVED THESE HOOKS TO THE TOP
   const [paymentModal, setPaymentModal] = React.useState({
@@ -668,7 +669,7 @@ function ManagementWorktime() {
         totalWorktime = employeeData.totalWorktime || 0;
         wageCost = employeeData.wageCost || 0;
       }
-
+      setPaidWorktimes(employeeData.worktimes || []);
       // ✅ อัพเดทข้อมูลใหม่ใน modal
       setPaymentModal(prev => ({
         ...prev,
@@ -1026,6 +1027,8 @@ function ManagementWorktime() {
               </div>
             </div>
 
+            
+
             {/* ✅ ปุ่มการกระทำ */}
             <div className="modal-action">
               <button
@@ -1051,6 +1054,114 @@ function ManagementWorktime() {
                   </>
                 )}
               </button>
+            </div>
+            <hr className="my-4" />
+            {/* แสดงวันที่จ่ายเงินแล้ว */}
+            <div className="form-control mb-4">
+              <label className="label">
+                <span className="label-text font-semibold">📅 รายการที่จ่ายเงินแล้ว</span>
+              </label>
+              <div className="bg-base-200 p-3 rounded-lg">
+                {paymentLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="loading loading-spinner loading-sm"></span>
+                    กำลังตรวจสอบรายการจ่ายเงิน...
+                  </span>
+                ) : (
+                  <div className="space-y-2">
+                    {/* ✅ แสดงรายการที่จ่ายเงินแล้ว */}
+                    {(() => {
+                      // กรองข้อมูลที่มีการจ่ายเงินแล้ว
+                      const filteredPaidWorktimes = paidWorktimes.filter(item => 
+                        item.employeeID === paymentModal.employee?.employeeID
+                      );
+
+                      if (filteredPaidWorktimes.length === 0) {
+                        return (
+                          <div className="text-center text-base-content/60 py-2">
+                            <span className="text-2xl">💼</span>
+                            <p className="text-sm">ยังไม่มีการจ่ายเงินในช่วงนี้</p>
+                          </div>
+                        );
+                      }
+
+                      return filteredPaidWorktimes.map((item, index) => (
+                        <div key={index} className="bg-base-100 p-2 rounded border border-base-300">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              {/* ✅ แสดงสถานะตาม isPurchase */}
+                              {item.isPurchase ? (
+                                <div className="font-semibold text-sm text-success">
+                                  ✅ จ่ายแล้ว
+                                </div>
+                              ) : (
+                                <div className="font-semibold text-sm text-warning">
+                                  ⏳ ยังไม่จ่าย
+                                </div>
+                              )}
+                              <div className="text-xs text-base-content/70">
+                                วันที่: {item.workDate || 'ไม่ระบุ'}
+                              </div>
+                              {/* แสดงวันที่จ่ายเงินหากจ่ายแล้ว */}
+                              {item.IsPurchase && item.purchaseDate && (
+                                <div className="text-xs text-success/70">
+                                  💰 จ่ายเมื่อ: {new Date(item.purchaseDate).toLocaleDateString('th-TH')}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className={`font-bold text-sm ${
+                                item.IsPurchase ? 'text-success' : 'text-warning'
+                              }`}>
+                                {formatCurrency(item.wageCost)}
+                              </div>
+                              <div className="text-xs text-base-content/60">
+                                {formatWorktime(item.totalWorktime)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ));
+                    })()}
+
+                    {/* ✅ สรุปรวมที่จ่ายแล้ว */}
+                    {(() => {
+                      const paidWorktimes = data.filter(item => 
+                        item.employeeID === paymentModal.employee?.employeeID &&
+                        item.isPaid === true
+                      );
+                      
+                      if (paidWorktimes.length === 0) return null;
+
+                      const totalPaidAmount = paidWorktimes.reduce((sum, item) => sum + (item.wageCost || 0), 0);
+                      const totalPaidHours = paidWorktimes.reduce((sum, item) => sum + (item.totalWorktime || 0), 0);
+
+                      return (
+                        <div className="mt-3 pt-3 border-t border-base-300">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="font-semibold text-sm text-info">
+                                📊 รวมที่จ่ายแล้ว
+                              </div>
+                              <div className="text-xs text-base-content/70">
+                                {paidWorktimes.length} รายการ
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-info text-sm">
+                                {formatCurrency(totalPaidAmount)}
+                              </div>
+                              <div className="text-xs text-base-content/60">
+                                {formatWorktime(totalPaidHours)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

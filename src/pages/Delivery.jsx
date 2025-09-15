@@ -1,15 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import Cookies from "js-cookie";
+import { useNavigate } from "react-router-dom"; // ✅ เพิ่ม useNavigate
 
 // ฟังก์ชันแปลงวันที่เป็น "DD/MM/YYYY"
-function formatDate(dateStr) {
-    const date = new Date(dateStr);
-    if (isNaN(date)) return dateStr;
-    return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}/${date.getFullYear()}`;
-}
+// function formatDate(dateStr) {
+//     const date = new Date(dateStr);
+//     if (isNaN(date)) return dateStr;
+//     return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+//         .toString()
+//         .padStart(2, "0")}/${date.getFullYear()}`;
+// }
+// เพิ่มฟังก์ชันนี้ไว้ใน component ด้วย
+  function formatDateWithDay(dateString) {
+    const date = new Date(dateString);
+    const days = [
+      "วันอาทิตย์",
+      "วันจันทร์",
+      "วันอังคาร",
+      "วันพุธ",
+      "วันพฤหัสบดี",
+      "วันศุกร์",
+      "วันเสาร์",
+    ];
+    const dayName = days[date.getDay()];
+    const formattedDate = date.toLocaleDateString("th-TH", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return `${dayName} ที่ ${formattedDate}`;
+  }
 
 function calcGPPercent(totalSales, netSales) {
     if (!totalSales || !netSales) return 0;
@@ -24,6 +45,7 @@ const months = [
     "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
     "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
 ];
+
 
 export default function Delivery() {
     const getToday = () => {
@@ -56,6 +78,20 @@ export default function Delivery() {
         totalSales && netSales
             ? calcGPAmount(Number(totalSales), Number(netSales)).toFixed(2)
             : "";
+
+    const navigate = useNavigate(); // ✅ เพิ่ม navigate
+
+    // ✅ ฟังก์ชันสำหรับเปิดหน้า Detail
+    const handleOpenDetail = (item) => {
+        // ส่งข้อมูลไปหน้า Detail ผ่าน state
+        navigate('/delivery-detail', {
+            state: {
+                deliveryData: item,
+                selectedMonth: selectedMonth,
+                selectedYear: selectedYear
+            }
+        });
+    };
 
     // ดึงข้อมูล Grab จาก API
     useEffect(() => {
@@ -227,10 +263,17 @@ export default function Delivery() {
                         {grabData
                             .sort((a, b) => new Date(b.saleDate) - new Date(a.saleDate))
                             .map((item, index, arr) => (
-                            <div key={item.deliveryId || index} className="card bg-gradient-to-br from-base-100 to-base-200 border border-base-300 rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
+                            <div 
+                                key={item.deliveryId || index} 
+                                className="card bg-gradient-to-br from-base-100 to-base-200 border border-base-300 rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer hover:border-primary/50 group"
+                                onClick={() => handleOpenDetail(item)} // ✅ เพิ่ม onClick
+                                title="คลิกเพื่อดูรายละเอียด" // ✅ เพิ่ม tooltip
+                            >
                                 <div className="flex justify-between items-center mb-3">
                                     <span className="font-bold text-lg">#{arr.length - index}</span>
-                                    <span className="badge badge-primary text-sm">{formatDate(item.saleDate)}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="badge badge-primary text-sm">{formatDateWithDay(item.saleDate)}</span>
+                                    </div>
                                 </div>
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-sm text-base-content/70">ยอดขายรวม</span>
@@ -248,8 +291,12 @@ export default function Delivery() {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex justify-end mt-3">
-                                    <span className="badge badge-outline text-xs">ID: {item.deliveryId || "N/A"}</span>
+                                
+                                {/* ✅ เพิ่ม indicator ว่าคลิกได้ */}
+                                <div className="mt-3 pt-2 border-t border-base-300/50 text-center">
+                                    <span className="text-xs text-base-content/50 group-hover:text-primary transition-colors">
+                                        👆 คลิกเพื่อดูรายละเอียด
+                                    </span>
                                 </div>
                             </div>
                         ))}
