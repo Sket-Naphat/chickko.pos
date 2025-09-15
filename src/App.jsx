@@ -19,8 +19,10 @@ import WorkTime from "./pages/Worktime";
 import CheckStock from "./pages/CheckStock";
 import StockIn from "./pages/StockIn"; // 👉 เปลี่ยนชื่อเป็น StockInDetail เพื่อความชัดเจน
 import StockItem from "./pages/StockItem";
-import Register from "./pages/Register"; 
+import Register from "./pages/Register";
 import TimeClock from "./pages/TimeClock";
+import Delivery from "./pages/Delivery";
+import DeliveryDetail from "./pages/DeliveryDetail";
 
 function App() {
   const location = useLocation();
@@ -63,6 +65,8 @@ function App() {
                 <Route path="/checkstock/:orderId" element={<CheckStock />} />
                 <Route path="/stockin/:orderId" element={<StockIn />} />
                 <Route path="/stockitem" element={<StockItem />} />
+                <Route path="/delivery" element={<Delivery />} />
+                <Route path="/delivery-detail" element={<DeliveryDetail />} /> {/* ✅ เพิ่ม route นี้ */}
               </Route>
 
               {/* ไป path แปลก ๆ ขณะอยู่ layout นี้ → ส่งไป /login */}
