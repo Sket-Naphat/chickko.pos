@@ -414,7 +414,7 @@ export default function StockInDetail() {
                     {`จัดการรายการใบสั่ง: ${orderId}`}
                 </h1>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="join">
                     <button
@@ -643,7 +643,7 @@ export default function StockInDetail() {
                                                     const modified = modifiedIds.includes(it.stockId);
                                                     const invalid = invalidIds.includes(it.stockId);
                                                     const cardClass = invalid ? "border-error bg-error/10" : modified ? "border-warning bg-warning/10" : "border-base-300";
-                                                    
+
                                                     return (
                                                         <div key={`tablet-${it.stockId}`} className={`border ${cardClass} rounded-lg p-2 shadow-sm`}>
                                                             <div className="grid grid-cols-12 gap-2 items-center">
@@ -656,13 +656,16 @@ export default function StockInDetail() {
                                                                         <span>ต้องใช้: <span className="font-bold text-accent">{it.requiredQTY}</span></span>
                                                                         <span>นับได้: <span className="font-bold">{it.totalQTY}</span></span>
                                                                     </div>
+                                                                    <div className="text-sm text-base-content/70">
+                                                                        หน่วย: <span className="font-bold">{it.unitTypeName || it.stockUnitTypeName || "หน่วยไม่ระบุ"}</span>
+                                                                    </div>
                                                                 </div>
 
                                                                 {/* ต้องซื้อเข้า - 2 columns */}
                                                                 <div className="col-span-2">
                                                                     <div className="text-sm text-warning font-medium">⚠️ ต้องซื้อเข้า</div>
                                                                     <div className="flex items-center gap-1">
-                                                                        
+
                                                                         <button
                                                                             onClick={() => { onClickCopyQTYtoPurchaseQTY(it.stockId, it.stockInQTY) }}
                                                                             className="btn btn-xs btn-outline btn-warning"
@@ -795,7 +798,7 @@ export default function StockInDetail() {
                                             const modified = modifiedIds.includes(it.stockId);
                                             const invalid = invalidIds.includes(it.stockId);
                                             const cardClass = invalid ? "border-error bg-error/10" : modified ? "border-warning bg-warning/10" : "border-base-300";
-                                            
+
                                             return (
                                                 <div key={`mobile-${it.stockId}`} className={`border ${cardClass} rounded p-2 space-y-1`}>
                                                     {/* ชื่อสินค้าและข้อมูลพื้นฐาน */}
@@ -805,6 +808,7 @@ export default function StockInDetail() {
                                                             <div className="text-sm text-base-content/70 flex gap-2">
                                                                 <span>ต้องใช้: <span className="font-bold text-accent">{it.requiredQTY}</span></span>
                                                                 <span>นับได้: <span className="font-bold">{it.totalQTY}</span></span>
+                                                                <span>หน่วย: <span className="font-bold">{it.unitTypeName || it.stockUnitTypeName || "ไม่ระบุ"}</span></span>
                                                             </div>
                                                         </div>
                                                         <button
@@ -1110,9 +1114,9 @@ export default function StockInDetail() {
                                             const modified = modifiedIds.includes(it.stockId);
                                             const hasValue = it.purchaseQTY !== "";
                                             const cardClass = hasValue ? "border-success bg-success/10" : modified ? "border-warning bg-warning/10" : "border-warning/50";
-                                            
+
                                             return (
-                                                        <div key={`tablet-zero-${it.stockId}`} className={`border ${cardClass} rounded-lg p-2 shadow-sm`}>
+                                                <div key={`tablet-zero-${it.stockId}`} className={`border ${cardClass} rounded-lg p-2 shadow-sm`}>
                                                     <div className="grid grid-cols-12 gap-2 items-center">
                                                         {/* ชื่อสินค้า - 3 columns */}
                                                         <div className="col-span-3">
@@ -1122,6 +1126,9 @@ export default function StockInDetail() {
                                                             <div className="text-sm text-base-content/70 space-x-2">
                                                                 <span>ต้องใช้: <span className="font-bold text-accent">{it.requiredQTY}</span></span>
                                                                 <span>นับได้: <span className="font-bold">{it.totalQTY}</span></span>
+                                                            </div>
+                                                            <div className="text-sm text-base-content/70">
+                                                                หน่วย: <span className="font-bold">{it.unitTypeName || it.stockUnitTypeName || "หน่วยไม่ระบุ"}</span>
                                                             </div>
                                                         </div>
 
@@ -1255,7 +1262,7 @@ export default function StockInDetail() {
                                         const modified = modifiedIds.includes(it.stockId);
                                         const hasValue = it.purchaseQTY !== "";
                                         const cardClass = hasValue ? "border-success bg-success/10" : modified ? "border-warning bg-warning/10" : "border-warning/50";
-                                        
+
                                         return (
                                             <div key={`mobile-zero-${it.stockId}`} className={`border ${cardClass} rounded p-2 space-y-1`}>
                                                 {/* ชื่อสินค้าและข้อมูลพื้นฐาน */}
@@ -1265,6 +1272,7 @@ export default function StockInDetail() {
                                                         <div className="text-sm text-base-content/70 flex gap-2">
                                                             <span>ต้องใช้: <span className="font-bold text-accent">{it.requiredQTY}</span></span>
                                                             <span>นับได้: <span className="font-bold">{it.totalQTY}</span></span>
+                                                            <span>หน่วย: <span className="font-bold">{it.unitTypeName || it.stockUnitTypeName || "ไม่ระบุ"}</span></span>
                                                         </div>
                                                     </div>
                                                     <button
@@ -1387,7 +1395,7 @@ export default function StockInDetail() {
                                 onChange={(e) => setOrderDate(e.target.value)}
                             />
                         </div>
-                        
+
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                             <span className="text-xs md:text-sm font-medium">💰 ราคารวม:</span>
                             <div className="flex items-center gap-2">
@@ -1403,17 +1411,17 @@ export default function StockInDetail() {
                                 <span className="text-xs md:text-sm">บาท</span>
                             </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-2">
-                            <input 
+                            <input
                                 type="checkbox"
                                 className="toggle toggle-xs sm:toggle-sm toggle-primary"
                                 checked={isPurchase}
-                                onChange={(e) => setIsPurchase(e.target.checked)} 
+                                onChange={(e) => setIsPurchase(e.target.checked)}
                             />
                             <span className="text-xs md:text-sm font-medium">✅ ชำระเงินแล้ว</span>
                         </div>
-                        
+
                         <button
                             className="btn btn-primary btn-sm md:btn-md xl:btn-lg w-full xl:w-auto"
                             onClick={save}
