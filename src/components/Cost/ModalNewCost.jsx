@@ -17,7 +17,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
     const [costDescription, setCostDescription] = useState("");
     const [categoryId, setCategoryId] = useState("");
     const [costCategory, setCostCategory] = useState([]);
-    const [isPurchase, setIsPurchase] = useState(true); // Default to checked
+    const [isPurchase, setIsPurchase] = useState(false); // Default to checked
     const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
 
     useEffect(() => {

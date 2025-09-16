@@ -227,29 +227,32 @@ export default function CheckStockDetail() {
     const isSaveDisabled = isNew && items.some((it) => it.totalQTY === "");
 
     return (
-        <div className="p-4 space-y-4">
-
-            <div className="flex items-center justify-between">
-                <h1 className="text-xl font-bold text-primary">
+        <div className="p-2 sm:p-4 space-y-3 max-w-full overflow-hidden">
+            {/* Header - Responsive */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h1 className="text-lg sm:text-xl font-bold text-primary break-words">
                     {isNew ? "✏️ สร้างรายการเช็ค Stock ใหม่" : `จัดการรายการใบสั่ง: ${orderId}`}
                 </h1>
-
             </div>
-            <div className="join">
-                <button
-                    className={`btn btn-sm text-lg join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
-                    onClick={() => setGroupBy("location")}
-                    title="จัดเรียงตามตำแหน่งเก็บ"
-                >
-                    ตามตำแหน่งเก็บ
-                </button>
-                <button
-                    className={`btn btn-sm text-lg join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
-                    onClick={() => setGroupBy("category")}
-                    title="จัดเรียงตามหมวดหมู่"
-                >
-                    ตามหมวดหมู่
-                </button>
+
+            {/* Group Toggle Buttons - Mobile Friendly */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+                <div className="join w-full sm:w-auto">
+                    <button
+                        className={`btn btn-sm flex-1 sm:flex-none text-base sm:text-lg join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
+                        onClick={() => setGroupBy("location")}
+                        title="จัดเรียงตามตำแหน่งเก็บ"
+                    >
+                        📍 ตำแหน่งเก็บ
+                    </button>
+                    <button
+                        className={`btn btn-sm flex-1 sm:flex-none text-base sm:text-lg join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
+                        onClick={() => setGroupBy("category")}
+                        title="จัดเรียงตามหมวดหมู่"
+                    >
+                        📂 หมวดหมู่
+                    </button>
+                </div>
             </div>
 
             {errorMsg && (
@@ -258,59 +261,433 @@ export default function CheckStockDetail() {
                 </div>
             )}
 
+            {/* Mobile & Desktop Table Container */}
             <div className="card bg-base-100 shadow">
                 <div className="card-body p-0">
                     {loading ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 p-4">
                             <span className="loading loading-spinner loading-sm"></span> ⏳ กำลังโหลด…
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="table">
-                                <thead>
-                                    <tr>
-                                        <th className="sticky left-0 bg-base-100 z-20 text-lg">รายการ</th>
-
-                                        <th className="text-right text-lg">ที่ต้องใช้</th>
-                                        <th className="text-right bg-secondary text-secondary-content text-lg">☝️ จำนวนที่นับได้</th>
-                                        <th className="text-right bg-success text-success-content text-lg">✅ จำนวนที่ต้องซื้อเข้า</th>
-                                        <th className="text-lg">หน่วย</th>
-                                        <th className="text-lg">หมายเหตุ</th>
-                                        <th className="text-right text-lg">จัดการ</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(!items || items.length === 0) && (
+                        <>
+                            {/* Desktop Table View */}
+                            <div className="hidden xl:block overflow-x-auto">
+                                <table className="table">
+                                    <thead>
                                         <tr>
-                                            <td colSpan="6" className="text-center text-base-content/60">ไม่มีรายการ</td>
+                                            <th className="sticky left-0 bg-base-100 z-20 text-lg min-w-32">รายการ</th>
+                                            <th className="text-center text-sm">ที่ต้องใช้</th>
+                                            <th className="text-center bg-secondary text-secondary-content text-sm">☝️ นับได้</th>
+                                            <th className="text-center bg-success text-success-content text-sm">✅ ต้องซื้อ</th>
+                                            <th className="text-center text-sm">หน่วย</th>
+                                            <th className="text-center text-sm">หมายเหตุ</th>
+                                            <th className="text-center text-sm">จัดการ</th>
                                         </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(!items || items.length === 0) && (
+                                            <tr>
+                                                <td colSpan="7" className="text-center text-base-content/60 p-4">ไม่มีรายการ</td>
+                                            </tr>
+                                        )}
+
+                                        {groups.map(group => (
+                                            <Fragment key={`grp-${group.id}`}>
+                                                {/* หัวข้อกลุ่ม */}
+                                                <tr className="bg-base-200">
+                                                    <td colSpan={7} className="font-bold text-sm bg-info p-2" >
+                                                        {group.name}
+                                                    </td>
+                                                </tr>
+
+                                                {/* รายการในกลุ่ม - Desktop */}
+                                                {group.items.map((it) => {
+                                                    const modified = modifiedIds.includes(it.stockId);
+                                                    const invalid = invalidIds.includes(it.stockId);
+                                                    const rowClass = invalid ? "bg-error/30" : modified ? "bg-warning/20" : "";
+                                                    return (
+                                                        <tr key={it.stockId} className={rowClass}>
+                                                            <td className="sticky left-0 bg-base-100 z-10 text-sm p-2 min-w-32">
+                                                                {it.itemName}
+                                                            </td>
+                                                            <td className="text-center text-sm p-1">{it.requiredQTY}</td>
+
+                                                            {/* นับได้ */}
+                                                            <td className="text-center bg-secondary/10 p-1">
+                                                                <div className="flex items-center justify-center gap-1">
+                                                                    <button
+                                                                        className="btn btn-xs btn-outline btn-error"
+                                                                        onClick={() => {
+                                                                            const n = Math.max(0, Number(it.totalQTY || 0) - 1);
+                                                                            let stockInQTY = it.requiredQTY - n;
+                                                                            stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
+                                                                                )
+                                                                            );
+                                                                            setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    >
+                                                                        -
+                                                                    </button>
+
+                                                                    <input
+                                                                        type="number"
+                                                                        min="0"
+                                                                        max="99"
+                                                                        className="input input-bordered input-xs w-12 text-center text-sm"
+                                                                        value={it.totalQTY}
+                                                                        onChange={(e) => onQtyChange(it.stockId, e.target.value)}
+                                                                    />
+
+                                                                    <button
+                                                                        className="btn btn-xs btn-outline btn-success"
+                                                                        onClick={() => {
+                                                                            const n = Number(it.totalQTY || 0) + 1;
+                                                                            let stockInQTY = it.requiredQTY - n;
+                                                                            stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
+                                                                                )
+                                                                            );
+                                                                            setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+
+                                                            {/* ต้องซื้อเข้า */}
+                                                            <td className="text-center bg-success/10 p-1">
+                                                                <div className="flex items-center justify-center gap-1">
+                                                                    <button
+                                                                        className="btn btn-xs btn-outline btn-error"
+                                                                        onClick={() => {
+                                                                            const n = Math.max(0, Number(it.stockInQTY || 0) - 1);
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                            );
+                                                                            setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    >
+                                                                        -
+                                                                    </button>
+
+                                                                    <input
+                                                                        type="number"
+                                                                        min="0"
+                                                                        max="99"
+                                                                        className="input input-bordered input-xs w-12 text-center text-sm"
+                                                                        value={it.stockInQTY}
+                                                                        onChange={(e) => {
+                                                                            const v = e.target.value;
+                                                                            if (v === "" || (/^\d+$/.test(v) && Number(v) >= 0)) {
+                                                                                setItems((prev) =>
+                                                                                    prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: v } : x))
+                                                                                );
+                                                                                setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                                markModified(it.stockId);
+                                                                            }
+                                                                        }}
+                                                                    />
+
+                                                                    <button
+                                                                        className="btn btn-xs btn-outline btn-success"
+                                                                        onClick={() => {
+                                                                            const n = Number(it.stockInQTY || 0) + 1;
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                            );
+                                                                            setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+
+                                                            {/* หน่วย */}
+                                                            <td className="text-center text-xs p-1">
+                                                                {it.unitTypeName || it.stockUnitTypeName || ""}
+                                                            </td>
+
+                                                            {/* หมายเหตุ */}
+                                                            <td className="text-center p-1">
+                                                                <input
+                                                                    type="text"
+                                                                    className="input input-bordered input-xs w-20 text-center text-xs"
+                                                                    value={it.remark}
+                                                                    placeholder="หมายเหตุ"
+                                                                    onChange={(e) => {
+                                                                        const newRemark = e.target.value;
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, remark: newRemark } : x))
+                                                                        );
+                                                                        markModified(it.stockId);
+                                                                    }}
+                                                                />
+                                                            </td>
+
+                                                            {/* เคลียร์ */}
+                                                            <td className="text-center p-1">
+                                                                <button
+                                                                    className="btn btn-xs btn-outline btn-error"
+                                                                    onClick={() => {
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, totalQTY: "", stockInQTY: 0, remark: "" } : x))
+                                                                        );
+                                                                        setModifiedIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                    }}
+                                                                    title="เคลียร์ข้อมูล"
+                                                                >
+                                                                    🗑️
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </Fragment>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Tablet View - Medium screens */}
+                            <div className="hidden md:block xl:hidden overflow-x-auto">
+                                <div className="space-y-2 p-3">
+                                    {(!items || items.length === 0) && (
+                                        <div className="text-center text-base-content/60 p-4">ไม่มีรายการ</div>
                                     )}
 
                                     {groups.map(group => (
-                                        <Fragment key={`grp-${group.id}`}>
-                                            {/* หัวข้อกลุ่ม */}
-                                            <tr className="bg-base-200">
-                                                <td colSpan={7} className="font-bold text-lg bg-info p-2 pl-10" >
-                                                    {group.name}
-                                                </td>
-                                            </tr>
+                                        <div key={`tablet-grp-${group.id}`} className="space-y-2">
+                                            {/* หัวข้อกลุ่ม Tablet */}
+                                            <div className="bg-info text-info-content p-3 rounded-lg font-bold text-sm">
+                                                {group.name}
+                                            </div>
 
-                                            {/* รายการในกลุ่ม */}
-                                            {group.items.map((it) => {
-                                                const modified = modifiedIds.includes(it.stockId);
-                                                const invalid = invalidIds.includes(it.stockId);
-                                                const rowClass = invalid ? "bg-error/30" : modified ? "bg-warning/20" : "border-info";
-                                                const rowClassItemName = invalid ? "bg-error" : modified ? "bg-warning" : "";
-                                                return (
-                                                    <tr key={it.stockId} className={rowClass}>
-                                                        <td className={`sticky text-lg p-1 left-0 bg-base-100 z-10 ${rowClassItemName}`}>{it.itemName}</td>
-                                                        <td className="text-right text-xl">{it.requiredQTY}</td>
+                                            {/* Grid Layout สำหรับ Tablet */}
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {group.items.map((it) => {
+                                                    const modified = modifiedIds.includes(it.stockId);
+                                                    const invalid = invalidIds.includes(it.stockId);
+                                                    const cardClass = invalid ? "border-error bg-error/10" : modified ? "border-warning bg-warning/10" : "border-base-300";
+                                                    
+                                                    return (
+                                                        <div key={`tablet-${it.stockId}`} className={`border ${cardClass} rounded-lg p-4 shadow-sm`}>
+                                                            <div className="grid grid-cols-12 gap-4 items-center">
+                                                                {/* ชื่อสินค้า - 4 columns */}
+                                                                <div className="col-span-4">
+                                                                    <div className="font-bold text-base text-primary break-words text-lg">
+                                                                        {it.itemName}
+                                                                    </div>
+                                                                    <div className="text-lg text-base-content/70 mt-1">
+                                                                        ต้องใช้: <span className="font-bold text-accent">{it.requiredQTY}</span> {it.unitTypeName || it.stockUnitTypeName || ""}
+                                                                    </div>
+                                                                </div>
 
+                                                                {/* จำนวนที่นับได้ - 3 columns */}
+                                                                <div className="col-span-3">
+                                                                    <label className="text-lg text-base-content/70 block mb-2">☝️ จำนวนที่นับได้</label>
+                                                                    <div className="flex items-center gap-1">
+                                                                        <button
+                                                                            className="btn btn-sm btn-outline btn-error"
+                                                                            onClick={() => {
+                                                                                const n = Math.max(0, Number(it.totalQTY || 0) - 1);
+                                                                                let stockInQTY = it.requiredQTY - n;
+                                                                                stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
+                                                                                setItems((prev) =>
+                                                                                    prev.map((x) =>
+                                                                                        x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
+                                                                                    )
+                                                                                );
+                                                                                setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                                markModified(it.stockId);
+                                                                            }}
+                                                                        >
+                                                                            -
+                                                                        </button>
+
+                                                                        <input
+                                                                            type="number"
+                                                                            min="0"
+                                                                            max="99"
+                                                                            className="input input-bordered input-sm w-16 text-center text-base font-bold"
+                                                                            value={it.totalQTY}
+                                                                            onChange={(e) => onQtyChange(it.stockId, e.target.value)}
+                                                                        />
+
+                                                                        <button
+                                                                            className="btn btn-sm btn-outline btn-success"
+                                                                            onClick={() => {
+                                                                                const n = Number(it.totalQTY || 0) + 1;
+                                                                                let stockInQTY = it.requiredQTY - n;
+                                                                                stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
+                                                                                setItems((prev) =>
+                                                                                    prev.map((x) =>
+                                                                                        x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
+                                                                                    )
+                                                                                );
+                                                                                setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                                markModified(it.stockId);
+                                                                            }}
+                                                                        >
+                                                                            +
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* จำนวนที่ต้องซื้อ - 3 columns */}
+                                                                <div className="col-span-3">
+                                                                    <label className="text-lg text-base-content/70 block mb-2">✅ จำนวนที่ต้องซื้อ</label>
+                                                                    <div className="flex items-center gap-1">
+                                                                        <button
+                                                                            className="btn btn-sm btn-outline btn-error"
+                                                                            onClick={() => {
+                                                                                const n = Math.max(0, Number(it.stockInQTY || 0) - 1);
+                                                                                setItems((prev) =>
+                                                                                    prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                                );
+                                                                                setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                                markModified(it.stockId);
+                                                                            }}
+                                                                        >
+                                                                            -
+                                                                        </button>
+
+                                                                        <input
+                                                                            type="number"
+                                                                            min="0"
+                                                                            max="99"
+                                                                            className="input input-bordered input-sm w-16 text-center text-base font-bold"
+                                                                            value={it.stockInQTY}
+                                                                            onChange={(e) => {
+                                                                                const v = e.target.value;
+                                                                                if (v === "" || (/^\d+$/.test(v) && Number(v) >= 0)) {
+                                                                                    setItems((prev) =>
+                                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: v } : x))
+                                                                                    );
+                                                                                    setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                                    markModified(it.stockId);
+                                                                                }
+                                                                            }}
+                                                                        />
+
+                                                                        <button
+                                                                            className="btn btn-sm btn-outline btn-success"
+                                                                            onClick={() => {
+                                                                                const n = Number(it.stockInQTY || 0) + 1;
+                                                                                setItems((prev) =>
+                                                                                    prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                                );
+                                                                                setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                                markModified(it.stockId);
+                                                                            }}
+                                                                        >
+                                                                            +
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* หมายเหตุและจัดการ - 2 columns */}
+                                                                <div className="col-span-2 space-y-2">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="input input-bordered input-sm w-full text-sm"
+                                                                        placeholder="หมายเหตุ..."
+                                                                        value={it.remark}
+                                                                        onChange={(e) => {
+                                                                            const newRemark = e.target.value;
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) => (x.stockId === it.stockId ? { ...x, remark: newRemark } : x))
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    />
+                                                                    <button
+                                                                        className="btn btn-sm btn-outline btn-error w-full"
+                                                                        onClick={() => {
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) => (x.stockId === it.stockId ? { ...x, totalQTY: "", stockInQTY: 0, remark: "" } : x))
+                                                                            );
+                                                                            setModifiedIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                            setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        }}
+                                                                        title="เคลียร์ข้อมูล"
+                                                                    >
+                                                                        🗑️ เคลียร์
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Mobile Compact View */}
+                            <div className="md:hidden space-y-2 p-2">
+                                {(!items || items.length === 0) && (
+                                    <div className="text-center text-base-content/60 p-4">ไม่มีรายการ</div>
+                                )}
+
+                                {groups.map(group => (
+                                    <div key={`mobile-grp-${group.id}`} className="space-y-1">
+                                        {/* หัวข้อกลุ่ม Mobile - Compact */}
+                                        <div className="bg-info text-info-content px-3 py-2 rounded font-bold text-xs">
+                                            {group.name}
+                                        </div>
+
+                                        {/* รายการในกลุ่ม Mobile - Compact */}
+                                        {group.items.map((it) => {
+                                            const modified = modifiedIds.includes(it.stockId);
+                                            const invalid = invalidIds.includes(it.stockId);
+                                            const cardClass = invalid ? "border-error bg-error/10" : modified ? "border-warning bg-warning/10" : "border-base-300";
+                                            
+                                            return (
+                                                <div key={`mobile-${it.stockId}`} className={`border ${cardClass} rounded p-2 space-y-2`}>
+                                                    {/* ชื่อสินค้าและข้อมูลพื้นฐาน */}
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="flex-1 pr-2">
+                                                            <div className="font-bold text-lg text-primary break-words mb-1">{it.itemName}</div>
+                                                            <div className="text-md text-base-content/70">
+                                                                ต้องใช้: <span className="font-bold text-accent">{it.requiredQTY}</span> {it.unitTypeName || it.stockUnitTypeName || ""}
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            className="btn btn-xs btn-outline btn-error"
+                                                            onClick={() => {
+                                                                setItems((prev) =>
+                                                                    prev.map((x) => (x.stockId === it.stockId ? { ...x, totalQTY: "", stockInQTY: 0, remark: "" } : x))
+                                                                );
+                                                                setModifiedIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                            }}
+                                                            title="เคลียร์"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Controls ในแนวนอน */}
+                                                    <div className="grid grid-cols-2 gap-2">
                                                         {/* นับได้ */}
-                                                        <td className="text-right bg-secondary/10 text-info-content">
-                                                            <div className="flex items-center justify-end gap-2">
+                                                        <div>
+                                                            <label className="text-xs text-base-content/70 block mb-1">☝️ นับได้</label>
+                                                            <div className="flex items-center gap-1">
                                                                 <button
-                                                                    className="btn btn-md btn-outline btn-error"
+                                                                    className="btn btn-xs btn-outline btn-error"
                                                                     onClick={() => {
                                                                         const n = Math.max(0, Number(it.totalQTY || 0) - 1);
                                                                         let stockInQTY = it.requiredQTY - n;
@@ -331,13 +708,13 @@ export default function CheckStockDetail() {
                                                                     type="number"
                                                                     min="0"
                                                                     max="99"
-                                                                    className="input input-bordered input-md w-14 text-center text-lg"
+                                                                    className="input input-bordered input-xs w-12 text-center text-sm font-bold"
                                                                     value={it.totalQTY}
                                                                     onChange={(e) => onQtyChange(it.stockId, e.target.value)}
                                                                 />
 
                                                                 <button
-                                                                    className="btn btn-md btn-outline btn-success"
+                                                                    className="btn btn-xs btn-outline btn-success"
                                                                     onClick={() => {
                                                                         const n = Number(it.totalQTY || 0) + 1;
                                                                         let stockInQTY = it.requiredQTY - n;
@@ -354,13 +731,14 @@ export default function CheckStockDetail() {
                                                                     +
                                                                 </button>
                                                             </div>
-                                                        </td>
+                                                        </div>
 
-                                                        {/* ต้องซื้อเข้า */}
-                                                        <td className="text-right bg-success/10">
-                                                            <div className="flex items-center justify-end gap-2">
-                                                            <button
-                                                                    className="btn btn-md btn-outline btn-error"
+                                                        {/* ต้องซื้อ */}
+                                                        <div>
+                                                            <label className="text-xs text-base-content/70 block mb-1">✅ ต้องซื้อ</label>
+                                                            <div className="flex items-center gap-1">
+                                                                <button
+                                                                    className="btn btn-xs btn-outline btn-error"
                                                                     onClick={() => {
                                                                         const n = Math.max(0, Number(it.stockInQTY || 0) - 1);
                                                                         setItems((prev) =>
@@ -377,7 +755,7 @@ export default function CheckStockDetail() {
                                                                     type="number"
                                                                     min="0"
                                                                     max="99"
-                                                                    className="input input-bordered input-md w-14 text-center text-lg"
+                                                                    className="input input-bordered input-xs w-12 text-center text-sm font-bold"
                                                                     value={it.stockInQTY}
                                                                     onChange={(e) => {
                                                                         const v = e.target.value;
@@ -392,7 +770,7 @@ export default function CheckStockDetail() {
                                                                 />
 
                                                                 <button
-                                                                    className="btn btn-md btn-outline btn-success"
+                                                                    className="btn btn-xs btn-outline btn-success"
                                                                     onClick={() => {
                                                                         const n = Number(it.stockInQTY || 0) + 1;
                                                                         setItems((prev) =>
@@ -405,75 +783,59 @@ export default function CheckStockDetail() {
                                                                     +
                                                                 </button>
                                                             </div>
-                                                        </td>
-                                                        {/* หน่วย */}
-                                                        <td className="text-left text-lg">
-                                                            {it.unitTypeName || it.stockUnitTypeName || "หน่วยไม่ระบุ"}
-                                                        </td>
-                                                        {/* หมายเหตุ */}
-                                                        <td className="text-left text-lg">
-                                                            <div className="flex items-center justify-end gap-2">
-                                                                <input
-                                                                    type="text"
-                                                                    className="input input-bordered input-md w-40 text-left"
-                                                                    value={it.remark}
-                                                                    onChange={(e) => {
-                                                                        const newRemark = e.target.value;
-                                                                        setItems((prev) =>
-                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, remark: newRemark } : x))
-                                                                        );
-                                                                        markModified(it.stockId);
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        </td>
+                                                        </div>
+                                                    </div>
 
-                                                        {/* เคลียร์ */}
-                                                        <td className="text-right">
-                                                            <button
-                                                                className="btn btn-md btn-outline btn-error"
-                                                                onClick={() => {
-                                                                    setItems((prev) =>
-                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, totalQTY: "", stockInQTY: 0, remark: "" } : x))
-                                                                    );
-                                                                    setModifiedIds((prev) => prev.filter((x) => x !== it.stockId));
-                                                                    setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
-                                                                }}
-                                                            >
-                                                                เคลียร์
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </Fragment>
-                                    ))}
-                                </tbody>
-
-
-                            </table>
-                        </div>
+                                                    {/* หมายเหตุ */}
+                                                    <input
+                                                        type="text"
+                                                        className="input input-bordered input-xs w-full text-xs"
+                                                        placeholder="หมายเหตุ..."
+                                                        value={it.remark}
+                                                        onChange={(e) => {
+                                                            const newRemark = e.target.value;
+                                                            setItems((prev) =>
+                                                                prev.map((x) => (x.stockId === it.stockId ? { ...x, remark: newRemark } : x))
+                                                            );
+                                                            markModified(it.stockId);
+                                                        }}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
-            <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">
-                    📅 วันที่สั่งซื้อ:{" "}
+            {/* Footer - Responsive */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-2 bg-base-200 rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <label className="text-sm font-medium">📅 วันที่สั่งซื้อ:</label>
                     <input
                         type="date"
-                        className="input input-bordered input-sm w-40"
+                        className="input input-bordered input-sm w-full sm:w-40"
                         value={orderDate}
                         onChange={(e) => setOrderDate(e.target.value)}
                     />
-
-                </span>
+                </div>
+                
                 <button
-                    className="btn btn-primary w-30"
+                    className="btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
                     onClick={save}
                     disabled={isSaveDisabled || isSaving}
                     title={isSaveDisabled ? "กรุณากรอกจำนวนให้ครบก่อนบันทึก" : ""}
                 >
-                    {isSaving ? "กำลังบันทึก..." : " 💾 บันทึก"}
+                    {isSaving ? (
+                        <>
+                            <span className="loading loading-spinner loading-sm"></span>
+                            กำลังบันทึก...
+                        </>
+                    ) : (
+                        "💾 บันทึก"
+                    )}
                 </button>
             </div>
             {alertOpen && (

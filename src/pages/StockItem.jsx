@@ -297,33 +297,36 @@ export default function CheckStockDetail() {
     }, [refreshDropdownKey]); // ✅ เพิ่ม dependency
 
     return (
-        <div className="p-4 space-y-4">
+        <div className="p-2 sm:p-4 space-y-3 max-w-full overflow-hidden">
             {/* Global Toast */}
             <Toast show={toast.show} message={toast.message} type={toast.type} position="bottom-center" />
-            <div className="flex items-center justify-between">
-                <h1 className="text-xl font-bold">
+            
+            {/* Header - Responsive */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h1 className="text-lg sm:text-xl font-bold text-primary">
                     🗒️ จัดการต่างๆ ในคลัง
                 </h1>
-
             </div>
-            <div className="flex items-center justify-between">
-                <div className="join">
+
+            {/* Controls - Mobile Friendly */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="join w-full sm:w-auto">
                     <button
-                        className={`btn btn-sm join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
+                        className={`btn btn-sm flex-1 sm:flex-none join-item ${groupBy === "location" ? "btn-primary" : "btn-outline"}`}
                         onClick={() => setGroupBy("location")}
                         title="จัดเรียงตามตำแหน่งเก็บ"
                     >
-                        ตามตำแหน่งเก็บ
+                        📍 ตำแหน่งเก็บ
                     </button>
                     <button
-                        className={`btn btn-sm join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
+                        className={`btn btn-sm flex-1 sm:flex-none join-item ${groupBy === "category" ? "btn-primary" : "btn-outline"}`}
                         onClick={() => setGroupBy("category")}
                         title="จัดเรียงตามหมวดหมู่"
                     >
-                        ตามหมวดหมู่
+                        📂 หมวดหมู่
                     </button>
                 </div>
-                <div>
+                <div className="w-full sm:w-auto">
                     <ModalUpdateStockItem onCreated={refreshData} showToast={showToast} />
                 </div>
             </div>
@@ -337,25 +340,27 @@ export default function CheckStockDetail() {
             <div className="card bg-base-100 shadow">
                 <div className="card-body p-0">
                     {loading ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 p-4">
                             <span className="loading loading-spinner loading-sm"></span> ⏳ กำลังโหลด…
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="table">
-                                <thead>
-                                    <tr>
-                                        <th className="sticky left-0 bg-base-100 z-20">รายการ</th>
-                                        <th className="text-right">จำนวนที่ต้องใช้</th>
-                                        <th className="text-right">จำนวนที่นับได้</th>
-                                        <th className="text-right">จำนวนที่ต้องซื้อเข้า</th>
-                                        <th>หน่วย</th>
-                                        <th>ตำแหน่งเก็บ</th>
-                                        <th>หมวดหมู่</th>
-                                        <th>ใช้งาน</th>
-                                        <th className="text-right">จัดการ</th>
-                                    </tr>
-                                </thead>
+                        <>
+                            {/* Desktop Table View */}
+                            <div className="hidden xl:block overflow-x-auto">
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th className="sticky left-0 bg-base-100 z-20 text-sm">รายการ</th>
+                                            <th className="text-center text-sm">ต้องใช้</th>
+                                            <th className="text-center text-sm">นับได้</th>
+                                            <th className="text-center text-sm">ต้องซื้อ</th>
+                                            <th className="text-center text-sm">หน่วย</th>
+                                            <th className="text-center text-sm">ตำแหน่งเก็บ</th>
+                                            <th className="text-center text-sm">หมวดหมู่</th>
+                                            <th className="text-center text-sm">ใช้งาน</th>
+                                            <th className="text-center text-sm">จัดการ</th>
+                                        </tr>
+                                    </thead>
                                 <tbody>
                                     {(!items || items.length === 0) && (
                                         <tr>
@@ -838,14 +843,926 @@ export default function CheckStockDetail() {
                                         </Fragment>
                                     ))}
                                 </tbody>
-
-
                             </table>
                         </div>
+
+                        {/* Tablet View - Medium screens */}
+                        <div className="hidden md:block xl:hidden space-y-2 p-3">
+                            {(!items || items.length === 0) && (
+                                <div className="text-center text-base-content/60 p-4">ไม่มีรายการ</div>
+                            )}
+
+                            {groups.map(group => (
+                                <div key={`tablet-grp-${group.id}`} className="space-y-2">
+                                    {/* หัวข้อกลุ่ม Tablet */}
+                                    <div className="bg-info text-info-content p-3 rounded-lg font-bold text-sm">
+                                        {group.name}
+                                    </div>
+
+                                    {/* รายการในกลุ่ม Tablet */}
+                                    {group.items.map((it) => {
+                                        const modified = modifiedIds.includes(it.stockId);
+                                        const invalid = invalidIds.includes(it.stockId);
+                                        const cardClass = invalid ? "border-error bg-error/10" : modified ? "border-warning bg-warning/10" : "border-base-300";
+                                        
+                                        return (
+                                            <div key={`tablet-${it.stockId}`} className={`border ${cardClass} rounded-lg p-4 shadow-sm`}>
+                                                <div className="space-y-4">
+                                                    {/* ชื่อรายการและสถานะ */}
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="flex-1 pr-4">
+                                                            <input 
+                                                                type="text" 
+                                                                className="input input-ghost input-sm w-full font-bold text-primary text-base" 
+                                                                value={it.itemName || ""}
+                                                                placeholder="ชื่อรายการ"
+                                                                onChange={e => {
+                                                                    const newName = e.target.value;
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, itemName: newName } : x))
+                                                                    );
+                                                                    markModified(it.stockId);
+                                                                }} 
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    className="toggle toggle-success toggle-sm" 
+                                                                    checked={it.active}
+                                                                    onChange={(e) => {
+                                                                        const newIsActive = e.target.checked;
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, active: newIsActive } : x))
+                                                                        );
+                                                                        markModified(it.stockId);
+                                                                    }} 
+                                                                />
+                                                                <span className={`text-sm font-medium ${it.active ? 'text-success' : 'text-error'}`}>
+                                                                    {it.active ? 'ใช้งาน' : 'ปิดใช้'}
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                className="btn btn-sm btn-success"
+                                                                disabled={!modified}
+                                                                onClick={() => handleSave(it)}
+                                                            >
+                                                                💾 บันทึก
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* จำนวน - Grid 3 คอลัมน์ */}
+                                                    <div className="grid grid-cols-3 gap-4">
+                                                        {/* ต้องใช้ */}
+                                                        <div>
+                                                            <label className="text-xs text-base-content/70 block mb-2">📊 ต้องใช้</label>
+                                                            <div className="flex items-center gap-1">
+                                                                <button
+                                                                    className="btn btn-xs btn-outline btn-error"
+                                                                    onClick={() => {
+                                                                        const n = Math.max(0, Number(it.requiredQTY || 0) - 1);
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, requiredQTY: String(n) } : x))
+                                                                        );
+                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        markModified(it.stockId);
+                                                                    }}
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max="99"
+                                                                    className="input input-bordered input-xs w-12 text-center text-sm font-bold"
+                                                                    value={it.requiredQTY}
+                                                                    onChange={(e) => {
+                                                                        const v = e.target.value;
+                                                                        if (v === "" || (/^\d+$/.test(v) && Number(v) >= 0)) {
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) => (x.stockId === it.stockId ? { ...x, requiredQTY: v } : x))
+                                                                            );
+                                                                            setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                            markModified(it.stockId);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <button
+                                                                    className="btn btn-xs btn-outline btn-success"
+                                                                    onClick={() => {
+                                                                        const n = Number(it.requiredQTY || 0) + 1;
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, requiredQTY: String(n) } : x))
+                                                                        );
+                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        markModified(it.stockId);
+                                                                    }}
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* นับได้ */}
+                                                        <div>
+                                                            <label className="text-xs text-base-content/70 block mb-2">☝️ นับได้</label>
+                                                            <div className="flex items-center gap-1">
+                                                                <button
+                                                                    className="btn btn-xs btn-outline btn-error"
+                                                                    onClick={() => {
+                                                                        const n = Math.max(0, Number(it.totalQTY || 0) - 1);
+                                                                        let stockInQTY = it.requiredQTY - n;
+                                                                        stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) =>
+                                                                                x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
+                                                                            )
+                                                                        );
+                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        markModified(it.stockId);
+                                                                    }}
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max="99"
+                                                                    className="input input-bordered input-xs w-12 text-center text-sm font-bold"
+                                                                    value={it.totalQTY}
+                                                                    onChange={(e) => onQtyChange(it.stockId, e.target.value)}
+                                                                />
+                                                                <button
+                                                                    className="btn btn-xs btn-outline btn-success"
+                                                                    onClick={() => {
+                                                                        const n = Number(it.totalQTY || 0) + 1;
+                                                                        let stockInQTY = it.requiredQTY - n;
+                                                                        stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) =>
+                                                                                x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
+                                                                            )
+                                                                        );
+                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        markModified(it.stockId);
+                                                                    }}
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* ต้องซื้อ */}
+                                                        <div>
+                                                            <label className="text-xs text-base-content/70 block mb-2">✅ ต้องซื้อ</label>
+                                                            <div className="flex items-center gap-1">
+                                                                <button
+                                                                    className="btn btn-xs btn-outline btn-error"
+                                                                    onClick={() => {
+                                                                        const n = Math.max(0, Number(it.stockInQTY || 0) - 1);
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                        );
+                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        markModified(it.stockId);
+                                                                    }}
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max="99"
+                                                                    className="input input-bordered input-xs w-12 text-center text-sm font-bold"
+                                                                    value={it.stockInQTY}
+                                                                    onChange={(e) => {
+                                                                        const v = e.target.value;
+                                                                        if (v === "" || (/^\d+$/.test(v) && Number(v) >= 0)) {
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: v } : x))
+                                                                            );
+                                                                            setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                            markModified(it.stockId);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <button
+                                                                    className="btn btn-xs btn-outline btn-success"
+                                                                    onClick={() => {
+                                                                        const n = Number(it.stockInQTY || 0) + 1;
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                        );
+                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        markModified(it.stockId);
+                                                                    }}
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Dropdowns - Grid 3 คอลัมน์ */}
+                                                    <div className="grid grid-cols-3 gap-4">
+                                                        {/* หน่วย */}
+                                                        <div>
+                                                            <label className="text-xs text-base-content/70 block mb-2">📏 หน่วย</label>
+                                                            <div className="space-y-1">
+                                                                <select
+                                                                    className="select select-bordered select-sm w-full"
+                                                                    value={newUnitRows.has(it.stockId) ? 0 : (it.stockUnitTypeID || "")}
+                                                                    onChange={async (e) => {
+                                                                        const selectedValue = e.target.value;
+                                                                        
+                                                                        if (selectedValue === "0") {
+                                                                            setNewUnitRows(prev => new Set([...prev, it.stockId]));
+                                                                            setNewUnitNames(prev => ({ ...prev, [it.stockId]: "" }));
+                                                                            setItems(prev =>
+                                                                                prev.map(x =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockUnitTypeID: 0,
+                                                                                            stockUnitTypeName: "หน่วยใหม่"
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        } else {
+                                                                            const newUnitId = Number(selectedValue);
+                                                                            const selectedUnit = unitList.find(u => u.stockUnitTypeID === newUnitId);
+                                                                            setNewUnitRows(prev => {
+                                                                                const newSet = new Set(prev);
+                                                                                newSet.delete(it.stockId);
+                                                                                return newSet;
+                                                                            });
+                                                                            setNewUnitNames(prev => {
+                                                                                const { [it.stockId]: _removed, ...rest } = prev;
+                                                                                return rest;
+                                                                            });
+                                                                            setItems(prev =>
+                                                                                prev.map(x =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockUnitTypeID: newUnitId,
+                                                                                            stockUnitTypeName: selectedUnit?.stockUnitTypeName || ""
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {unitList.map(unit => (
+                                                                        <option key={unit.stockUnitTypeID} value={unit.stockUnitTypeID}>
+                                                                            {unit.stockUnitTypeName}
+                                                                        </option>
+                                                                    ))}
+                                                                    <option value="0" className="text-primary font-semibold">
+                                                                        ✏️ เพิ่มหน่วยใหม่
+                                                                    </option>
+                                                                </select>
+                                                                {newUnitRows.has(it.stockId) && (
+                                                                    <input
+                                                                        type="text"
+                                                                        className="input input-bordered input-xs w-full"
+                                                                        placeholder="ชื่อหน่วยใหม่"
+                                                                        value={newUnitNames[it.stockId] || ""}
+                                                                        onChange={(e) => {
+                                                                            setNewUnitNames(prev => ({
+                                                                                ...prev,
+                                                                                [it.stockId]: e.target.value
+                                                                            }));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* ตำแหน่งเก็บ */}
+                                                        <div>
+                                                            <label className="text-xs text-base-content/70 block mb-2">📍 ตำแหน่งเก็บ</label>
+                                                            <div className="space-y-1">
+                                                                <select
+                                                                    className="select select-bordered select-sm w-full"
+                                                                    value={newLocationRows.has(it.stockId) ? "0" : (it.stockLocationID || "")}
+                                                                    onChange={(e) => {
+                                                                        const selectedValue = e.target.value;
+                                                                        
+                                                                        if (selectedValue === "0") {
+                                                                            setNewLocationRows(prev => new Set([...prev, it.stockId]));
+                                                                            setNewLocationNames(prev => ({ ...prev, [it.stockId]: "" }));
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockLocationID: 0,
+                                                                                            stockLocationName: "ตำแหน่งใหม่"
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        } else {
+                                                                            const newLocationId = Number(selectedValue);
+                                                                            const selectedLocation = locationList.find(l => l.stockLocationID === newLocationId);
+                                                                            setNewLocationRows(prev => {
+                                                                                const newSet = new Set(prev);
+                                                                                newSet.delete(it.stockId);
+                                                                                return newSet;
+                                                                            });
+                                                                            setNewLocationNames(prev => {
+                                                                                const { [it.stockId]: _, ...rest } = prev;
+                                                                                return rest;
+                                                                            });
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockLocationID: newLocationId,
+                                                                                            stockLocationName: selectedLocation?.stockLocationName || ""
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <option value="">-- เลือกตำแหน่งเก็บ --</option>
+                                                                    {locationList.map(location => (
+                                                                        <option key={location.stockLocationID} value={location.stockLocationID}>
+                                                                            {location.stockLocationName}
+                                                                        </option>
+                                                                    ))}
+                                                                    <option value="0" className="text-primary font-semibold">
+                                                                        ✏️ เพิ่มตำแหน่งใหม่
+                                                                    </option>
+                                                                </select>
+                                                                {newLocationRows.has(it.stockId) && (
+                                                                    <input
+                                                                        type="text"
+                                                                        className="input input-bordered input-xs w-full"
+                                                                        placeholder="ชื่อตำแหน่งใหม่"
+                                                                        value={newLocationNames[it.stockId] || ""}
+                                                                        onChange={(e) => {
+                                                                            setNewLocationNames(prev => ({
+                                                                                ...prev,
+                                                                                [it.stockId]: e.target.value
+                                                                            }));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* หมวดหมู่ */}
+                                                        <div>
+                                                            <label className="text-xs text-base-content/70 block mb-2">📂 หมวดหมู่</label>
+                                                            <div className="space-y-1">
+                                                                <select
+                                                                    className="select select-bordered select-sm w-full"
+                                                                    value={newCategoryRows.has(it.stockId) ? "0" : (it.stockCategoryID || "")}
+                                                                    onChange={(e) => {
+                                                                        const selectedValue = e.target.value;
+                                                                        
+                                                                        if (selectedValue === "0") {
+                                                                            setNewCategoryRows(prev => new Set([...prev, it.stockId]));
+                                                                            setNewCategoryNames(prev => ({ ...prev, [it.stockId]: "" }));
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockCategoryID: 0,
+                                                                                            stockCategoryName: "หมวดใหม่"
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        } else {
+                                                                            const newCategoryId = Number(selectedValue);
+                                                                            const selectedCategory = categoryList.find(c => c.stockCategoryID === newCategoryId);
+                                                                            setNewCategoryRows(prev => {
+                                                                                const newSet = new Set(prev);
+                                                                                newSet.delete(it.stockId);
+                                                                                return newSet;
+                                                                            });
+                                                                            setNewCategoryNames(prev => {
+                                                                                const { [it.stockId]: _, ...rest } = prev;
+                                                                                return rest;
+                                                                            });
+                                                                            setItems((prev) =>
+                                                                                prev.map((x) =>
+                                                                                    x.stockId === it.stockId
+                                                                                        ? {
+                                                                                            ...x,
+                                                                                            stockCategoryID: newCategoryId,
+                                                                                            stockCategoryName: selectedCategory?.stockCategoryName || ""
+                                                                                        }
+                                                                                        : x
+                                                                                )
+                                                                            );
+                                                                            markModified(it.stockId);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <option value="">-- เลือกหมวดหมู่ --</option>
+                                                                    {categoryList.map(category => (
+                                                                        <option key={category.stockCategoryID} value={category.stockCategoryID}>
+                                                                            {category.stockCategoryName}
+                                                                        </option>
+                                                                    ))}
+                                                                    <option value="0" className="text-primary font-semibold">
+                                                                        ✏️ เพิ่มหมวดใหม่
+                                                                    </option>
+                                                                </select>
+                                                                {newCategoryRows.has(it.stockId) && (
+                                                                    <input
+                                                                        type="text"
+                                                                        className="input input-bordered input-xs w-full"
+                                                                        placeholder="ชื่อหมวดใหม่"
+                                                                        value={newCategoryNames[it.stockId] || ""}
+                                                                        onChange={(e) => {
+                                                                            setNewCategoryNames(prev => ({
+                                                                                ...prev,
+                                                                                [it.stockId]: e.target.value
+                                                                            }));
+                                                                            markModified(it.stockId);
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Mobile Compact View */}
+                        <div className="md:hidden space-y-2 p-2">
+                            {(!items || items.length === 0) && (
+                                <div className="text-center text-base-content/60 p-4">ไม่มีรายการ</div>
+                            )}
+
+                            {groups.map(group => (
+                                <div key={`mobile-grp-${group.id}`} className="space-y-1">
+                                    {/* หัวข้อกลุ่ม Mobile */}
+                                    <div className="bg-info text-info-content px-3 py-2 rounded font-bold text-xs">
+                                        {group.name}
+                                    </div>
+
+                                    {/* รายการในกลุ่ม Mobile */}
+                                    {group.items.map((it) => {
+                                        const modified = modifiedIds.includes(it.stockId);
+                                        const invalid = invalidIds.includes(it.stockId);
+                                        const cardClass = invalid ? "border-error bg-error/10" : modified ? "border-warning bg-warning/10" : "border-base-300";
+                                        
+                                        return (
+                                            <div key={`mobile-${it.stockId}`} className={`border ${cardClass} rounded p-2 space-y-2`}>
+                                                {/* ชื่อรายการและสถานะ */}
+                                                <div className="flex justify-between items-start">
+                                                    <input 
+                                                        type="text" 
+                                                        className="input input-ghost input-xs flex-1 mr-2 font-bold text-primary text-sm" 
+                                                        value={it.itemName || ""}
+                                                        placeholder="ชื่อรายการ"
+                                                        onChange={e => {
+                                                            const newName = e.target.value;
+                                                            setItems((prev) =>
+                                                                prev.map((x) => (x.stockId === it.stockId ? { ...x, itemName: newName } : x))
+                                                            );
+                                                            markModified(it.stockId);
+                                                        }} 
+                                                    />
+                                                    <div className="flex items-center gap-1">
+                                                         <div className="flex items-center gap-2">
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    className="toggle toggle-success toggle-sm" 
+                                                                    checked={it.active}
+                                                                    onChange={(e) => {
+                                                                        const newIsActive = e.target.checked;
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, active: newIsActive } : x))
+                                                                        );
+                                                                        markModified(it.stockId);
+                                                                    }} 
+                                                                />
+                                                                <span className={`text-sm font-medium ${it.active ? 'text-success' : 'text-error'}`}>
+                                                                    {it.active ? 'ใช้งาน' : 'ปิดใช้'}
+                                                                </span>
+                                                            </div>
+                                                        <button
+                                                            className="btn btn-xs btn-success"
+                                                            disabled={!modified}
+                                                            onClick={() => handleSave(it)}
+                                                        >
+                                                            💾
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* จำนวน - แนวนอน */}
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <div>
+                                                        <label className="text-xs text-base-content/70 block mb-1">📊 ต้องใช้</label>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                className="btn btn-xs btn-outline btn-error"
+                                                                onClick={() => {
+                                                                    const n = Math.max(0, Number(it.requiredQTY || 0) - 1);
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, requiredQTY: String(n) } : x))
+                                                                    );
+                                                                    setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <input
+                                                                type="number"
+                                                                className="input input-bordered input-xs w-8 text-center text-xs font-bold"
+                                                                value={it.requiredQTY}
+                                                                onChange={(e) => {
+                                                                    const v = e.target.value;
+                                                                    if (v === "" || (/^\d+$/.test(v) && Number(v) >= 0)) {
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, requiredQTY: v } : x))
+                                                                        );
+                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        markModified(it.stockId);
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <button
+                                                                className="btn btn-xs btn-outline btn-success"
+                                                                onClick={() => {
+                                                                    const n = Number(it.requiredQTY || 0) + 1;
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, requiredQTY: String(n) } : x))
+                                                                    );
+                                                                    setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="text-xs text-base-content/70 block mb-1">☝️ นับได้</label>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                className="btn btn-xs btn-outline btn-error"
+                                                                onClick={() => {
+                                                                    const n = Math.max(0, Number(it.totalQTY || 0) - 1);
+                                                                    let stockInQTY = it.requiredQTY - n;
+                                                                    stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) =>
+                                                                            x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
+                                                                        )
+                                                                    );
+                                                                    setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <input
+                                                                type="number"
+                                                                className="input input-bordered input-xs w-8 text-center text-xs font-bold"
+                                                                value={it.totalQTY}
+                                                                onChange={(e) => onQtyChange(it.stockId, e.target.value)}
+                                                            />
+                                                            <button
+                                                                className="btn btn-xs btn-outline btn-success"
+                                                                onClick={() => {
+                                                                    const n = Number(it.totalQTY || 0) + 1;
+                                                                    let stockInQTY = it.requiredQTY - n;
+                                                                    stockInQTY = stockInQTY < 0 ? 0 : stockInQTY;
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) =>
+                                                                            x.stockId === it.stockId ? { ...x, totalQTY: String(n), stockInQTY: String(stockInQTY) } : x
+                                                                        )
+                                                                    );
+                                                                    setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="text-xs text-base-content/70 block mb-1">✅ ต้องซื้อ</label>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                className="btn btn-xs btn-outline btn-error"
+                                                                onClick={() => {
+                                                                    const n = Math.max(0, Number(it.stockInQTY || 0) - 1);
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                    );
+                                                                    setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <input
+                                                                type="number"
+                                                                className="input input-bordered input-xs w-8 text-center text-xs font-bold"
+                                                                value={it.stockInQTY}
+                                                                onChange={(e) => {
+                                                                    const v = e.target.value;
+                                                                    if (v === "" || (/^\d+$/.test(v) && Number(v) >= 0)) {
+                                                                        setItems((prev) =>
+                                                                            prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: v } : x))
+                                                                        );
+                                                                        setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                        markModified(it.stockId);
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <button
+                                                                className="btn btn-xs btn-outline btn-success"
+                                                                onClick={() => {
+                                                                    const n = Number(it.stockInQTY || 0) + 1;
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) => (x.stockId === it.stockId ? { ...x, stockInQTY: String(n) } : x))
+                                                                    );
+                                                                    setInvalidIds((prev) => prev.filter((x) => x !== it.stockId));
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Dropdowns - แนวตั้ง */}
+                                                <div className="space-y-2">
+                                                    {/* หน่วย */}
+                                                    <div>
+                                                        <select
+                                                            className="select select-bordered select-xs w-full"
+                                                            value={newUnitRows.has(it.stockId) ? 0 : (it.stockUnitTypeID || "")}
+                                                            onChange={async (e) => {
+                                                                const selectedValue = e.target.value;
+                                                                
+                                                                if (selectedValue === "0") {
+                                                                    setNewUnitRows(prev => new Set([...prev, it.stockId]));
+                                                                    setNewUnitNames(prev => ({ ...prev, [it.stockId]: "" }));
+                                                                    setItems(prev =>
+                                                                        prev.map(x =>
+                                                                            x.stockId === it.stockId
+                                                                                ? {
+                                                                                    ...x,
+                                                                                    stockUnitTypeID: 0,
+                                                                                    stockUnitTypeName: "หน่วยใหม่"
+                                                                                }
+                                                                                : x
+                                                                        )
+                                                                    );
+                                                                    markModified(it.stockId);
+                                                                } else {
+                                                                    const newUnitId = Number(selectedValue);
+                                                                    const selectedUnit = unitList.find(u => u.stockUnitTypeID === newUnitId);
+                                                                    setNewUnitRows(prev => {
+                                                                        const newSet = new Set(prev);
+                                                                        newSet.delete(it.stockId);
+                                                                        return newSet;
+                                                                    });
+                                                                    setNewUnitNames(prev => {
+                                                                        const { [it.stockId]: _removed, ...rest } = prev;
+                                                                        return rest;
+                                                                    });
+                                                                    setItems(prev =>
+                                                                        prev.map(x =>
+                                                                            x.stockId === it.stockId
+                                                                                ? {
+                                                                                    ...x,
+                                                                                    stockUnitTypeID: newUnitId,
+                                                                                    stockUnitTypeName: selectedUnit?.stockUnitTypeName || ""
+                                                                                }
+                                                                                : x
+                                                                        )
+                                                                    );
+                                                                    markModified(it.stockId);
+                                                                }
+                                                            }}
+                                                        >
+                                                            {unitList.map(unit => (
+                                                                <option key={unit.stockUnitTypeID} value={unit.stockUnitTypeID}>
+                                                                    📏 {unit.stockUnitTypeName}
+                                                                </option>
+                                                            ))}
+                                                            <option value="0" className="text-primary font-semibold">
+                                                                ✏️ เพิ่มหน่วยใหม่
+                                                            </option>
+                                                        </select>
+                                                        {newUnitRows.has(it.stockId) && (
+                                                            <input
+                                                                type="text"
+                                                                className="input input-bordered input-xs w-full mt-1"
+                                                                placeholder="ชื่อหน่วยใหม่"
+                                                                value={newUnitNames[it.stockId] || ""}
+                                                                onChange={(e) => {
+                                                                    setNewUnitNames(prev => ({
+                                                                        ...prev,
+                                                                        [it.stockId]: e.target.value
+                                                                    }));
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
+
+                                                    {/* ตำแหน่งเก็บ */}
+                                                    <div>
+                                                        <select
+                                                            className="select select-bordered select-xs w-full"
+                                                            value={newLocationRows.has(it.stockId) ? "0" : (it.stockLocationID || "")}
+                                                            onChange={(e) => {
+                                                                const selectedValue = e.target.value;
+                                                                
+                                                                if (selectedValue === "0") {
+                                                                    setNewLocationRows(prev => new Set([...prev, it.stockId]));
+                                                                    setNewLocationNames(prev => ({ ...prev, [it.stockId]: "" }));
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) =>
+                                                                            x.stockId === it.stockId
+                                                                                ? {
+                                                                                    ...x,
+                                                                                    stockLocationID: 0,
+                                                                                    stockLocationName: "ตำแหน่งใหม่"
+                                                                                }
+                                                                                : x
+                                                                        )
+                                                                    );
+                                                                    markModified(it.stockId);
+                                                                } else {
+                                                                    const newLocationId = Number(selectedValue);
+                                                                    const selectedLocation = locationList.find(l => l.stockLocationID === newLocationId);
+                                                                    setNewLocationRows(prev => {
+                                                                        const newSet = new Set(prev);
+                                                                        newSet.delete(it.stockId);
+                                                                        return newSet;
+                                                                    });
+                                                                    setNewLocationNames(prev => {
+                                                                        const { [it.stockId]: _, ...rest } = prev;
+                                                                        return rest;
+                                                                    });
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) =>
+                                                                            x.stockId === it.stockId
+                                                                                ? {
+                                                                                    ...x,
+                                                                                    stockLocationID: newLocationId,
+                                                                                    stockLocationName: selectedLocation?.stockLocationName || ""
+                                                                                }
+                                                                                : x
+                                                                        )
+                                                                    );
+                                                                    markModified(it.stockId);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <option value="">-- เลือกตำแหน่งเก็บ --</option>
+                                                            {locationList.map(location => (
+                                                                <option key={location.stockLocationID} value={location.stockLocationID}>
+                                                                    📍 {location.stockLocationName}
+                                                                </option>
+                                                            ))}
+                                                            <option value="0" className="text-primary font-semibold">
+                                                                ✏️ เพิ่มตำแหน่งใหม่
+                                                            </option>
+                                                        </select>
+                                                        {newLocationRows.has(it.stockId) && (
+                                                            <input
+                                                                type="text"
+                                                                className="input input-bordered input-xs w-full mt-1"
+                                                                placeholder="ชื่อตำแหน่งใหม่"
+                                                                value={newLocationNames[it.stockId] || ""}
+                                                                onChange={(e) => {
+                                                                    setNewLocationNames(prev => ({
+                                                                        ...prev,
+                                                                        [it.stockId]: e.target.value
+                                                                    }));
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
+
+                                                    {/* หมวดหมู่ */}
+                                                    <div>
+                                                        <select
+                                                            className="select select-bordered select-xs w-full"
+                                                            value={newCategoryRows.has(it.stockId) ? "0" : (it.stockCategoryID || "")}
+                                                            onChange={(e) => {
+                                                                const selectedValue = e.target.value;
+                                                                
+                                                                if (selectedValue === "0") {
+                                                                    setNewCategoryRows(prev => new Set([...prev, it.stockId]));
+                                                                    setNewCategoryNames(prev => ({ ...prev, [it.stockId]: "" }));
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) =>
+                                                                            x.stockId === it.stockId
+                                                                                ? {
+                                                                                    ...x,
+                                                                                    stockCategoryID: 0,
+                                                                                    stockCategoryName: "หมวดใหม่"
+                                                                                }
+                                                                                : x
+                                                                        )
+                                                                    );
+                                                                    markModified(it.stockId);
+                                                                } else {
+                                                                    const newCategoryId = Number(selectedValue);
+                                                                    const selectedCategory = categoryList.find(c => c.stockCategoryID === newCategoryId);
+                                                                    setNewCategoryRows(prev => {
+                                                                        const newSet = new Set(prev);
+                                                                        newSet.delete(it.stockId);
+                                                                        return newSet;
+                                                                    });
+                                                                    setNewCategoryNames(prev => {
+                                                                        const { [it.stockId]: _, ...rest } = prev;
+                                                                        return rest;
+                                                                    });
+                                                                    setItems((prev) =>
+                                                                        prev.map((x) =>
+                                                                            x.stockId === it.stockId
+                                                                                ? {
+                                                                                    ...x,
+                                                                                    stockCategoryID: newCategoryId,
+                                                                                    stockCategoryName: selectedCategory?.stockCategoryName || ""
+                                                                                }
+                                                                                : x
+                                                                        )
+                                                                    );
+                                                                    markModified(it.stockId);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <option value="">-- เลือกหมวดหมู่ --</option>
+                                                            {categoryList.map(category => (
+                                                                <option key={category.stockCategoryID} value={category.stockCategoryID}>
+                                                                    📂 {category.stockCategoryName}
+                                                                </option>
+                                                            ))}
+                                                            <option value="0" className="text-primary font-semibold">
+                                                                ✏️ เพิ่มหมวดใหม่
+                                                            </option>
+                                                        </select>
+                                                        {newCategoryRows.has(it.stockId) && (
+                                                            <input
+                                                                type="text"
+                                                                className="input input-bordered input-xs w-full mt-1"
+                                                                placeholder="ชื่อหมวดใหม่"
+                                                                value={newCategoryNames[it.stockId] || ""}
+                                                                onChange={(e) => {
+                                                                    setNewCategoryNames(prev => ({
+                                                                        ...prev,
+                                                                        [it.stockId]: e.target.value
+                                                                    }));
+                                                                    markModified(it.stockId);
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+                        </>
                     )}
                 </div>
             </div>
-
         </div>
     );
 }

@@ -12,25 +12,25 @@ import { useNavigate } from "react-router-dom"; // ✅ เพิ่ม useNaviga
 //         .padStart(2, "0")}/${date.getFullYear()}`;
 // }
 // เพิ่มฟังก์ชันนี้ไว้ใน component ด้วย
-  function formatDateWithDay(dateString) {
+function formatDateWithDay(dateString) {
     const date = new Date(dateString);
     const days = [
-      "วันอาทิตย์",
-      "วันจันทร์",
-      "วันอังคาร",
-      "วันพุธ",
-      "วันพฤหัสบดี",
-      "วันศุกร์",
-      "วันเสาร์",
+        "วันอาทิตย์",
+        "วันจันทร์",
+        "วันอังคาร",
+        "วันพุธ",
+        "วันพฤหัสบดี",
+        "วันศุกร์",
+        "วันเสาร์",
     ];
     const dayName = days[date.getDay()];
     const formattedDate = date.toLocaleDateString("th-TH", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
     });
     return `${dayName} ที่ ${formattedDate}`;
-  }
+}
 
 function calcGPPercent(totalSales, netSales) {
     if (!totalSales || !netSales) return 0;
@@ -123,7 +123,7 @@ export default function Delivery() {
     const totalDays = grabData.length;
 
     // คำนวณ % GP รวมของเดือน
-    const totalMonthGPPercent = totalMonthSales > 0 
+    const totalMonthGPPercent = totalMonthSales > 0
         ? ((totalMonthGP / totalMonthSales) * 100).toFixed(2)
         : 0;
 
@@ -178,7 +178,7 @@ export default function Delivery() {
         <div className="min-h-screen bg-base-200 flex flex-col items-center px-2 py-4 sm:px-4 sm:py-6">
             <div className="w-full max-w-4xl card bg-base-100 shadow-xl p-3 sm:p-6">
                 <h1 className="text-2xl font-bold text-primary mb-6 text-center">📊 สรุปยอดขาย Grab รายเดือน</h1>
-                
+
                 {/* Filter Section */}
                 <div className="mb-6 flex flex-col sm:flex-row gap-3 justify-center items-center">
                     <label className="font-semibold text-sm">เลือกเดือน:</label>
@@ -213,15 +213,16 @@ export default function Delivery() {
                     <div className="stats stats-vertical lg:stats-horizontal shadow bg-base-100 w-full">
                         <div className="stat">
                             <div className="stat-figure text-success">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.723 3.2a.75.75 0 1 0-1.446-.4L7.763 8.25H4a.75.75 0 1 0 0 1.5h3.347l-1.528 5.5H2a.75.75 0 0 0 0 1.5h3.402L4.277 20.8a.75.75 0 0 0 1.446.4l1.236-4.45h7.443l-1.125 4.05a.75.75 0 0 0 1.446.4l1.236-4.45H20a.75.75 0 1 0 0-1.5h-3.624l1.527-5.5H22a.75.75 0 0 0 0-1.5h-3.68l1.403-5.05a.75.75 0 1 0-1.446-.4l-1.514 5.45H9.32l1.403-5.05Zm4.096 12.05l1.528-5.5H8.903l-1.527 5.5h7.443Z" ></path></svg>
                             </div>
                             <div className="stat-title">ยอดขายรวม</div>
                             <div className="stat-value text-success">฿{totalMonthSales.toLocaleString()}</div>
                             <div className="stat-desc">เดือน {months[selectedMonth]} {selectedYear}</div>
                         </div>
-                        <div className="stat">
+                        <div className="stat bg-success/20">
                             <div className="stat-figure text-info">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path></svg>
+                                {/* <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path></svg> */}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                             </div>
                             <div className="stat-title">ยอดหลังหัก GP</div>
                             <div className="stat-value text-info">฿{totalMonthNetSales.toLocaleString()}</div>
@@ -229,8 +230,7 @@ export default function Delivery() {
                         </div>
                         <div className="stat">
                             <div className="stat-figure text-error">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                            </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>                            </div>
                             <div className="stat-title">GP ที่หักไป</div>
                             <div className="stat-value text-error">{totalMonthGPPercent} % (฿{totalMonthGP.toLocaleString()})</div>
                             <div className="stat-desc"> ค่าคอมมิชชัน Grab</div>
@@ -263,43 +263,43 @@ export default function Delivery() {
                         {grabData
                             .sort((a, b) => new Date(b.saleDate) - new Date(a.saleDate))
                             .map((item, index, arr) => (
-                            <div 
-                                key={item.deliveryId || index} 
-                                className="card bg-gradient-to-br from-base-100 to-base-200 border border-base-300 rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer hover:border-primary/50 group"
-                                onClick={() => handleOpenDetail(item)} // ✅ เพิ่ม onClick
-                                title="คลิกเพื่อดูรายละเอียด" // ✅ เพิ่ม tooltip
-                            >
-                                <div className="flex justify-between items-center mb-3">
-                                    <span className="font-bold text-lg">#{arr.length - index}</span>
-                                    <div className="flex items-center gap-2">
-                                        <span className="badge badge-primary text-sm">{formatDateWithDay(item.saleDate)}</span>
+                                <div
+                                    key={item.deliveryId || index}
+                                    className="card bg-gradient-to-br from-base-100 to-base-200 border border-base-300 rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer hover:border-primary/50 group"
+                                    onClick={() => handleOpenDetail(item)} // ✅ เพิ่ม onClick
+                                    title="คลิกเพื่อดูรายละเอียด" // ✅ เพิ่ม tooltip
+                                >
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="font-bold text-lg">#{arr.length - index}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="badge badge-primary text-sm">{formatDateWithDay(item.saleDate)}</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-base-content/70">ยอดขายรวม</span>
-                                    <span className="font-bold text-success text-lg">฿{item.totalSales?.toLocaleString() || 0}</span>
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-base-content/70">ยอดหลังหัก GP</span>
-                                        <span className="text-info font-semibold">฿{item.netSales?.toLocaleString() || 0}</span>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm text-base-content/70">ยอดขายรวม</span>
+                                        <span className="font-bold text-success text-lg">฿{item.totalSales?.toLocaleString() || 0}</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-base-content/70">GP ที่หักไป</span>
-                                        <span className="text-error font-semibold">
-                                            {item.gpPercent?.toFixed(2) || 0}% (฿{item.gpAmount?.toLocaleString() || 0})
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-base-content/70">ยอดหลังหัก GP</span>
+                                            <span className="text-info font-semibold">฿{item.netSales?.toLocaleString() || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-base-content/70">GP ที่หักไป</span>
+                                            <span className="text-error font-semibold">
+                                                {item.gpPercent?.toFixed(2) || 0}% (฿{item.gpAmount?.toLocaleString() || 0})
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* ✅ เพิ่ม indicator ว่าคลิกได้ */}
+                                    <div className="mt-3 pt-2 border-t border-base-300/50 text-center">
+                                        <span className="text-xs text-base-content/50 group-hover:text-primary transition-colors">
+                                            👆 คลิกเพื่อดูรายละเอียด
                                         </span>
                                     </div>
                                 </div>
-                                
-                                {/* ✅ เพิ่ม indicator ว่าคลิกได้ */}
-                                <div className="mt-3 pt-2 border-t border-base-300/50 text-center">
-                                    <span className="text-xs text-base-content/50 group-hover:text-primary transition-colors">
-                                        👆 คลิกเพื่อดูรายละเอียด
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 )}
             </div>
