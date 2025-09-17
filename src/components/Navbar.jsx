@@ -72,20 +72,20 @@ function Navbar() {
                             </Link>
                         </>
                     )}
-                    {/* ✅ Employee สามารถเช็ค Stock */}
+                    {/* ✅ Employee สามารถนับสต๊อก */}
                     {isEmployee && (
                         <>
                             <Link to="/stock" className="py-2 px-2 rounded hover:bg-accent">
-                                เช็ค Stock
+                                นับสต๊อก
                             </Link>
                             <Link to="/worktime" className="py-2 px-2 rounded hover:bg-accent">
                                 เวลางาน
                             </Link>
                         </>
                     )}
-                    {/* ✅ หรือทุก role สามารถเช็ค Stock */}
+                    {/* ✅ หรือทุก role สามารถนับสต๊อก */}
                     {/* <Link to="/stock" className="py-2 px-2 rounded hover:bg-accent">
-                        เช็ค Stock
+                        นับสต๊อก
                     </Link> */}
                     
                     <div>
@@ -115,11 +115,11 @@ function Navbar() {
                         </>
                     )}
                     
-                    {/* ✅ แก้ไข: Employee สามารถเช็ค Stock */}
+                    {/* ✅ แก้ไข: Employee สามารถนับสต๊อก */}
                     {isEmployee && (
                         <>
                             <Link to="/stock" className="py-2 px-2 rounded hover:bg-accent">
-                                เช็ค Stock
+                                นับสต๊อก
                             </Link>
                             <Link to="/worktime" className="py-2 px-2 rounded hover:bg-accent">
                                 เวลางาน

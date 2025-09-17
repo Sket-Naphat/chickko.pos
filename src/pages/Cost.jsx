@@ -115,6 +115,7 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
               <th className="text-sm lg:text-base">หมวดหมู่</th>
               <th className="text-right text-sm lg:text-base">ราคา</th>
               <th className="text-sm lg:text-base">รายละเอียดการซื้อ</th>
+              <th className="text-sm lg:text-base">ลบ</th>
             </tr>
           </thead>
           <tbody>
@@ -136,8 +137,8 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
               return (
                 <tr key={item.id || idx} className="hover:bg-base-200">
                   <td>
-                    {item.costCategoryID == 1
-                      ? <button className="btn btn-sm lg:btn-md btn-primary text-xs lg:text-sm" onClick={() => openStockIn(item.costID)}>รายการ</button>
+                    {item.costCategoryID == 1 && item.isStockIn 
+                      ? <button className="btn btn-sm lg:btn-sm btn-primary text-sm lg:text-sm" onClick={() => openStockIn(item.costID)}>รายการ</button>
                       : <ModalConfirmPayment onConfirm={handleConfirm} item={item} showToast={showToast} />}
                   </td>
                   <td className="text-sm lg:text-base">{item.costDate}</td>
@@ -148,6 +149,15 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
                   </td>
                   <td className="text-right font-medium text-sm lg:text-base">{item.costPrice.toLocaleString()} บาท</td>
                   <td className="text-sm lg:text-base max-w-xs truncate" title={item.costDescription}>{item.costDescription}</td>
+                  <td>
+                    <button
+                      className="btn btn-sm lg:btn-md btn-error text-xs lg:text-sm"
+                      onClick={() => handleDeleteClick(item)}
+                      title="ลบรายการ"
+                    >
+                      🗑️ ลบ
+                    </button>
+                  </td>
                 </tr>
               );
             })}
@@ -203,7 +213,7 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
                 >
                 🗑️ ลบ
                 </button>
-                {item.costCategoryID == 1
+                {item.costCategoryID == 1 && item.isStockIn 
                 ? <button className="btn btn-sm btn-primary shadow-md hover:shadow-lg whitespace-nowrap transition-all duration-200" onClick={() => openStockIn(item.costID)}>
                   📦 ดูรายการ
                   </button>

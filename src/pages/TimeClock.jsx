@@ -119,7 +119,9 @@ const TimeClock = () => {
             const locations = [];
             let attempts = 0;
             const maxAttempts = 5; // ขอตำแหน่ง 5 ครั้ง
-            const targetAccuracy = 50; // ความแม่นยำที่ต้องการ (เมตร)
+            const preferredAccuracy = 50; // ความแม่นยำที่ต้องการ (เมตร)
+            const acceptableAccuracy = 200; // ความแม่นยำที่ยอมรับได้ (เมตร)
+            const fallbackAccuracy = 1000; // ความแม่นยำสำรอง (เมตร)
 
             const getLocationAttempt = () => {
                 navigator.geolocation.getCurrentPosition(
@@ -141,11 +143,18 @@ const TimeClock = () => {
                         console.log(`GPS Attempt ${attempts}:`, {
                             lat: locationData.latitude.toFixed(6),
                             lng: locationData.longitude.toFixed(6),   
-                            accuracy: Math.round(locationData.accuracy) + 'm'
+                            accuracy: Math.round(locationData.accuracy) + 'm',
+                            quality: locationData.accuracy <= preferredAccuracy ? 'Excellent' : 
+                                    locationData.accuracy <= acceptableAccuracy ? 'Good' : 
+                                    locationData.accuracy <= fallbackAccuracy ? 'Fair' : 'Poor'
                         });
 
-                        // ถ้าได้ความแม่นยำที่ต้องการ หรือครบจำนวนครั้งแล้ว
-                        if (locationData.accuracy <= targetAccuracy || attempts >= maxAttempts) {
+                        // เงื่อนไขการหยุด: ได้ความแม่นยำดี หรือ ครบจำนวนครั้ง หรือ มีตำแหน่งที่ใช้งานได้
+                        const shouldStop = locationData.accuracy <= preferredAccuracy || 
+                                         attempts >= maxAttempts || 
+                                         (attempts >= 2 && locationData.accuracy <= acceptableAccuracy);
+
+                        if (shouldStop) {
                             // เลือกตำแหน่งที่แม่นยำที่สุด
                             const bestLocation = locations.reduce((best, current) => 
                                 current.accuracy < best.accuracy ? current : best
@@ -155,44 +164,71 @@ const TimeClock = () => {
                                 lat: bestLocation.latitude.toFixed(6),
                                 lng: bestLocation.longitude.toFixed(6),
                                 accuracy: Math.round(bestLocation.accuracy) + 'm',
-                                totalAttempts: attempts
+                                totalAttempts: attempts,
+                                quality: bestLocation.accuracy <= preferredAccuracy ? '🟢 Excellent' : 
+                                        bestLocation.accuracy <= acceptableAccuracy ? '🟡 Good' : 
+                                        bestLocation.accuracy <= fallbackAccuracy ? '🟠 Fair' : '🔴 Poor',
+                                usable: bestLocation.accuracy <= fallbackAccuracy ? 'Yes' : 'Limited'
                             });
 
                             setIsGettingLocation(false);
                             resolve(bestLocation);
                         } else {
-                            // รอ 1 วินาที แล้วลองใหม่
+                            // รอ 1.5 วินาที แล้วลองใหม่ (เพิ่มเวลารอเล็กน้อย)
                             setTimeout(() => {
                                 getLocationAttempt();
-                            }, 1000);
+                            }, 1500);
                         }
                     },
                     (error) => {
                         attempts++;
-                        console.error(`GPS Attempt ${attempts} failed:`, error.message);
+                        console.error(`GPS Attempt ${attempts} failed:`, {
+                            code: error.code,
+                            message: error.message,
+                            description: error.code === 1 ? 'Permission denied' :
+                                        error.code === 2 ? 'Position unavailable' :
+                                        error.code === 3 ? 'Timeout' : 'Unknown error'
+                        });
                         
-                        if (attempts >= maxAttempts || locations.length === 0) {
+                        // ถ้าครบจำนวนครั้ง หรือ error ร้ายแรง
+                        if (attempts >= maxAttempts) {
                             setIsGettingLocation(false);
                             if (locations.length > 0) {
-                                // ถ้ามีตำแหน่งบางค่า ให้ใช้ค่าที่แม่นยำที่สุด
+                                // ถ้ามีตำแหน่งบางค่า ให้ใช้ค่าที่แม่นยำที่สุด (แม้จะไม่ดีมาก)
                                 const bestLocation = locations.reduce((best, current) => 
                                     current.accuracy < best.accuracy ? current : best
                                 );
+                                
+                                console.warn('Using fallback location:', {
+                                    lat: bestLocation.latitude.toFixed(6),
+                                    lng: bestLocation.longitude.toFixed(6),
+                                    accuracy: Math.round(bestLocation.accuracy) + 'm',
+                                    note: 'Location quality may be poor but usable'
+                                });
+                                
                                 resolve(bestLocation);
                             } else {
-                                reject(error);
+                                // ไม่มีตำแหน่งเลย
+                                console.error('Complete GPS failure after all attempts');
+                                reject(new Error(`GPS failed after ${attempts} attempts: ${error.message}`));
                             }
                         } else {
-                            // ลองใหม่
+                            // ลองใหม่ แต่ถ้าเป็น permission denied ให้หยุดเลย
+                            if (error.code === 1) { // PERMISSION_DENIED
+                                setIsGettingLocation(false);
+                                reject(error);
+                                return;
+                            }
+                            
                             setTimeout(() => {
                                 getLocationAttempt();
-                            }, 1000);
+                            }, 2000); // รอนานขึ้นหลัง error
                         }
                     },
                     {
                         enableHighAccuracy: true,  // ขอความแม่นยำสูงสุด
-                        timeout: 10000,            // รอสูงสุด 10 วินาทีต่อครั้ง
-                        maximumAge: 0              // ไม่ใช้ข้อมูลเก่า ขอข้อมูลใหม่เสมอ
+                        timeout: 15000,            // เพิ่มเวลารอเป็น 15 วินาที
+                        maximumAge: 30000          // ยอมรับข้อมูลเก่าได้ 30 วินาที (ลดการขอใหม่)
                     }
                 );
             };
@@ -429,7 +465,7 @@ const TimeClock = () => {
                     {isGettingLocation && (
                         <div className="alert alert-info mb-4">
                             <span className="loading loading-spinner loading-sm"></span>
-                            <span>🛰️ กำลังดึงข้อมูลตำแหน่ง GPS กรุณารอสักครู่...</span>
+                            <span>⏳ กำลังดึงข้อมูลตำแหน่ง GPS กรุณารอสักครู่...</span>
                         </div>
                     )}
 
@@ -450,7 +486,7 @@ const TimeClock = () => {
                             {isGettingLocation ? (
                                 <>
                                     <span className="loading loading-spinner loading-sm mr-2"></span>
-                                    🛰️ อุ่น GPS...
+                                    ⏳ กรุณารอสักครู่ ...
                                 </>
                             ) : (
                                 <>
@@ -467,7 +503,7 @@ const TimeClock = () => {
                             {isGettingLocation ? (
                                 <>
                                     <span className="loading loading-spinner loading-sm mr-2"></span>
-                                    🛰️ อุ่น GPS...
+                                    ⏳ กรุณารอสักครู่ ...
                                 </>
                             ) : (
                                 <>

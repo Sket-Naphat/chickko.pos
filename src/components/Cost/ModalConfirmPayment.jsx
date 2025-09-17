@@ -14,10 +14,10 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
     const [isLoadingModal, setIsLoadingModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     // สถานะต่างๆ สำหรับข้อมูลค่าใช้จ่าย
-    const [costCategory, setCostCategory] = useState([]);
+    const [costCategories, setCostCategories] = useState([]);
     const [costPrice, setCostPrice] = useState(item.costPrice);
     const [purchaseDate, setPurchaseDate] = useState(item.purchaseDate || new Date().toISOString().slice(0, 10));
-    const [categoryId, setCategoryId] = useState(item.costCategory.id);
+    const [categoryId, setCategoryId] = useState(item.costCategoryID || item.costCategory?.costCategoryID);
     const [costDescription, setCostDescription] = useState(item.costDescription);
     const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
     useEffect(() => {
@@ -31,10 +31,11 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
         try {
             setIsLoadingModal(true);
 
-            const costCategory = await getCostCategories();
-            setCostCategory(costCategory);
-            if (!categoryId && costCategory.length > 0) {
-                setCategoryId(String(costCategory[0].costCategoryID));
+            const categories = await getCostCategories();
+            setCostCategories(categories);
+            // ถ้ายังไม่มี categoryId ให้ใช้ค่าจาก item หรือค่าแรกใน list
+            if (!categoryId && categories.length > 0) {
+                setCategoryId(String(item.costCategoryID || item.costCategory?.costCategoryID || categories[0].costCategoryID));
             }
         }
         catch (err) {
@@ -60,7 +61,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
         )}`;
 
         // หาข้อความของ option ที่เลือกจาก dropdown
-        const categoryText = costCategory.find(
+        const categoryText = costCategories.find(
             (c) => String(c.costCategoryID) === String(categoryId)
         )?.description || "";
 
@@ -109,69 +110,102 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
 
     return (
         <>
-            <button className="btn btn-sm btn-primary" onClick={openModal} disabled={isLoadingModal}>
-                {isLoadingModal ? <span className="loading loading-spinner loading-sm"></span> : "จ่าย"}
+            <button 
+                className="btn btn-sm lg:btn-md btn-primary shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap" 
+                onClick={openModal} 
+                disabled={isLoadingModal}
+            >
+                {isLoadingModal ? (
+                    <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        ⏳กำลังโหลด...
+                    </>
+                ) : (
+                    <>
+                        <span className="text-lg">💳</span>
+                        จ่าย
+                    </>
+                )}
             </button>
             {/* Modal Dialog */}
             <dialog ref={dialogRef} className="modal">
-                <div className="modal-box w-11/12 max-w-2xl">
-
-                    <h3 className="font-bold text-lg">รายการ {item.costDescription}</h3>
+                <div className="modal-box w-11/12 max-w-3xl bg-gradient-to-br from-base-100 to-base-200 border-2 border-primary/20 shadow-2xl">
+                    {/* Modal Header */}
+                    <div className="flex items-center gap-4 mb-6 pb-4 border-b border-base-300">
+                        <div className="p-3 bg-primary/20 rounded-full">
+                            <span className="text-2xl">💰</span>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-xl text-primary">ยืนยันการจ่ายเงิน</h3>
+                            <p className="text-sm text-base-content/70 mt-1">รายการ: {item.costDescription}</p>
+                        </div>
+                    </div>
 
                     <form
-                        className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3"
+                        className="max-w-md mx-auto space-y-6"
                         onSubmit={handleSubmit}
                     >
-                        <label className="form-control">
-                            <div className="label">
-                                <span className="label-text" htmlFor={num_costPriceId}>
+                        {/* Payment Amount */}
+                        <div className="form-control w-full">
+                            <div className="mb-2 text-start">
+                                <span className="label-text font-semibold flex items-center gap-2">
+                                    <span className="text-lg">💵</span>
                                     จำนวนเงิน (บาท)
                                 </span>
                             </div>
-                            <input
-                                id={num_costPriceId}
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                className="input input-bordered"
-                                placeholder="เช่น 120.00"
-                                value={costPrice}
-                                onChange={(e) => setCostPrice(e.target.value)}
-                                required
-                            />
-                        </label>
+                            <div className="relative">
+                                <input
+                                    id={num_costPriceId}
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    className="input input-bordered input-primary w-full pr-12 bg-base-50 focus:bg-base-100 transition-colors"
+                                    placeholder="เช่น 120.00"
+                                    value={costPrice}
+                                    onChange={(e) => setCostPrice(e.target.value)}
+                                    required
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-base-content/60">
+                                    ฿
+                                </span>
+                            </div>
+                        </div>
 
-                        <label className="form-control">
-                            <div className="label">
-                                <span className="label-text" htmlFor={dt_purchaseDateId}>
+                        {/* Payment Date */}
+                        <div className="form-control w-full">
+                            <div className="mb-2 text-start">
+                                <span className="label-text font-semibold flex items-center gap-2">
+                                    <span className="text-lg">📅</span>
                                     วันที่จ่ายเงิน
                                 </span>
                             </div>
                             <input
                                 id={dt_purchaseDateId}
                                 type="date"
-                                className="input input-bordered"
+                                className="input input-bordered input-primary w-full bg-base-50 focus:bg-base-100 transition-colors"
                                 value={purchaseDate}
                                 onChange={(e) => setPurchaseDate(e.target.value)}
                                 required
                             />
-                        </label>
+                        </div>
 
-                        <label className="form-control md:col-span-2">
-                            <div className="label">
-                                <span className="label-text" htmlFor={ddl_costCategoryId}>
-                                    ประเภท
-                                </span> &nbsp;
+                        {/* Category Selection */}
+                        <div className="form-control w-full">
+                            <div className="mb-2 text-start">
+                                <span className="label-text font-semibold flex items-center gap-2">
+                                    <span className="text-lg">🏷️</span>
+                                    ประเภทค่าใช้จ่าย
+                                </span>
                             </div>
                             <select
                                 id={ddl_costCategoryId}
-                                className="select select-bordered"
+                                className="select select-bordered select-primary w-full bg-base-50 focus:bg-base-100 transition-colors"
                                 value={categoryId}
                                 onChange={(e) => setCategoryId(e.target.value)}
                                 required
                             >
                                 <option value="" disabled>— เลือกประเภทค่าใช้จ่าย —</option>
-                                {costCategory.map((category) => (
+                                {costCategories.map((category) => (
                                     <option
                                         key={category.costCategoryID}
                                         value={String(category.costCategoryID)}
@@ -180,39 +214,53 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
                                     </option>
                                 ))}
                             </select>
-                        </label>
+                        </div>
 
-                        <label className="form-control md:col-span-2">
-                            <div className="label">
-                                <span className="label-text" htmlFor={txt_costDescriptionId}>
+                        {/* Description */}
+                        <div className="form-control w-full">
+                            <div className="mb-2 text-start">
+                                <span className="label-text font-semibold flex items-center gap-2">
+                                    <span className="text-lg">📝</span>
                                     รายละเอียดการซื้อ
-                                </span>&nbsp;
+                                </span>
                             </div>
                             <textarea
                                 id={txt_costDescriptionId}
-                                className="textarea textarea-bordered"
-                                rows={3}
+                                className="textarea textarea-bordered textarea-primary w-full bg-base-50 focus:bg-base-100 transition-colors min-h-[100px]"
+                                rows={4}
                                 placeholder="รายละเอียดการซื้อ เช่น ซื้อวัตถุดิบ, ค่าบริการ, ค่าขนส่ง ฯลฯ"
                                 value={costDescription}
                                 onChange={(e) => setCostDescription(e.target.value)}
                             />
-                        </label>
+                        </div>
 
-                        <div className="modal-action md:grid-span-2 lg:grid-span-3">
-                            <button
-                                type="submit"
-                                className={`btn btn-success ${isSaving ? "loading" : ""}`}
-                                disabled={isSaving}
-                            >
-                                {isSaving ? "กำลังบันทึก..." : "✅ ยืนยันการจ่าย"}
-                            </button>
+                        {/* Action Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 mt-6 border-t border-base-300">
                             <button
                                 type="button"
-                                className="btn"
+                                className="btn btn-outline btn-base-content hover:bg-base-200 transition-all duration-200 order-2 sm:order-1"
                                 onClick={closeModal}
                                 disabled={isSaving}
                             >
-                                ปิด
+                                <span className="text-lg">❌</span>
+                                ยกเลิก
+                            </button>
+                            <button
+                                type="submit"
+                                className={`btn btn-success text-success-content shadow-lg hover:shadow-xl transition-all duration-200 order-1 sm:order-2 ${isSaving ? "loading" : ""}`}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? (
+                                    <>
+                                        <span className="loading loading-spinner loading-sm"></span>
+                                        ⏳ กำลังบันทึก...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="text-lg">✅</span>
+                                        ยืนยันการจ่าย
+                                    </>
+                                )}
                             </button>
                         </div>
                     </form>

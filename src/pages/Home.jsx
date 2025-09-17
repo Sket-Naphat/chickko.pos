@@ -60,27 +60,27 @@ function Home() {
       menuItems.push(
         { title: "📊 Dashboard", path: "/dashboard" },
         { title: "🚛 Delivery", path: "/delivery" },
-        { title: "💰 Cost", path: "/cost" },
+        { title: "💰 ต้นทุน", path: "/cost" },
         { title: "🕒 ประวัติการเข้าออกงาน", path: "/worktime" }, // ✅ เพิ่ม disabled
-        { title: "📦 Stock", path: "/stock" },
-        { title: "🗒️ เว็บรับ order", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
+        { title: "📦 นับสต๊อก", path: "/stock" },
+        { title: "🗒️ เว็บรับออเดอร์", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
         
       );
       break;
     case 2: // manager
       menuItems.push(
-        { title: "📦 Stock", path: "/stock" },
+        { title: "📦 นับสต๊อก", path: "/stock" },
         { title: "🕒 ประวัติการเข้าออกงาน", path: "/worktime" }, // ✅ เพิ่ม disabled
         { title: "⏰ ลงเวลางาน", path: "/timeclock" },
-        { title: "🗒️ เว็บรับ order", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
+        { title: "🗒️ เว็บรับออเดอร์", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
       );
       break;
     case 3: // staff
       menuItems.push(
-        { title: "📦 Stock", path: "/stock" },
+        { title: "📦 นับสต๊อก", path: "/stock" },
         { title: "🕒 ประวัติการเข้าออกงาน", path: "/worktime" }, // ✅ เพิ่ม disabled
         { title: "⏰ ลงเวลางาน", path: "/timeclock" },
-        { title: "🗒️ เว็บรับ order", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
+        { title: "🗒️ เว็บรับออเดอร์", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
       );
       break;
     default:
