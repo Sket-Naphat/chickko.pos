@@ -33,8 +33,8 @@ function Navbar() {
 
     useEffect(() => {
         if (permission !== null) {
-            setIsManager(permission !== 3); // admin, manager
-            setIsEmployee(true); // employee, admin
+            setIsManager(permission == 1); // owner
+            setIsEmployee(true); // employee, manager
         }
     }, [permission]);
     

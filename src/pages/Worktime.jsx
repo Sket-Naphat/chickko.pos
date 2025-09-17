@@ -196,6 +196,39 @@ function EmployeeDetailWorktime({ employee, onBack }) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
+  // ✅ เพิ่ม state สำหรับ edit time modal
+  const [editTimeModal, setEditTimeClockInModal] = React.useState({
+    isOpen: false,
+    workDate: '',
+    currentTimeClockIn: '',
+    newTimeClockIn: '',
+    employeeID: null
+  });
+  
+  // ✅ เพิ่ม state สำหรับ edit time clock out modal
+  const [editTimeClockOutModal, setEditTimeClockOutModal] = React.useState({
+    isOpen: false,
+    workDate: '',
+    currentTimeClockOut: '',
+    newTimeClockOut: '',
+    employeeID: null
+  });
+  
+  const [editLoading, setEditLoading] = React.useState(false);
+
+  // ✅ ดึงข้อมูล authData เพื่อตรวจสอบสิทธิ์
+  const authData = React.useMemo(() => {
+    const raw = Cookies.get("authData");
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, []);
+
   // สร้าง options เดือนเหมือน StaffWorktime
   const startYear = 2025, startMonth = 9;
   const now = new Date();
@@ -242,6 +275,8 @@ function EmployeeDetailWorktime({ employee, onBack }) {
           timeClockIn: item.timeClockIn,
           timeClockOut: item.timeClockOut,
           totalWorktime: item.totalWorktime,
+          clockInLocation: item.clockInLocation,
+          clockOutLocation: item.clockOutLocation
         }));
         setHistory(mapped.sort((a, b) => new Date(b.workDate) - new Date(a.workDate)));
       })
@@ -261,6 +296,117 @@ function EmployeeDetailWorktime({ employee, onBack }) {
     const monthName = months[date.getMonth()];
     return `${dayName} ${day} ${monthName}`;
   }, []);
+
+  const getGoogleMapsUrl = (clockInLocation) => {
+    if (!clockInLocation) return null;
+
+    var location = JSON.parse(clockInLocation);
+    var latitude = location.latitude;
+    var longitude = location.longitude;
+    return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+  }
+
+  // ✅ ฟังก์ชันเปิด modal แก้ไขเวลาเข้างาน
+  const openEditTimeClockInModal = (item) => {
+    setEditTimeClockInModal({
+      isOpen: true,
+      workDate: item.workDate,
+      currentTimeClockIn: item.timeClockIn || '',
+      newTimeClockIn: item.timeClockIn || '',
+      employeeID: employeeID
+    });
+  };
+
+  // ✅ ฟังก์ชันปิด modal
+  const closeEditTimeModal = () => {
+    setEditTimeClockInModal({
+      isOpen: false,
+      workDate: '',
+      currentTimeClockIn: '',
+      newTimeClockIn: '',
+      employeeID: null
+    });
+  };
+
+  // ✅ ฟังก์ชันบันทึกการแก้ไขเวลา
+  const saveClockInEditTime = async () => {
+    if (!editTimeModal.newTimeClockIn || !editTimeModal.workDate || !editTimeModal.employeeID) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+
+    setEditLoading(true);
+    try {
+      await api.post('/worktime/UpdateTimeClockIn', {
+        employeeID: editTimeModal.employeeID,
+        workDate: editTimeModal.workDate,
+        TimeClockIn: editTimeModal.newTimeClockIn,
+        CreatedBy: authData?.userId
+      });
+
+      alert('✅ แก้ไขเวลาเข้างานเรียบร้อยแล้ว');
+      closeEditTimeModal();
+
+      // ✅ รีเฟรชข้อมูล
+      window.location.reload();
+
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถแก้ไขเวลาได้'));
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // ✅ ฟังก์ชันเปิด modal แก้ไขเวลาออกงาน
+  const openEditTimeClockOutModal = (item) => {
+    setEditTimeClockOutModal({
+      isOpen: true,
+      workDate: item.workDate,
+      currentTimeClockOut: item.timeClockOut || '',
+      newTimeClockOut: item.timeClockOut || '',
+      employeeID: employeeID
+    });
+  };
+
+  // ✅ ฟังก์ชันปิด modal แก้ไขเวลาออกงาน
+  const closeEditTimeClockOutModal = () => {
+    setEditTimeClockOutModal({
+      isOpen: false,
+      workDate: '',
+      currentTimeClockOut: '',
+      newTimeClockOut: '',
+      employeeID: null
+    });
+  };
+
+  // ✅ ฟังก์ชันบันทึกการแก้ไขเวลาออกงาน
+  const saveClockOutEditTime = async () => {
+    if (!editTimeClockOutModal.newTimeClockOut || !editTimeClockOutModal.workDate || !editTimeClockOutModal.employeeID) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+
+    setEditLoading(true);
+    try {
+      await api.post('/worktime/UpdateTimeClockOut', {
+        employeeID: editTimeClockOutModal.employeeID,
+        workDate: editTimeClockOutModal.workDate,
+        TimeClockOut: editTimeClockOutModal.newTimeClockOut,
+        CreatedBy: authData?.userId
+      });
+
+      alert('✅ แก้ไขเวลาออกงานเรียบร้อยแล้ว');
+      closeEditTimeClockOutModal();
+
+      // ✅ รีเฟรชข้อมูล
+      window.location.reload();
+
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถแก้ไขเวลาได้'));
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-base-200 flex flex-col items-center px-2 py-4 sm:px-4 sm:py-6">
@@ -338,36 +484,466 @@ function EmployeeDetailWorktime({ employee, onBack }) {
               {history.length === 0 ? (
                 <div className="text-center py-8 text-base-content/60">ไม่มีข้อมูล</div>
               ) : (
-                history.map((item, idx) => (
-                  /* ✅ Card แบบกระชับ */
-                  <div key={idx} className="bg-base-100 border border-base-300 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-primary text-sm">
-                        {formatThaiDate(item.workDate)}
-                      </div>
-                      <div className="text-xs text-base-content/60">
-                        {item.totalWorktime ? formatWorktime(item.totalWorktime) : '-'}
-                      </div>
-                    </div>
+                history.map((item, idx) => {
+                  // ✅ ตรวจสอบตำแหน่งนอกพื้นที่ร้าน
+                  let isOutsideStore = false;
+                  let outsideMessages = [];
 
-                    {/* ✅ เวลาเข้า-ออกแบบ inline */}
-                    <div className="flex justify-between text-sm">
-                      <div className="flex items-center gap-1">
-                        <span className="text-success">เข้างาน ⬇️</span>
-                        <span>{item.timeClockIn || '-'}</span>
+                  // ตรวจสอบตำแหน่งเข้างาน
+                  if (item.clockInLocation) {
+                    try {
+                      const clockInData = JSON.parse(item.clockInLocation);
+                      if (clockInData.isWithinStoreRadius === false) {
+                        isOutsideStore = true;
+                        outsideMessages.push('เข้างาน');
+                      }
+                    } catch (e) {
+                      console.error('Error parsing clockInLocation:', e);
+                    }
+                  }
+
+                  // ตรวจสอบตำแหน่งออกงาน
+                  if (item.clockOutLocation) {
+                    try {
+                      const clockOutData = JSON.parse(item.clockOutLocation);
+                      if (clockOutData.isWithinStoreRadius === false) {
+                        isOutsideStore = true;
+                        outsideMessages.push('ออกงาน');
+                      }
+                    } catch (e) {
+                      console.error('Error parsing clockOutLocation:', e);
+                    }
+                  }
+
+                  return (
+                    /* ✅ Card แบบกระชับ - เปลี่ยนสีเมื่อนอกพื้นที่ */
+                    <div key={idx} className={`${isOutsideStore
+                        ? 'bg-error/10 border-error/30 border-2'
+                        : 'bg-base-100 border-base-300 border'
+                      } rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow`}>
+
+                      {/* ✅ แสดงข้อความเตือนเมื่อนอกพื้นที่ */}
+                      {isOutsideStore && (
+                        <div className="bg-error/20 border border-error/40 rounded-lg p-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-error text-lg">⚠️</span>
+                            <div>
+                              <div className="font-semibold text-error text-sm">
+                                มีการกด{outsideMessages.join(' และ ')}นอกพื้นที่ร้าน
+                              </div>
+                              <div className="text-xs text-error/70">
+                                โปรดตรวจสอบตำแหน่งในแผนที่
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-start mb-2">
+                        <div className={`font-semibold text-sm ${isOutsideStore ? 'text-error' : 'text-primary'
+                          }`}>
+                          {formatThaiDate(item.workDate)}
+                        </div>
+                        <div className="text-xs text-base-content/60">
+                          {item.totalWorktime ? formatWorktime(item.totalWorktime) : '-'}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-error">ออกงาน ⬆️</span>
-                        <span>{item.timeClockOut || '-'}</span>
+
+                      {/* ✅ เวลาเข้า-ออกแบบ inline */}
+                      <div className="flex justify-between text-sm">
+                        <div className="flex items-center gap-1">
+                          <span className="text-success">เข้างาน ⬇️</span>
+                          <span>{item.timeClockIn || '-'}</span>
+                          {/* ✅ แสดงปุ่มแก้ไขเฉพาะ Admin (userPermissionId === 1) */}
+                          {authData?.userPermissionId === 1 && (
+                            <button
+                              className="btn btn-xs btn-ghost btn-outline"
+                              title='แก้ไขเวลาเข้างาน'
+                              onClick={() => openEditTimeClockInModal(item)}
+                            >
+                              📋
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-error">ออกงาน ⬆️</span>
+                          <span>{item.timeClockOut || '-'}</span>
+                          {/* ✅ แสดงปุ่มแก้ไขเฉพาะ Admin (userPermissionId === 1) */}
+                          {authData?.userPermissionId === 1 && (
+                            <button
+                              className="btn btn-xs btn-ghost btn-outline"
+                              title='แก้ไขเวลาออกงาน'
+                              onClick={() => openEditTimeClockOutModal(item)}
+                            >
+                              📋
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* ✅ ตำแหน่งเข้า-ออกงาน */}
+                      <div className="flex justify-between text-sm">
+                        <div>
+                          {item.clockInLocation ? (
+                            <button
+                              className={`btn btn-xs btn-outline mt-2 ${(() => {
+                                  try {
+                                    const clockInData = JSON.parse(item.clockInLocation);
+                                    return clockInData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
+                                  } catch {
+                                    return 'btn-primary';
+                                  }
+                                })()
+                                }`}
+                              onClick={() => window.open(getGoogleMapsUrl(item.clockInLocation), '_blank')}
+                              title="ดูตำแหน่งในแผนที่"
+                            >
+                              📍 ดูตำแหน่ง
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-500 mt-2">-</span>
+                          )}
+                        </div>
+                        <div>
+                          {item.clockOutLocation ? (
+                            <button
+                              className={`btn btn-xs btn-outline mt-2 ${(() => {
+                                  try {
+                                    const clockOutData = JSON.parse(item.clockOutLocation);
+                                    return clockOutData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
+                                  } catch {
+                                    return 'btn-primary';
+                                  }
+                                })()
+                                }`}
+                              onClick={() => window.open(getGoogleMapsUrl(item.clockOutLocation), '_blank')}
+                              title="ดูตำแหน่งในแผนที่"
+                            >
+                              📍 ดูตำแหน่ง
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-500 mt-2">-</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}
         </section>
       </div>
+
+      {/* ✅ Modal แก้ไขเวลาเข้างาน */}
+      {editTimeModal.isOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-4">📋 แก้ไขเวลาเข้างาน</h3>
+
+            {/* ✅ ข้อมูลพนักงาน */}
+            <div className="bg-base-200 p-3 rounded-lg mb-4">
+              <div className="font-semibold text-primary">
+                👤 {employee?.employeeName || 'ไม่ระบุชื่อ'}
+              </div>
+              <div className="text-sm text-base-content/70">
+                📅 {formatThaiDate(editTimeModal.workDate)}
+              </div>
+            </div>
+
+            {/* ✅ เวลาเข้างานปัจจุบัน */}
+            <div className="form-control mb-4">
+              <label className="label">
+                <span className="label-text font-semibold">เวลาเข้างานปัจจุบัน</span>
+              </label>
+              <div className="bg-base-200 p-3 rounded-lg">
+                <div className="text-lg font-bold text-primary">
+                  {editTimeModal.currentTimeClockIn || 'ไม่มีข้อมูล'}
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ เวลาเข้างานใหม่ */}
+            <div className="form-control mb-6">
+              <label className="label">
+                <span className="label-text font-semibold">⏰ เวลาเข้างานใหม่</span>
+              </label>
+
+              {/* ✅ Custom 24-hour time input */}
+              <div className="flex gap-2 items-center">
+                {/* ชั่วโมง */}
+                <div className="flex flex-col items-center">
+                  <label className="text-xs text-base-content/70 mb-1">ชั่วโมง</label>
+                  <select
+                    value={editTimeModal.newTimeClockIn ? editTimeModal.newTimeClockIn.split(':')[0] : '00'}
+                    onChange={(e) => {
+                      const currentTime = editTimeModal.newTimeClockIn || '00:00:00';
+                      const [, minutes, seconds] = currentTime.split(':');
+                      const newTime = `${e.target.value}:${minutes || '00'}:${seconds || '00'}`;
+                      setEditTimeClockInModal(prev => ({
+                        ...prev,
+                        newTimeClockIn: newTime
+                      }));
+                    }}
+                    className="select select-bordered select-sm w-20"
+                    disabled={editLoading}
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={String(i).padStart(2, '0')}>
+                        {String(i).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <span className="text-2xl font-bold text-base-content/50 mt-6">:</span>
+
+                {/* นาที */}
+                <div className="flex flex-col items-center">
+                  <label className="text-xs text-base-content/70 mb-1">นาที</label>
+                  <select
+                    value={editTimeModal.newTimeClockIn ? editTimeModal.newTimeClockIn.split(':')[1] : '00'}
+                    onChange={(e) => {
+                      const currentTime = editTimeModal.newTimeClockIn || '00:00:00';
+                      const [hours, , seconds] = currentTime.split(':');
+                      const newTime = `${hours || '00'}:${e.target.value}:${seconds || '00'}`;
+                      setEditTimeClockInModal(prev => ({
+                        ...prev,
+                        newTimeClockIn: newTime
+                      }));
+                    }}
+                    className="select select-bordered select-sm w-20"
+                    disabled={editLoading}
+                  >
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <option key={i} value={String(i).padStart(2, '0')}>
+                        {String(i).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <span className="text-2xl font-bold text-base-content/50 mt-6">:</span>
+
+                {/* วินาที */}
+                <div className="flex flex-col items-center">
+                  <label className="text-xs text-base-content/70 mb-1">วินาที</label>
+                  <select
+                    value={editTimeModal.newTimeClockIn ? editTimeModal.newTimeClockIn.split(':')[2] || '00' : '00'}
+                    onChange={(e) => {
+                      const currentTime = editTimeModal.newTimeClockIn || '00:00:00';
+                      const [hours, minutes] = currentTime.split(':');
+                      const newTime = `${hours || '00'}:${minutes || '00'}:${e.target.value}`;
+                      setEditTimeClockInModal(prev => ({
+                        ...prev,
+                        newTimeClockIn: newTime
+                      }));
+                    }}
+                    className="select select-bordered select-sm w-20"
+                    disabled={editLoading}
+                  >
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <option key={i} value={String(i).padStart(2, '0')}>
+                        {String(i).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* ✅ แสดงเวลาที่เลือก */}
+              <div className="mt-3 p-2 bg-base-200 rounded-lg text-center">
+                <div className="text-sm text-base-content/70">เวลาที่เลือก:</div>
+                <div className="text-lg font-bold text-primary font-mono">
+                  {editTimeModal.newTimeClockIn || '00:00:00'}
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ ปุ่มการกระทำ */}
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={closeEditTimeModal}
+                disabled={editLoading}
+              >
+                ยกเลิก
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={saveClockInEditTime}
+                disabled={editLoading || !editTimeModal.newTimeClockIn}
+              >
+                {editLoading ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    กำลังบันทึก...
+                  </>
+                ) : (
+                  <>
+                    💾 บันทึกการแก้ไข
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Modal แก้ไขเวลาออกงาน */}
+      {editTimeClockOutModal.isOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-4">📋 แก้ไขเวลาออกงาน</h3>
+
+            {/* ✅ ข้อมูลพนักงาน */}
+            <div className="bg-base-200 p-3 rounded-lg mb-4">
+              <div className="font-semibold text-primary">
+                👤 {employee?.employeeName || 'ไม่ระบุชื่อ'}
+              </div>
+              <div className="text-sm text-base-content/70">
+                📅 {formatThaiDate(editTimeClockOutModal.workDate)}
+              </div>
+            </div>
+
+            {/* ✅ เวลาออกงานปัจจุบัน */}
+            <div className="form-control mb-4">
+              <label className="label">
+                <span className="label-text font-semibold">เวลาออกงานปัจจุบัน</span>
+              </label>
+              <div className="bg-base-200 p-3 rounded-lg">
+                <div className="text-lg font-bold text-primary">
+                  {editTimeClockOutModal.currentTimeClockOut || 'ไม่มีข้อมูล'}
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ เวลาออกงานใหม่ */}
+            <div className="form-control mb-6">
+              <label className="label">
+                <span className="label-text font-semibold">⏰ เวลาออกงานใหม่</span>
+              </label>
+
+              {/* ✅ Custom 24-hour time input */}
+              <div className="flex gap-2 items-center">
+                {/* ชั่วโมง */}
+                <div className="flex flex-col items-center">
+                  <label className="text-xs text-base-content/70 mb-1">ชั่วโมง</label>
+                  <select
+                    value={editTimeClockOutModal.newTimeClockOut ? editTimeClockOutModal.newTimeClockOut.split(':')[0] : '00'}
+                    onChange={(e) => {
+                      const currentTime = editTimeClockOutModal.newTimeClockOut || '00:00:00';
+                      const [, minutes, seconds] = currentTime.split(':');
+                      const newTime = `${e.target.value}:${minutes || '00'}:${seconds || '00'}`;
+                      setEditTimeClockOutModal(prev => ({
+                        ...prev,
+                        newTimeClockOut: newTime
+                      }));
+                    }}
+                    className="select select-bordered select-sm w-20"
+                    disabled={editLoading}
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={String(i).padStart(2, '0')}>
+                        {String(i).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <span className="text-2xl font-bold text-base-content/50 mt-6">:</span>
+
+                {/* นาที */}
+                <div className="flex flex-col items-center">
+                  <label className="text-xs text-base-content/70 mb-1">นาที</label>
+                  <select
+                    value={editTimeClockOutModal.newTimeClockOut ? editTimeClockOutModal.newTimeClockOut.split(':')[1] : '00'}
+                    onChange={(e) => {
+                      const currentTime = editTimeClockOutModal.newTimeClockOut || '00:00:00';
+                      const [hours, , seconds] = currentTime.split(':');
+                      const newTime = `${hours || '00'}:${e.target.value}:${seconds || '00'}`;
+                      setEditTimeClockOutModal(prev => ({
+                        ...prev,
+                        newTimeClockOut: newTime
+                      }));
+                    }}
+                    className="select select-bordered select-sm w-20"
+                    disabled={editLoading}
+                  >
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <option key={i} value={String(i).padStart(2, '0')}>
+                        {String(i).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <span className="text-2xl font-bold text-base-content/50 mt-6">:</span>
+
+                {/* วินาที */}
+                <div className="flex flex-col items-center">
+                  <label className="text-xs text-base-content/70 mb-1">วินาที</label>
+                  <select
+                    value={editTimeClockOutModal.newTimeClockOut ? editTimeClockOutModal.newTimeClockOut.split(':')[2] || '00' : '00'}
+                    onChange={(e) => {
+                      const currentTime = editTimeClockOutModal.newTimeClockOut || '00:00:00';
+                      const [hours, minutes] = currentTime.split(':');
+                      const newTime = `${hours || '00'}:${minutes || '00'}:${e.target.value}`;
+                      setEditTimeClockOutModal(prev => ({
+                        ...prev,
+                        newTimeClockOut: newTime
+                      }));
+                    }}
+                    className="select select-bordered select-sm w-20"
+                    disabled={editLoading}
+                  >
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <option key={i} value={String(i).padStart(2, '0')}>
+                        {String(i).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* ✅ แสดงเวลาที่เลือก */}
+              <div className="mt-3 p-2 bg-base-200 rounded-lg text-center">
+                <div className="text-sm text-base-content/70">เวลาที่เลือก:</div>
+                <div className="text-lg font-bold text-primary font-mono">
+                  {editTimeClockOutModal.newTimeClockOut || '00:00:00'}
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ ปุ่มการกระทำ */}
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={closeEditTimeClockOutModal}
+                disabled={editLoading}
+              >
+                ยกเลิก
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={saveClockOutEditTime}
+                disabled={editLoading || !editTimeClockOutModal.newTimeClockOut}
+              >
+                {editLoading ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    กำลังบันทึก...
+                  </>
+                ) : (
+                  <>
+                    💾 บันทึกการแก้ไข
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1027,7 +1603,7 @@ function ManagementWorktime() {
               </div>
             </div>
 
-            
+
 
             {/* ✅ ปุ่มการกระทำ */}
             <div className="modal-action">
@@ -1072,7 +1648,7 @@ function ManagementWorktime() {
                     {/* ✅ แสดงรายการที่จ่ายเงินแล้ว */}
                     {(() => {
                       // กรองข้อมูลที่มีการจ่ายเงินแล้ว
-                      const filteredPaidWorktimes = paidWorktimes.filter(item => 
+                      const filteredPaidWorktimes = paidWorktimes.filter(item =>
                         item.employeeID === paymentModal.employee?.employeeID
                       );
 
@@ -1110,9 +1686,8 @@ function ManagementWorktime() {
                               )}
                             </div>
                             <div className="text-right">
-                              <div className={`font-bold text-sm ${
-                                item.IsPurchase ? 'text-success' : 'text-warning'
-                              }`}>
+                              <div className={`font-bold text-sm ${item.IsPurchase ? 'text-success' : 'text-warning'
+                                }`}>
                                 {formatCurrency(item.wageCost)}
                               </div>
                               <div className="text-xs text-base-content/60">
@@ -1126,11 +1701,11 @@ function ManagementWorktime() {
 
                     {/* ✅ สรุปรวมที่จ่ายแล้ว */}
                     {(() => {
-                      const paidWorktimes = data.filter(item => 
+                      const paidWorktimes = data.filter(item =>
                         item.employeeID === paymentModal.employee?.employeeID &&
                         item.isPaid === true
                       );
-                      
+
                       if (paidWorktimes.length === 0) return null;
 
                       const totalPaidAmount = paidWorktimes.reduce((sum, item) => sum + (item.wageCost || 0), 0);
