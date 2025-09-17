@@ -287,13 +287,13 @@ const TimeClock = () => {
                 setLocationWarning('');
             }
             setClockOutTime(currentTime);
-            saveTimesClockOut(clockInTime, currentTime, location);
+            saveTimesClockOut(clockInTime, currentTime, location, locationCheck);
 
         } catch (error) {
             console.error('Error getting location:', error);
             // ถ้าไม่ได้ location ก็บันทึกเวลาไปก่อน
             setClockOutTime(currentTime);
-            saveTimesClockOut(clockInTime, currentTime, null);
+            saveTimesClockOut(clockInTime, currentTime, null, null);
         }
     };
     // Save times with location
@@ -327,14 +327,18 @@ const TimeClock = () => {
             });
     };
     // Save times with location
-    const saveTimesClockOut = (inTime, outTime, location = null) => {
+    const saveTimesClockOut = (inTime, outTime, location = null, locationCheck = null) => {
         const today = getTodayDate();
         const requestData = {
             EmployeeID: EmployeeID,
             TimeClockIn: inTime,
             TimeClockOut: outTime,
             WorkDate: today,
-            ClockOutLocation: location ? JSON.stringify(location) : null
+            ClockOutLocation: location ? JSON.stringify({
+                ...location,
+                distanceFromStore: locationCheck?.distance || null,
+                isWithinStoreRadius: locationCheck?.isWithinRadius || false
+            }) : null
         };
 
         api.post('/worktime/ClockOut', requestData)
