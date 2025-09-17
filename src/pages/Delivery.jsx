@@ -12,25 +12,17 @@ import { useNavigate } from "react-router-dom"; // ✅ เพิ่ม useNaviga
 //         .padStart(2, "0")}/${date.getFullYear()}`;
 // }
 // เพิ่มฟังก์ชันนี้ไว้ใน component ด้วย
-function formatDateWithDay(dateString) {
-    const date = new Date(dateString);
-    const days = [
-        "วันอาทิตย์",
-        "วันจันทร์",
-        "วันอังคาร",
-        "วันพุธ",
-        "วันพฤหัสบดี",
-        "วันศุกร์",
-        "วันเสาร์",
-    ];
+function formatDateWithDay(dateStr) {
+    const date = new Date(dateStr);
+    if (isNaN(date)) return dateStr;
+
+    const day = date.getDate();
+    const month = date.getMonth();
+    const year = date.getFullYear();
     const dayName = days[date.getDay()];
-    const formattedDate = date.toLocaleDateString("th-TH", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    });
-    return `${dayName} ที่ ${formattedDate}`;
+    return `${dayName} ${day} ${months[month]} ${year}`;
 }
+
 
 function calcGPPercent(totalSales, netSales) {
     if (!totalSales || !netSales) return 0;
@@ -40,6 +32,15 @@ function calcGPPercent(totalSales, netSales) {
 function calcGPAmount(totalSales, netSales) {
     return totalSales - netSales;
 }
+const days = [
+    "วันอาทิตย์",
+    "วันจันทร์",
+    "วันอังคาร",
+    "วันพุธ",
+    "วันพฤหัสบดี",
+    "วันศุกร์",
+    "วันเสาร์",
+];
 
 const months = [
     "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",

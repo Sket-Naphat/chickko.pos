@@ -72,6 +72,8 @@ function StaffWorktime() {
           timeClockIn: item.timeClockIn,
           timeClockOut: item.timeClockOut,
           totalWorktime: item.totalWorktime,
+          clockInLocation: item.clockInLocation,
+          clockOutLocation: item.clockOutLocation
         }));
         setHistory(mapped.sort((a, b) => new Date(b.workDate) - new Date(a.workDate)));
       })
@@ -90,6 +92,14 @@ function StaffWorktime() {
     const day = date.getDate();
     const monthName = months[date.getMonth()];
     return `${dayName} ${day} ${monthName}`;
+  }
+  const getGoogleMapsUrl = (clockInLocation) => {
+    if (!clockInLocation) return null;
+
+    var location = JSON.parse(clockInLocation);
+    var latitude = location.latitude;
+    var longitude = location.longitude;
+    return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
   }
 
   return (
@@ -171,14 +181,59 @@ function StaffWorktime() {
                     {/* ✅ เวลาเข้า-ออกแบบ inline */}
                     <div className="flex justify-between text-sm">
                       <div className="flex items-center gap-1">
-                        <span className="text-success">⬇️</span>
+                        <span className="text-success">เข้างาน ⬇️</span>
                         <span>{item.timeClockIn || '-'}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-error">⬆️</span>
+                        <span className="text-error">⬆️ ออกงาน</span>
                         <span>{item.timeClockOut || '-'}</span>
                       </div>
                     </div>
+                    {/* ✅ ตำแหน่งเข้า-ออกงาน */}
+                      <div className="flex justify-between text-sm">
+                        <div>
+                          {item.clockInLocation ? (
+                            <button
+                              className={`btn btn-xs btn-outline mt-2 ${(() => {
+                                  try {
+                                    const clockInData = JSON.parse(item.clockInLocation);
+                                    return clockInData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
+                                  } catch {
+                                    return 'btn-primary';
+                                  }
+                                })()
+                                }`}
+                              onClick={() => window.open(getGoogleMapsUrl(item.clockInLocation), '_blank')}
+                              title="ดูตำแหน่งในแผนที่"
+                            >
+                              📍 ดูตำแหน่ง
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-500 mt-2">-</span>
+                          )}
+                        </div>
+                        <div>
+                          {item.clockOutLocation ? (
+                            <button
+                              className={`btn btn-xs btn-outline mt-2 ${(() => {
+                                  try {
+                                    const clockOutData = JSON.parse(item.clockOutLocation);
+                                    return clockOutData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
+                                  } catch {
+                                    return 'btn-primary';
+                                  }
+                                })()
+                                }`}
+                              onClick={() => window.open(getGoogleMapsUrl(item.clockOutLocation), '_blank')}
+                              title="ดูตำแหน่งในแผนที่"
+                            >
+                              📍 ดูตำแหน่ง
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-500 mt-2">-</span>
+                          )}
+                        </div>
+                      </div>
                   </div>
                 ))
               )}
