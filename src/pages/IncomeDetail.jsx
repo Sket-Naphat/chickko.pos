@@ -27,7 +27,7 @@ const months = [
     "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
 ];
 
-export default function DeliveryDetail() {
+export default function IncomeDetail() {
     const location = useLocation();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -36,19 +36,19 @@ export default function DeliveryDetail() {
     const [ordersLoading, setOrdersLoading] = useState(false); // ✅ loading สำหรับ orders
 
     // รับข้อมูลจากหน้าก่อน
-    const { deliveryData } = location.state || {};
+    const { incomeData } = location.state || {};
 
     // ถ้าไม่มีข้อมูล ให้กลับหน้าแรก
     useEffect(() => {
-        if (!deliveryData) {
-            navigate('/income', { state: { activeTab: 'delivery' } });
+        if (!incomeData) {
+            navigate('/income', { state: { activeTab: 'income' } });
             return;
         }
-    }, [deliveryData, navigate]);
+    }, [incomeData, navigate]);
 
     // ดึงข้อมูลรายละเอียดเพิ่มเติม (ถ้ามี API เฉพาะ)
     useEffect(() => {
-        if (!deliveryData) return;
+        if (!incomeData) return;
 
         const fetchAllData = async () => {
             setLoading(true);
@@ -56,11 +56,11 @@ export default function DeliveryDetail() {
 
             try {
                 // ✅ ดึงข้อมูล detail
-                setDetailData(deliveryData);
+                setDetailData(incomeData);
 
                 // ✅ ดึงข้อมูล orders
-                const ordersResponse = await api.post('/orders/GetDeliveryOrdersByDate', {
-                    SaleDate: deliveryData.saleDate
+                const ordersResponse = await api.post('/orders/GetIncomeOrdersByDate', {
+                    SaleDate: incomeData.saleDate
                 }, {
                     timeout: 30000, // ✅ รอ 30 วินาที
                     retry: 3, // ✅ ลองใหม่ 3 ครั้ง
@@ -75,11 +75,12 @@ export default function DeliveryDetail() {
                         orderId: order.orderId,
                         orderTime: order.orderTime,
                         customerName: order.customerName,
-                        totalPrice: order.totalPrice , // ✅ ใช้ totalPrice จาก API
+                        totalPrice: order.totalPrice, // ✅ ใช้ totalPrice จาก API
+                        orderTypeId : order.orderTypeId,
                         items: order.orderDetails?.map(detail => ({
                             name: detail.menuName,
                             qty: detail.quantity,
-                            price: detail.price   / detail.quantity, // ✅ คำนวณราคาต่อชิ้น
+                            price: detail.price / detail.quantity, // ✅ คำนวณราคาต่อชิ้น
                             toppings: detail.toppings || []
                         })) || []
                     }));
@@ -132,7 +133,7 @@ export default function DeliveryDetail() {
         };
 
         fetchAllData();
-    }, [deliveryData]);
+    }, [incomeData]);
 
     // ✅ ฟังก์ชันแปลงเวลา
     const formatTime = (timeStr) => {
@@ -144,7 +145,11 @@ export default function DeliveryDetail() {
         });
     };
 
-    if (!deliveryData) {
+    // นับจำนวน orderTypeId
+    const dineInCount = ordersData.filter(order => order.orderTypeId === 1).length;
+    const takeawayCount = ordersData.filter(order => order.orderTypeId === 2).length;
+
+    if (!incomeData) {
         return null;
     }
 
@@ -155,15 +160,15 @@ export default function DeliveryDetail() {
                 <div className="flex items-center gap-4 mb-6">
                     <button
                         className="btn btn-sm btn-circle btn-outline"
-                        onClick={() => navigate('/income', { state: { activeTab: 'delivery' } })}
+                        onClick={() => navigate('/income', { state: { activeTab: 'income' } })}
                         title="กลับหน้าแรก"
                     >
                         ←
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-primary">🛵 รายละเอียดยอดขาย Grab</h1>
+                        <h1 className="text-2xl font-bold text-primary">🏪 รายละเอียดยอดขายหน้าร้าน</h1>
                         <p className="text-base-content/70">
-                             {formatDate(deliveryData.saleDate)}
+                             {formatDate(incomeData.saleDate)}
                         </p>
                     </div>
                 </div>
@@ -182,42 +187,34 @@ export default function DeliveryDetail() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
-                                            <span className="font-semibold">ยอดหลังหัก GP</span>
-                                            <span className="text-success font-bold text-xl">
-                                                ฿{detailData?.netSales?.toLocaleString() || 0}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
                                             <span className="font-semibold">ยอดขายรวม</span>
+                                            <span className="text-success font-bold text-xl">
+                                                ฿{detailData?.totalAmount?.toLocaleString() || 0}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
+                                            <span className="font-semibold">จำนวนบิล</span>
                                             <span className="text-info font-bold text-xl">
-                                                ฿{detailData?.totalSales?.toLocaleString() || 0}
-                                            </span>                                            
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
-                                            <span className="font-semibold">% GP ที่หักไป</span>
-                                            <span className="text-error font-bold text-xl">
-                                                {detailData?.gpPercent?.toFixed(2) || 0}%
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
-                                            <span className="font-semibold">จำนวน GP ที่หักไป</span>
-                                            <span className="text-error font-bold text-xl">
-                                                ฿{detailData?.gpAmount?.toLocaleString() || 0}
+                                                {detailData?.orders?.toLocaleString() || 0}
                                             </span>
                                         </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold">วิเคราะห์ GP</h3>
-                                        <div className="text-xs">
-                                            {detailData?.gpPercent > 30
-                                                ? "🔴 GP สูงกว่าปกติ อาจต้องตรวจสอบราคา"
-                                                : detailData?.gpPercent > 20
-                                                    ? "🟡 GP อยู่ในเกณฑ์ปกติ"
-                                                    : "🟢 GP ต่ำ ได้กำไรดี"}
+                                    <div className="space-y-4">                                        
+                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
+                                            <span className="font-semibold">ยอดเฉลี่ยต่อบิล</span>
+                                            <span className="text-error font-bold text-xl">
+                                                ฿{detailData?.avgPerOrder ?.toLocaleString() || 0}
+                                            </span>
                                         </div>
+                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
+                                            <span className="font-semibold">จำนวน ทานที่ร้าน / กลับบ้าน</span>
+                                            <span className="text-warning font-bold text-xl">
+                                                {dineInCount?.toLocaleString() || 0} / {takeawayCount?.toLocaleString() || 0}
+                                            </span>
+                                        </div>
+
                                     </div>
+                                    
                                 </div>
                             </div>
                         </div>
@@ -249,7 +246,7 @@ export default function DeliveryDetail() {
                                             <div className="card-body p-4">
                                                 <div className="flex justify-between items-center">
                                                     <div>
-                                                        <div className="font-bold text-lg">📊 สรุปรวมเป็นราคาหน้าร้าน</div>
+                                                        <div className="font-bold text-lg">📊 สรุปรวม</div>
                                                         <div className="text-sm text-base-content/70">
                                                             {ordersData.length} ออเดอร์ • {ordersData.reduce((sum, order) => sum + (order.items?.length || 0), 0)} รายการ
                                                         </div>
@@ -278,7 +275,7 @@ export default function DeliveryDetail() {
                                                                 <div className="badge badge-primary badge-sm">#{arr.length - index}</div>
                                                                 <div>
                                                                     <div className="font-semibold text-base">
-                                                                        {order.customerName || `ออเดอร์ ${order.orderId}`}
+                                                                        {order.customerName || `ออเดอร์ ${order.orderId}`}  {order.orderTypeId === 1 ?  <span className="badge badge-info badge-xs">🏪 หน้าร้าน</span> : order.orderTypeId === 2 ? <span className="badge badge-accent badge-xs">🛵 กลับบ้าน</span> : ''}
                                                                     </div>
                                                                     <div className="text-sm text-base-content/70">
                                                                         🕐 {formatTime(order.orderTime)}
@@ -364,9 +361,7 @@ export default function DeliveryDetail() {
                                                                     <div>
                                                                         <span className="text-base-content/70">แพลตฟอร์ม:</span>
                                                                         <span className="ml-2">
-                                                                            <span className="badge badge-info badge-xs">
-                                                                                🛵 Grab
-                                                                            </span>
+                                                                            {order.orderTypeId === 1 ?  <span className="badge badge-info badge-xs">🏪 หน้าร้าน</span> : order.orderTypeId === 2 ? <span className="badge badge-accent badge-xs">🛵 กลับบ้าน</span> : ''}
                                                                         </span>
                                                                     </div>
                                                                 </div>
@@ -386,7 +381,7 @@ export default function DeliveryDetail() {
                         {/* <div className="flex gap-3 justify-center">
                             <button
                                 className="btn btn-outline"
-                                onClick={() => navigate('/delivery')}
+                                onClick={() => navigate('/income')}
                             >
                                 ← กลับหน้าแรก
                             </button>

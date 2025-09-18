@@ -68,6 +68,7 @@ export default function Delivery() {
     const [selectedYear, setSelectedYear] = useState(now.getFullYear());
     const [grabData, setGrabData] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [showFAB, setShowFAB] = useState(false);
 
     const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
 
@@ -117,11 +118,24 @@ export default function Delivery() {
         fetchData();
     }, [selectedMonth, selectedYear]);
 
+    // ✅ จัดการ FAB scroll to top
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowFAB(window.scrollY > 300);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     // สรุปยอดขายรวมในเดือนที่เลือก - ใช้ field names ตามจริงจากข้อมูล
     const totalMonthSales = grabData.reduce((sum, item) => sum + (item.totalSales || 0), 0);
     const totalMonthNetSales = grabData.reduce((sum, item) => sum + (item.netSales || 0), 0);
     const totalMonthGP = grabData.reduce((sum, item) => sum + (item.gpAmount || 0), 0);
-    const totalDays = grabData.length;
 
     // คำนวณ % GP รวมของเดือน
     const totalMonthGPPercent = totalMonthSales > 0
@@ -176,134 +190,174 @@ export default function Delivery() {
     const displayYearOptions = yearOptions.length > 0 ? yearOptions : [now.getFullYear()];
 
     return (
-        <div className="min-h-screen bg-base-200 flex flex-col items-center px-2 py-4 sm:px-4 sm:py-6">
-            <div className="w-full max-w-4xl card bg-base-100 shadow-xl p-3 sm:p-6">
-                <h1 className="text-2xl font-bold text-primary mb-6 text-center">📊 สรุปยอดขาย Grab รายเดือน</h1>
-
-                {/* Filter Section */}
-                <div className="mb-6 flex flex-col sm:flex-row gap-3 justify-center items-center">
-                    <label className="font-semibold text-sm">เลือกเดือน:</label>
-                    <select
-                        className="select select-bordered select-md w-full sm:w-auto"
-                        value={selectedMonth}
-                        onChange={e => setSelectedMonth(Number(e.target.value))}
-                    >
-                        {months.map((m, idx) => (
-                            <option key={m} value={idx}>{m}</option>
-                        ))}
-                    </select>
-                    <select
-                        className="select select-bordered select-md w-full sm:w-auto"
-                        value={selectedYear}
-                        onChange={e => setSelectedYear(Number(e.target.value))}
-                    >
-                        {displayYearOptions.map(y => (
-                            <option key={y} value={y}>{y}</option>
-                        ))}
-                    </select>
-                    <button
-                        className="btn btn-success btn-sm"
-                        onClick={() => setShowModal(true)}
-                    >
-                        + เพิ่มยอดขายแกรป
-                    </button>
+        <div className="p-4 space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-primary">🛵 รายได้เดลิเวอรี่</h1>
+                    <p className="text-sm text-base-content/70 mt-1">ติดตามยอดขายและค่าคอมมิชชันจาก Grab</p>
                 </div>
+                <button
+                    className="btn btn-success shadow-lg"
+                    onClick={() => setShowModal(true)}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    เพิ่มยอดขาย Grab
+                </button>
+            </div>
 
-                {/* Stats Section */}
-                <div className="mb-6">
-                    <div className="stats stats-vertical lg:stats-horizontal shadow bg-base-100 w-full">
-                        <div className="stat">
-                            <div className="stat-figure text-success">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.723 3.2a.75.75 0 1 0-1.446-.4L7.763 8.25H4a.75.75 0 1 0 0 1.5h3.347l-1.528 5.5H2a.75.75 0 0 0 0 1.5h3.402L4.277 20.8a.75.75 0 0 0 1.446.4l1.236-4.45h7.443l-1.125 4.05a.75.75 0 0 0 1.446.4l1.236-4.45H20a.75.75 0 1 0 0-1.5h-3.624l1.527-5.5H22a.75.75 0 0 0 0-1.5h-3.68l1.403-5.05a.75.75 0 1 0-1.446-.4l-1.514 5.45H9.32l1.403-5.05Zm4.096 12.05l1.528-5.5H8.903l-1.527 5.5h7.443Z" ></path></svg>
-                            </div>
-                            <div className="stat-title">ยอดขายรวม</div>
-                            <div className="stat-value text-success">฿{totalMonthSales.toLocaleString()}</div>
-                            <div className="stat-desc">เดือน {months[selectedMonth]} {selectedYear}</div>
-                        </div>
-                        <div className="stat bg-success/20">
-                            <div className="stat-figure text-info">
-                                {/* <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path></svg> */}
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                            </div>
-                            <div className="stat-title">ยอดหลังหัก GP</div>
-                            <div className="stat-value text-info">฿{totalMonthNetSales.toLocaleString()}</div>
-                            <div className="stat-desc">ยอดสุทธิที่ได้รับ</div>
-                        </div>
-                        <div className="stat">
-                            <div className="stat-figure text-error">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>                            </div>
-                            <div className="stat-title">GP ที่หักไป</div>
-                            <div className="stat-value text-error">{totalMonthGPPercent} % (฿{totalMonthGP.toLocaleString()})</div>
-                            <div className="stat-desc"> ค่าคอมมิชชัน Grab</div>
-                        </div>
-                        <div className="stat">
-                            <div className="stat-figure text-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                            </div>
-                            <div className="stat-title">จำนวนวันที่มีขาย</div>
-                            <div className="stat-value text-primary">{totalDays}</div>
-                            <div className="stat-desc">วัน</div>
-                        </div>
+            {/* Filter Section */}
+            <div className="bg-base-100 rounded-xl p-3 border border-base-300 shadow-sm">
+                <h3 className="text-base font-semibold text-base-content mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5" />
+                    </svg>
+                    เลือกช่วงเวลาที่ต้องการดู
+                </h3>
+                <div className="flex flex-row gap-2 md:grid md:grid-cols-2 md:gap-3">
+                    <div className="form-control flex-1">
+                        <label className="label mb-1">
+                            <span className="label-text font-medium text-sm">เดือน</span>
+                        </label>
+                        <select
+                            className="select select-bordered w-full text-sm min-h-8"
+                            value={selectedMonth}
+                            onChange={e => setSelectedMonth(Number(e.target.value))}
+                        >
+                            {months.map((m, idx) => (
+                                <option key={m} value={idx}>{m}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-control flex-1">
+                        <label className="label mb-1">
+                            <span className="label-text font-medium text-sm">ปี</span>
+                        </label>
+                        <select
+                            className="select select-bordered w-full text-sm min-h-8"
+                            value={selectedYear}
+                            onChange={e => setSelectedYear(Number(e.target.value))}
+                        >
+                            {displayYearOptions.map(y => (
+                                <option key={y} value={y}>{y}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
+                <div className="mt-2 text-center">
+                    <div className="badge badge-outline">
+                        แสดงข้อมูล: {months[selectedMonth]} {selectedYear}
+                    </div>
+                </div>
+            </div>
 
-                {/* Data Display Section */}
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                        <span className="loading loading-spinner loading-lg text-primary"></span>
-                        <span className="mt-3 text-sm text-base-content/70">⏳ กำลังโหลดข้อมูล…</span>
+            {/* Stats Section */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+
+                <div className="bg-success/20 border border-base-300 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="text-success">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-6 h-6 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        </div>
                     </div>
-                ) : grabData.length === 0 ? (
-                    <div className="text-center text-base-content/60 py-12">
-                        <div className="text-6xl mb-4">📅</div>
-                        <p className="text-lg">ยังไม่มีข้อมูลยอดขาย Grab ในเดือนนี้</p>
-                        <p className="text-sm mt-2">กดปุ่ม "เพิ่มยอดขายแกรป" เพื่อเพิ่มข้อมูล</p>
+                    <div className="text-xs text-base-content/70 mb-1">ยอดหลังหัก GP</div>
+                    <div className="text-lg font-bold text-success">฿{totalMonthNetSales.toLocaleString()}</div>
+                    <div className="text-xs text-base-content/60">สุทธิ</div>
+                </div>
+                <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="text-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-6 h-6 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.723 3.2a.75.75 0 1 0-1.446-.4L7.763 8.25H4a.75.75 0 1 0 0 1.5h3.347l-1.528 5.5H2a.75.75 0 0 0 0 1.5h3.402L4.277 20.8a.75.75 0 0 0 1.446.4l1.236-4.45h7.443l-1.125 4.05a.75.75 0 0 0 1.446.4l1.236-4.45H20a.75.75 0 1 0 0-1.5h-3.624l1.527-5.5H22a.75.75 0 0 0 0-1.5h-3.68l1.403-5.05a.75.75 0 1 0-1.446-.4l-1.514 5.45H9.32l1.403-5.05Zm4.096 12.05l1.528-5.5H8.903l-1.527 5.5h7.443Z" ></path></svg>
+                        </div>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {grabData
-                            .sort((a, b) => new Date(b.saleDate) - new Date(a.saleDate))
-                            .map((item, index, arr) => (
-                                <div
-                                    key={item.deliveryId || index}
-                                    className="card bg-gradient-to-br from-base-100 to-base-200 border border-base-300 rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer hover:border-primary/50 group"
-                                    onClick={() => handleOpenDetail(item)} // ✅ เพิ่ม onClick
-                                    title="คลิกเพื่อดูรายละเอียด" // ✅ เพิ่ม tooltip
-                                >
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="font-bold text-lg">#{arr.length - index}</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="badge badge-primary text-sm">{formatDateWithDay(item.saleDate)}</span>
-                                        </div>
+                    <div className="text-xs text-base-content/70 mb-1">ยอดขายรวม</div>
+                    <div className="text-lg font-bold text-info">฿{totalMonthSales.toLocaleString()}</div>
+                    <div className="text-xs text-base-content/60">{months[selectedMonth]} {selectedYear}</div>
+                </div>
+                <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="text-error">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-6 h-6 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div className="text-xs text-base-content/70 mb-1">GP ที่หักไป</div>
+                    <div className="text-lg font-bold text-error">{totalMonthGPPercent} % (฿{totalMonthGP.toLocaleString()})</div>
+                    <div className="text-xs text-base-content/60">GP</div>
+                </div>
+                <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-6 h-6 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        </div>
+                    </div>
+                    <div className="text-xs text-base-content/70 mb-1">จำนวนบิล</div>
+                    <div className="text-lg font-bold text-primary">{grabData.reduce((sum, item) => sum + (item.totalOrders || 0), 0).toLocaleString()}</div>
+                    <div className="text-xs text-base-content/60">ออเดอร์</div>
+                </div>
+            </div>
+
+            {/* Data Display Section */}
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                    <span className="loading loading-spinner loading-lg text-primary"></span>
+                    <span className="mt-3 text-sm text-base-content/70">⏳ กำลังโหลดข้อมูล…</span>
+                </div>
+            ) : grabData.length === 0 ? (
+                <div className="text-center text-base-content/60 py-12">
+                    <div className="text-6xl mb-4">📅</div>
+                    <p className="text-lg">ยังไม่มีข้อมูลยอดขาย Grab ในเดือนนี้</p>
+                    <p className="text-sm mt-2">กดปุ่ม "เพิ่มยอดขาย Grab" เพื่อเพิ่มข้อมูล</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {grabData
+                        .sort((a, b) => new Date(b.saleDate) - new Date(a.saleDate))
+                        .map((item, index, arr) => (
+                            <div
+                                key={item.deliveryId || index}
+                                className="card bg-gradient-to-br from-base-100 to-base-200 border border-base-300 rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer hover:border-primary/50 group"
+                                onClick={() => handleOpenDetail(item)}
+                                title="คลิกเพื่อดูรายละเอียด"
+                            >
+                                <div className="flex justify-between items-center mb-3">
+                                    <span className="font-bold text-lg">#{arr.length - index}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="badge badge-primary text-sm">{formatDateWithDay(item.saleDate)}</span>
                                     </div>
-                                    <div className="flex justify-between items-center mb-2">
+                                </div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm text-base-content/70">ยอดหลังหัก GP</span>
+                                    <span className="font-bold text-success text-lg">฿{item.netSales?.toLocaleString() || 0}</span>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
                                         <span className="text-sm text-base-content/70">ยอดขายรวม</span>
-                                        <span className="font-bold text-success text-lg">฿{item.totalSales?.toLocaleString() || 0}</span>
+                                        <span className="text-info font-semibold">฿{item.totalSales?.toLocaleString() || 0}</span>
                                     </div>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-base-content/70">ยอดหลังหัก GP</span>
-                                            <span className="text-info font-semibold">฿{item.netSales?.toLocaleString() || 0}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-base-content/70">GP ที่หักไป</span>
-                                            <span className="text-error font-semibold">
-                                                {item.gpPercent?.toFixed(2) || 0}% (฿{item.gpAmount?.toLocaleString() || 0})
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* ✅ เพิ่ม indicator ว่าคลิกได้ */}
-                                    <div className="mt-3 pt-2 border-t border-base-300/50 text-center">
-                                        <span className="text-xs text-base-content/50 group-hover:text-primary transition-colors">
-                                            👆 คลิกเพื่อดูรายละเอียด
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-base-content/70">GP ที่หักไป</span>
+                                        <span className="text-error font-semibold">
+                                            {item.gpPercent?.toFixed(2) || 0}% (฿{item.gpAmount?.toLocaleString() || 0})
                                         </span>
                                     </div>
                                 </div>
-                            ))}
-                    </div>
-                )}
-            </div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm text-base-content/70">จำนวนบิล</span>
+                                    <span className="badge badge-info">{item.totalOrders?.toLocaleString() || 0}</span>
+                                </div>
+
+
+                                <div className="mt-3 pt-2 border-t border-base-300/50 text-center">
+                                    <span className="text-xs text-base-content/50 group-hover:text-primary transition-colors">
+                                        👆 คลิกเพื่อดูรายละเอียด
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                </div>
+            )}
 
             {/* Modal เพิ่มยอดขาย Grab */}
             {showModal && (
@@ -391,6 +445,32 @@ export default function Delivery() {
                             </div>
                         </form>
                     </div>
+                </div>
+            )}
+
+            {/* FAB - Floating Action Button */}
+            {showFAB && (
+                <div className="fixed bottom-6 right-6 z-50">
+                    <button
+                        onClick={scrollToTop}
+                        className="btn btn-circle btn-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                        title="กลับไปด้านบนสุด"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-6 h-6"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M4.5 15.75l7.5-7.5 7.5 7.5"
+                            />
+                        </svg>
+                    </button>
                 </div>
             )}
         </div>
