@@ -1497,7 +1497,6 @@ function ManagementWorktime() {
                       >
                         <span className="text-2xl">👤</span>
                         <span>{item.employeeName || '-'}</span>
-                        <span className="text-sm opacity-60">👆</span>
                       </div>
 
                       {/* ✅ ปรับ layout ข้อมูล */}

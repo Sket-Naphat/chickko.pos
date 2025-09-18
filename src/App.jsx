@@ -23,6 +23,8 @@ import Register from "./pages/Register";
 import TimeClock from "./pages/TimeClock";
 import Delivery from "./pages/Delivery";
 import DeliveryDetail from "./pages/DeliveryDetail";
+import Income from "./pages/Income";
+import IncomeDetail from "./pages/IncomeDetail";
 
 function App() {
   const location = useLocation();
@@ -66,7 +68,9 @@ function App() {
                 <Route path="/stockin/:orderId" element={<StockIn />} />
                 <Route path="/stockitem" element={<StockItem />} />
                 <Route path="/delivery" element={<Delivery />} />
-                <Route path="/delivery-detail" element={<DeliveryDetail />} /> {/* ✅ เพิ่ม route นี้ */}
+                <Route path="/delivery-detail" element={<DeliveryDetail />} />
+                <Route path="/income" element={<Income />} /> 
+                <Route path="/income-detail" element={<IncomeDetail />} />
               </Route>
 
               {/* ไป path แปลก ๆ ขณะอยู่ layout นี้ → ส่งไป /login */}

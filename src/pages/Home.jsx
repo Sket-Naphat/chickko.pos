@@ -58,8 +58,9 @@ function Home() {
   switch (permission) {
     case 1: // owner
       menuItems.push(
-        { title: "📊 Dashboard", path: "/dashboard" },
-        { title: "🚛 Delivery", path: "/delivery" },
+        { title: "📊 สรุปผล", path: "/dashboard" },
+        { title: "💰 รายได้", path: "/income" },
+        // { title: "🚛 Delivery", path: "/delivery" },
         { title: "💰 ต้นทุน", path: "/cost" },
         { title: "🕒 ประวัติการเข้าออกงาน", path: "/worktime" }, // ✅ เพิ่ม disabled
         { title: "📦 นับสต๊อก", path: "/stock" },
