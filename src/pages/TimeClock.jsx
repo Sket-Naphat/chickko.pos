@@ -293,15 +293,19 @@ const TimeClock = () => {
                 setLocationWarning('');
             }
             
-            setClockInTime(currentTime);
-            saveTimesClockIn(currentTime, location, locationCheck);
-
+            const success = await saveTimesClockIn(currentTime, location, locationCheck);
+            if (success) {
+                setClockInTime(currentTime);
+            }
 
         } catch (error) {
             console.error('Error getting location:', error);
-            // ถ้าไม่ได้ location ก็บันทึกเวลาไปก่อน
-            setClockInTime(currentTime);
-            saveTimesClockIn(currentTime, null, null);
+            setLocationWarning('⚠️ ไม่สามารถดึงข้อมูลตำแหน่งได้ กรุณาลองใหม่อีกครั้ง');
+            
+            // ซ่อนข้อความเตือนหลัง 5 วินาที
+            setTimeout(() => {
+                setLocationWarning('');
+            }, 5000);
         }
     };
 
@@ -322,18 +326,31 @@ const TimeClock = () => {
             } else {
                 setLocationWarning('');
             }
-            setClockOutTime(currentTime);
-            saveTimesClockOut(clockInTime, currentTime, location, locationCheck);
+            
+            // เรียก saveTimesClockOut และรอผลลัพธ์
+            const success = await saveTimesClockOut(clockInTime, currentTime, location, locationCheck);
+            if (success) {
+                setClockOutTime(currentTime);
+            }
 
         } catch (error) {
             console.error('Error getting location:', error);
-            // ถ้าไม่ได้ location ก็บันทึกเวลาไปก่อน
-            setClockOutTime(currentTime);
-            saveTimesClockOut(clockInTime, currentTime, null, null);
+            setLocationWarning('⚠️ ไม่สามารถระบุตำแหน่งได้ กรุณาลองใหม่');
+            
+            // ซ่อนข้อความเตือนหลัง 5 วินาที
+            setTimeout(() => {
+                setLocationWarning('');
+            }, 5000);
+            
+            // พยายามบันทึกโดยไม่มี location
+            const success = await saveTimesClockOut(clockInTime, currentTime, null, null);
+            if (success) {
+                setClockOutTime(currentTime);
+            }
         }
     };
     // Save times with location
-    const saveTimesClockIn = (inTime, location = null, locationCheck = null) => {
+    const saveTimesClockIn = async (inTime, location = null, locationCheck = null) => {
         const today = getTodayDate();
         const requestData = {
             employeeID: EmployeeID,
@@ -346,24 +363,32 @@ const TimeClock = () => {
             }) : null
         };
 
-        api.post('/worktime/ClockIn', requestData)
-            .then(response => {
-                console.log('Clock In successful:', response.data);
-                if (location && locationCheck) {
-                    console.log('Location data:', JSON.stringify(location, null, 2));
-                    console.log('Distance from store:', locationCheck.distance + 'm');
-                    console.log('Within store radius:', locationCheck.isWithinRadius);
-                    console.log('Google Maps URL:', getGoogleMapsUrl(location.latitude, location.longitude));
+        try {
+            const response = await api.post('/worktime/ClockIn', requestData);
+            console.log('Clock In successful:', response.data);
+            if (location && locationCheck) {
+                console.log('Location data:', JSON.stringify(location, null, 2));
+                console.log('Distance from store:', locationCheck.distance + 'm');
+                console.log('Within store radius:', locationCheck.isWithinRadius);
+                console.log('Google Maps URL:', getGoogleMapsUrl(location.latitude, location.longitude));
 
-                    setClockInLocations(getGoogleMapsUrl(location.latitude, location.longitude));
-                }
-            })
-            .catch(error => {
-                console.error('Error clocking in:', error);
-            });
+                setClockInLocations(getGoogleMapsUrl(location.latitude, location.longitude));
+            }
+            return true; // บันทึกสำเร็จ
+        } catch (error) {
+            console.error('Error clocking in:', error);
+            setLocationWarning('⚠️ ไม่สามารถบันทึกเวลาเข้างานได้ กรุณาลองใหม่อีกครั้ง');
+            
+            // ซ่อนข้อความเตือนหลัง 5 วินาที
+            setTimeout(() => {
+                setLocationWarning('');
+            }, 5000);
+            
+            return false; // บันทึกไม่สำเร็จ
+        }
     };
     // Save times with location
-    const saveTimesClockOut = (inTime, outTime, location = null, locationCheck = null) => {
+    const saveTimesClockOut = async (inTime, outTime, location = null, locationCheck = null) => {
         const today = getTodayDate();
         const requestData = {
             EmployeeID: EmployeeID,
@@ -377,18 +402,26 @@ const TimeClock = () => {
             }) : null
         };
 
-        api.post('/worktime/ClockOut', requestData)
-            .then(response => {
-                console.log('Clock Out successful:', response.data);
-                if (location) {
-                    console.log('Location data:', JSON.stringify(location, null, 2));
-                    console.log('Google Maps URL:', getGoogleMapsUrl(location.latitude, location.longitude));
-                    setClockOutLocations(getGoogleMapsUrl(location.latitude, location.longitude));
-                }
-            })
-            .catch(error => {
-                console.error('Error clocking out:', error);
-            });
+        try {
+            const response = await api.post('/worktime/ClockOut', requestData);
+            console.log('Clock Out successful:', response.data);
+            if (location) {
+                console.log('Location data:', JSON.stringify(location, null, 2));
+                console.log('Google Maps URL:', getGoogleMapsUrl(location.latitude, location.longitude));
+                setClockOutLocations(getGoogleMapsUrl(location.latitude, location.longitude));
+            }
+            return true; // บันทึกสำเร็จ
+        } catch (error) {
+            console.error('Error clocking out:', error);
+            setLocationWarning('⚠️ เกิดข้อผิดพลาดในการบันทึกเวลาออกงาน กรุณาลองใหม่');
+            
+            // ซ่อนข้อความเตือนหลัง 5 วินาที
+            setTimeout(() => {
+                setLocationWarning('');
+            }, 5000);
+            
+            return false; // บันทึกไม่สำเร็จ
+        }
     };
     if (loadingAuth) {
         return (
@@ -490,7 +523,7 @@ const TimeClock = () => {
                                 </>
                             ) : (
                                 <>
-                                    <span className="material-icons text-3xl mr-2"> login</span>
+                                    <span className="material-icons text-3xl mr-2"> Clock In</span>
                                     กดเข้างาน
                                 </>
                             )}
@@ -507,7 +540,7 @@ const TimeClock = () => {
                                 </>
                             ) : (
                                 <>
-                                    <span className="material-icons text-3xl mr-2">logout</span>
+                                    <span className="material-icons text-3xl mr-2">Clock Out</span>
                                     กดเลิกงาน
                                 </>
                             )}

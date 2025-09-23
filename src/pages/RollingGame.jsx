@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { publicApi } from "../lib/api"; // ✅ ใช้ publicApi แทน api
+import { api } from "../lib/api"; // ✅ ใช้ api แทน api
 
 export default function RollingGame() {
     const [searchParams] = useSearchParams();
@@ -29,8 +29,8 @@ export default function RollingGame() {
         const fetchRewards = async () => {
             try {
                 setLoading(true);
-                // ✅ ใช้ publicApi แทน api
-                const response = await publicApi.get("/event/getRollingRewardList");
+                // ✅ ใช้ api แทน api
+                const response = await api.get("/event/getRollingRewardList");
                 const rewards = response.data?.data || response.data || [];
                 setRewardList(rewards);
                 setError("");
@@ -84,8 +84,8 @@ export default function RollingGame() {
 
             // บันทึกผลลง API
             try {
-                // ✅ ใช้ publicApi แทน api
-                await publicApi.post("/game/saveRollingGameReward", {
+                // ✅ ใช้ api แทน api
+                await api.post("/game/saveRollingGameReward", {
                     CustomerName: customerName,
                     OrderId: orderId,
                     RewardId: selectedReward.id,
