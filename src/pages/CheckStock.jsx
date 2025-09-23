@@ -486,7 +486,7 @@ export default function CheckStockDetail() {
                                                             <div className="grid grid-cols-12 gap-4 items-center">
                                                                 {/* ชื่อสินค้า - 4 columns */}
                                                                 <div className="col-span-4">
-                                                                    <div className="font-bold text-base text-primary break-words text-lg">
+                                                                    <div className="font-bold text-primary break-words text-lg">
                                                                         {it.itemName}
                                                                     </div>
                                                                     <div className="text-lg text-base-content/70 mt-1">

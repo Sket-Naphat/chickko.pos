@@ -25,12 +25,13 @@ import Delivery from "./pages/Delivery";
 import DeliveryDetail from "./pages/DeliveryDetail";
 import Income from "./pages/Income";
 import IncomeDetail from "./pages/IncomeDetail";
+import RollingGame from "./pages/RollingGame"; // ✅ เพิ่มหน้าจับฉลาก
 
 function App() {
   const location = useLocation();
 
-  // ✅ เพิ่ม "/register" ใน hideNavbarPaths
-  const hideNavbarPaths = ["/", "/login", "/home", "/register"];
+  // ✅ เพิ่ม "/rolling-game" ใน hideNavbarPaths เพื่อไม่แสดง Navbar
+  const hideNavbarPaths = ["/", "/login", "/home", "/register", "/rolling-game"];
   const shouldShowNavbar = !hideNavbarPaths.includes(location.pathname);
 
   // ✅ สายข้อมูลจาก axios interceptors → แถบโหลด + toast
@@ -79,12 +80,13 @@ function App() {
           </main>
         </div>
       ) : (
-        /* ======================= หน้า "ไม่มี Navbar" (login + register + home) ======================= */
+        /* ======================= หน้า "ไม่มี Navbar" (login + register + home + rolling-game) ======================= */
         <Routes>
           {/* ✅ Public routes - ไม่ต้อง login */}
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/rolling-game" element={<RollingGame />} /> {/* ✅ เพิ่มหน้าจับฉลาก - Public route */}
 
           {/* ✅ Protected routes - ต้อง login แต่ไม่มี Navbar */}
           <Route element={<RequireAuth />}>
