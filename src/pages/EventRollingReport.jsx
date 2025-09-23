@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
 
-export default function EventRollingGameReport() {
+export default function EventRollingReport() {
     const [reportData, setReportData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState("");
