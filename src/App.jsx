@@ -26,6 +26,8 @@ import DeliveryDetail from "./pages/DeliveryDetail";
 import Income from "./pages/Income";
 import IncomeDetail from "./pages/IncomeDetail";
 import RollingGame from "./pages/RollingGame"; // ✅ เพิ่มหน้าจับฉลาก
+import Event from "./pages/Event"; // 👉 เพิ่มหน้ากิจกรรม
+import EventRollingGameReport from "./pages/eventRollingGameReport"; // ✅ เพิ่มหน้าจับฉลาก - Protected route
 
 function App() {
   const location = useLocation();
@@ -72,6 +74,8 @@ function App() {
                 <Route path="/delivery-detail" element={<DeliveryDetail />} />
                 <Route path="/income" element={<Income />} /> 
                 <Route path="/income-detail" element={<IncomeDetail />} />
+                <Route path="/event" element={<Event />} /> {/* 👉 เพิ่มหน้ากิจกรรม */}
+                <Route path="/rolling-game-report" element={<EventRollingGameReport />} /> {/* ✅ เพิ่มหน้าจับฉลาก - Protected route */}
               </Route>
 
               {/* ไป path แปลก ๆ ขณะอยู่ layout นี้ → ส่งไป /login */}
