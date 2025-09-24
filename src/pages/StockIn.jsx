@@ -1,6 +1,6 @@
 // src/pages/CheckStockDetail.jsx
-import { useEffect, useState, useMemo, Fragment } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo, useCallback, Fragment } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 import Cookies from "js-cookie";
 
@@ -13,9 +13,14 @@ export default function StockInDetail() {
     const [invalidIds, setInvalidIds] = useState([]); // แถวที่ qty ว่าง/ไม่ถูกต้อง
     const [errorMsg, setErrorMsg] = useState("");
     const [isSaving, setIsSaving] = useState(false);
-    const [showZeroItems, setShowZeroItems] = useState(false); // แสดงรายการ stockInQTY <= 0
-    const [zeroItems, setZeroItems] = useState([]); // รายการ stockInQTY <= 0
+    const [showZeroItems, setShowZeroItems] = useState(false); // แสดงรายการที่ยังไม่ได้นับ
+    const [zeroItems, setZeroItems] = useState([]); // รายการที่ยังไม่ได้นับ
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // ✅ จดจำหน้าที่เข้ามา
+    const fromPage = location.state?.from || '/stock'; // default กลับไป /stock
+    
     // helper: คืน yyyy-MM-dd แบบ local (ไม่คลาดวัน)
     const todayLocal = () => {
         const d = new Date();
@@ -31,35 +36,26 @@ export default function StockInDetail() {
         setModifiedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
     };
     const [groupBy, setGroupBy] = useState("category"); // "location" | "category"
-    // กลุ่มรายการตามสถานที่เก็บ พร้อมเรียงตาม StockLocationID และเรียงชื่อสินค้าในกลุ่ม
-    // const groups = useMemo(() => {
-    //     if (!items || items.length === 0) return [];
+    const [showBackToTop, setShowBackToTop] = useState(false);
 
-    //     // รองรับชื่อพร็อพได้หลายแบบ
-    //     const catId = (it) => it.stockCategoryID ?? it.stockCategoryId ?? it.categoryID ?? it.categoryId;
-    //     const catName = (it) => it.stockCategoryName ?? it.categoryName;
+    // ✅ จัดการ Back to Top Button
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            setShowBackToTop(scrollTop > 300);
+        };
 
-    //     const locId = (it) => it.stockLocationID ?? it.stockLocationId ?? it.locationID ?? it.locationId;
-    //     const locName = (it) => it.stockLocationName ?? it.locationName;
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
-    //     const idOf = (it) => groupBy === "category" ? catId(it) : locId(it);
-    //     const nameOf = (it) => groupBy === "category" ? catName(it) : locName(it);
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
 
-    //     const map = new Map(); // id -> { id, name, items: [] }
-    //     for (const it of items) {
-    //         const id = Number(idOf(it) ?? -1); // บังคับเป็นตัวเลขเพื่อเรียงถูก
-    //         const name = nameOf(it) ?? (groupBy === "category" ? `หมวด #${id}` : `ตำแหน่ง #${id}`);
-    //         if (!map.has(id)) map.set(id, { id, name, items: [] });
-    //         map.get(id).items.push(it);
-    //     }
-
-    //     return Array.from(map.values())
-    //         .sort((a, b) => a.id - b.id) // เรียงกลุ่มตาม id
-    //         .map(g => ({
-    //             ...g,
-    //             items: g.items.sort((a, b) => (a.itemName ?? "").localeCompare(b.itemName ?? "")), // เรียงชื่อในกลุ่ม
-    //         }));
-    // }, [items, groupBy]);
     // ✅ แก้ไข groups เพื่อแสดงเฉพาะรายการหลัก
     const groups = useMemo(() => {
         // ใช้เฉพาะ items (ไม่รวม zeroItems)
@@ -89,7 +85,7 @@ export default function StockInDetail() {
             }));
     }, [items, groupBy]); // ✅ ลบ zeroItems และ showZeroItems ออก
 
-    // ✅ เพิ่ม groups สำหรับรายการเพิ่มเติม
+    // ✅ เพิ่ม groups สำหรับรายการที่ยังไม่ได้นับ
     const zeroGroups = useMemo(() => {
         if (!zeroItems || zeroItems.length === 0) return [];
 
@@ -116,6 +112,11 @@ export default function StockInDetail() {
                 items: g.items.sort((a, b) => (a.itemName ?? "").localeCompare(b.itemName ?? "")),
             }));
     }, [zeroItems, groupBy]);
+
+    // ✅ Cache expensive calculations
+    const itemsWithPurchaseQty = useMemo(() => {
+        return zeroItems.filter(it => it.purchaseQTY !== "");
+    }, [zeroItems]);
 
     // ...ใน component
     const [alertOpen, setAlertOpen] = useState(false);
@@ -154,7 +155,7 @@ export default function StockInDetail() {
                     // ✅ กรองเฉพาะรายการที่ StockInQTY > 0
 
                     const mainItems = raw.stockCountDtos.filter(s => s.stockInQTY > 0 || s.purchaseQTY > 0);
-                    const zeroStockItems = raw.stockCountDtos.filter(s => s.stockInQTY <= 0 && s.purchaseQTY <= 0);
+                    const zeroStockItems = raw.stockNotCountDtos;
 
                     const mainList = mainItems.map(s => ({
                         stockLogId: s.stockLogId,
@@ -184,7 +185,7 @@ export default function StockInDetail() {
                         stockUnitTypeName: s.stockUnitTypeName,
                         stockLocationID: s.stockLocationID,
                         stockLocationName: s.stockLocationName,
-                        totalQTY: s.totalQTY,
+                        totalQTY: 0,//s.totalQTY,
                         requiredQTY: s.requiredQTY,
                         stockInQTY: s.stockInQTY,
                         remark: s.remark,
@@ -218,17 +219,7 @@ export default function StockInDetail() {
     }, [orderId, navigate]);
 
 
-
-    // const onQtyChange = (stockId, value) => {
-    //     // อนุญาตค่าว่างชั่วคราว + ตัวเลขบวกเท่านั้น
-    //     if (value === "" || (/^\d+$/.test(value) && Number(value) >= 0)) {
-    //         setItems((prev) => prev.map((x) => (x.stockId === stockId ? { ...x, purchaseQTY: value } : x)));
-    //         setInvalidIds((prev) => prev.filter((x) => x !== stockId)); // ถ้าพิมพ์แล้วถูกต้อง เอาออกจาก invalid
-    //         markModified(stockId);
-    //     }
-    // };
-
-    const onQtyChange = (stockId, value) => {
+    const onQtyChange = useCallback((stockId, value) => {
         if (value === "" || (/^\d+$/.test(value) && Number(value) >= 0)) {
             // อัปเดตใน items
             setItems((prev) => prev.map((x) => (x.stockId === stockId ? { ...x, purchaseQTY: value } : x)));
@@ -238,107 +229,49 @@ export default function StockInDetail() {
             setInvalidIds((prev) => prev.filter((x) => x !== stockId));
             markModified(stockId);
         }
-    };
+    }, []);
 
     // const onClickCopyQTYtoPurchaseQTY = (stockId, value) => {
     //     setItems((prev) => prev.map((x) => (x.stockId === stockId ? { ...x, purchaseQTY: value } : x)));
     //     markModified(stockId);
     // };
-    const onClickCopyQTYtoPurchaseQTY = (stockId, value) => {
+    const onClickCopyQTYtoPurchaseQTY = useCallback((stockId, value) => {
         setItems((prev) => prev.map((x) => (x.stockId === stockId ? { ...x, purchaseQTY: value } : x)));
         setZeroItems((prev) => prev.map((x) => (x.stockId === stockId ? { ...x, purchaseQTY: value } : x)));
         markModified(stockId);
-    };
+    }, []);
     // ✅ 2. Early Return หลัก - ป้องกัน render
     if (!orderId) {
         return null; // 🔥 นี่คือ Early Return หลัก
     }
     const validate = () => {
-        const invalid = items.filter((it) => it.purchaseQTY === "");
-        setInvalidIds(invalid.map((it) => it.stockId));
-        if (invalid.length > 0) {
-            setErrorMsg(`กรุณากรอกจำนวนให้ครบ (${invalid.length} รายการยังว่าง)`);
-            return false;
-        }
+        // ไม่ต้อง validate ให้กรอกครบทุกรายการแล้ว
         setErrorMsg("");
         return true;
     };
 
-    // const save = async () => {
-    //     if (!validate()) return;
-
-    //     setIsSaving(true);
-
-    //     const nowTime = new Date().toLocaleTimeString("en-GB", {
-    //         hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit",
-    //     });
-
-    //     // Helper to convert date string (yyyy-MM-dd) to DateOnly format (backend expects ISO string)
-    //     const toDateOnly = (dateStr) => dateStr || null;
-    //     // Helper to convert time string (HH:mm:ss) to TimeOnly format (backend expects ISO string)
-    //     const toTimeOnly = (timeStr) => timeStr || null;
-    //     const toIntOrNull = (v) =>
-    //         v === "" || v === null || v === undefined ? 0 : Number(v);
-
-    //     const stockInDto = items.map((it) => ({
-    //         StockLogId: it.stockLogId ?? 0, // ถ้าไม่มี stockLogId ให้เป็น 0
-    //         StockName: it.itemName ?? "",
-    //         StockId: Number(it.stockId),
-    //         StockInDate: toDateOnly(orderDate),
-    //         StockInTime: toTimeOnly(nowTime),
-    //         StockInQTY: toIntOrNull(it.stockInQTY),
-    //         PurchaseQTY: toIntOrNull(it.purchaseQTY),
-    //         Price: toIntOrNull(it.price),
-    //         SupplyId: 0, // ไม่มีข้อมูล SupplyId ในฟอร์มนี้
-    //         Remark: it.remark ?? "",
-    //         CostId: Number(orderId),
-    //         IsStockIn: true,
-    //     }));
-    //     const UpdateStockCostDto = {
-    //         StockInDate: toDateOnly(orderDate),
-    //         StockInTime: toTimeOnly(nowTime),
-    //         CostPrice: toIntOrNull(costPrice),
-    //         IsPurchase: isPurchase,
-    //         CostID: Number(orderId),
-    //         UpdateBy: authData?.userId ?? 0,
-    //     }
-
-    //     const payload = {
-    //         UpdateStockCostDto: UpdateStockCostDto,
-    //         StockInDto: stockInDto,
-    //     };
-
-    //     try {
-    //         await api.post("/stock/CreateStockIn", payload);
-    //         // ✅ แสดง alert แทน toast
-    //         setAlertTitle("บันทึกสำเร็จ");
-    //         setAlertMessage("ข้อมูลถูกบันทึกเรียบร้อยแล้ว");
-    //         setAlertNext(() => () => {
-    //             navigate("/stock", { state: { shouldRefresh: true } });
-    //         });
-    //         setAlertOpen(true);
-
-    //     } catch (err) {
-    //         console.error(err);
-    //         // แสดง alert กรณี error ก็ได้ (ถ้าต้องการ)
-    //         setAlertTitle("บันทึกไม่สำเร็จ");
-    //         setAlertMessage("กรุณาลองใหม่อีกครั้ง");
-    //         setAlertNext(() => () => { }); // ไม่ต้องทำอะไรต่อ
-    //         setAlertOpen(true);
-    //     } finally {
-    //         setIsSaving(false);
-    //     }
-    // };
     const save = async () => {
         if (!validate()) return;
-        // รวมรายการที่จะ save: items + zeroItems ที่มี purchaseQTY
-        const zeroItemsWithQty = zeroItems.filter(it => it.purchaseQTY !== "" && it.purchaseQTY !== "0");
-        const allItemsToSave = [...items, ...zeroItemsWithQty];
 
-        // ตรวจสอบรายการหลักว่ากรอกครบหรือไม่
-        const invalid = items.filter((it) => it.purchaseQTY === "");
-        if (invalid.length > 0) {
-            setErrorMsg(`กรุณากรอกจำนวนให้ครบ (${invalid.length} รายการยังว่าง)`);
+        // ✅ บันทึกเฉพาะรายการที่มีการซื้อเข้า (purchaseQTY > 0)
+        const mainItemsWithPurchase = items.filter(it =>
+            it.purchaseQTY !== "" &&
+            it.purchaseQTY !== "0" &&
+            Number(it.purchaseQTY) > 0
+        );
+
+        // ✅ บันทึกรายการที่ยังไม่ได้นับที่มีการซื้อเข้า
+        const zeroItemsWithPurchase = zeroItems.filter(it =>
+            it.purchaseQTY !== "" &&
+            it.purchaseQTY !== "0" &&
+            Number(it.purchaseQTY) > 0
+        );
+
+        const allItemsToSave = [...mainItemsWithPurchase, ...zeroItemsWithPurchase];
+
+        // ตรวจสอบว่ามีรายการที่จะบันทึกหรือไม่
+        if (allItemsToSave.length === 0) {
+            setErrorMsg("ไม่มีรายการที่จะบันทึก กรุณาแก้ไขข้อมูลก่อน");
             return;
         }
 
@@ -366,6 +299,7 @@ export default function StockInDetail() {
             Remark: it.remark ?? "",
             CostId: Number(orderId),
             IsStockIn: true,
+            RequiredQTY: toIntOrNull(it.requiredQTY),
         }));
 
         const UpdateStockCostDto = {
@@ -383,12 +317,18 @@ export default function StockInDetail() {
         };
 
         try {
-            await api.post("/stock/CreateStockIn", payload);
+            // ✅ เพิ่ม timeout สำหรับการบันทึก (60 วินาที)
+            await api.post("/stock/CreateStockIn", payload, {
+                timeout: 60000, // 60 วินาที
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             console.log("Saving payload:", payload); // ✅ สำหรับ debug
             setAlertTitle("บันทึกสำเร็จ");
-            setAlertMessage("ข้อมูลถูกบันทึกเรียบร้อยแล้ว");
+            setAlertMessage(`ข้อมูลถูกบันทึกเรียบร้อยแล้ว (${allItemsToSave.length} รายการ)`);
             setAlertNext(() => () => {
-                navigate("/stock", { state: { shouldRefresh: true } });
+                navigate(fromPage, { state: { shouldRefresh: true } });
             });
             setAlertOpen(true);
 
@@ -404,7 +344,7 @@ export default function StockInDetail() {
     };
 
 
-    const isSaveDisabled = items.some((it) => it.purchaseQTY === "");
+
 
     return (
         <div className="p-2 md:p-4 space-y-3 md:space-y-4">
@@ -433,19 +373,7 @@ export default function StockInDetail() {
                     </button>
                 </div>
 
-                {/* ✅ ปุ่มแสดง/ซ่อนรายการ stockInQTY <= 0 */}
-                <button
-                    className={`btn btn-xs sm:btn-sm text-xs sm:text-sm ${showZeroItems ? "btn-warning" : "btn-outline"}`}
-                    onClick={() => setShowZeroItems(!showZeroItems)}
-                    title={showZeroItems ? "ซ่อนรายการที่ไม่ต้องซื้อ" : "แสดงรายการที่ไม่ต้องซื้อ"}
-                >
-                    <span className="hidden sm:inline">
-                        {showZeroItems ? "ซ่อนรายการเพิ่มเติม" : `แสดงรายการเพิ่มเติม (${zeroItems.length})`}
-                    </span>
-                    <span className="sm:hidden">
-                        {showZeroItems ? "ซ่อนรายการเพิ่มเติม" : `ดูรายการเพิ่มเติม (${zeroItems.length})`}
-                    </span>
-                </button>
+
             </div>
 
             {errorMsg && (
@@ -454,7 +382,75 @@ export default function StockInDetail() {
                 </div>
             )}
 
+            {/* ✅ Card บันทึก - ย้ายมาไว้ข้างบน */}
             <div className="card bg-base-100 shadow">
+                <div className="card-body">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 items-center">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <span className="text-xs md:text-sm font-medium">📅 วันที่ซื้อเข้า:</span>
+                            <input
+                                type="date"
+                                className="input input-bordered input-xs sm:input-sm md:input-md w-full sm:w-40"
+                                value={orderDate}
+                                onChange={(e) => setOrderDate(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <span className="text-xs md:text-sm font-medium">💰 ราคารวม:</span>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="input input-bordered input-xs sm:input-sm md:input-md text-md w-full sm:w-32 text-right"
+                                    value={costPrice || ""}
+                                    onChange={(e) => setCostPrice(e.target.value)}
+                                    tabIndex={-1}
+                                />
+                                <span className="text-xs md:text-sm">บาท</span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                className="toggle toggle-xs sm:toggle-sm toggle-primary"
+                                checked={isPurchase}
+                                onChange={(e) => setIsPurchase(e.target.checked)}
+                            />
+                            <span className="text-xs md:text-sm font-medium">✅ ชำระเงินแล้ว</span>
+                        </div>
+
+                        <button
+                            className="btn btn-primary btn-sm md:btn-md xl:btn-lg w-full xl:w-auto"
+                            onClick={save}
+                            disabled={isSaving}
+                            title="บันทึกรายการที่มีการซื้อเข้า"
+                        >
+                            <span className="text-sm md:text-md xl:text-lg">
+                                {isSaving ? "⏳ กำลังบันทึก..." : "💾 บันทึกนำเข้า"}
+                            </span>
+                        </button>
+                    </div>
+                    {alertOpen && (
+                        <div className="modal modal-open">
+                            <div className="modal-box">
+                                <h3 className="font-bold text-lg">{alertTitle}</h3>
+                                <p className="py-2">{alertMessage}</p>
+                                <div className="modal-action">
+                                    <button className="btn btn-primary" onClick={handleAlertOk}>
+                                        OK
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="modal-backdrop"></div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="card bg-base-100 shadow" style={{ contain: 'layout style' }}>
                 <div className="card-body p-0">
                     {loading ? (
                         <div className="flex items-center gap-2 p-4">
@@ -922,17 +918,34 @@ export default function StockInDetail() {
                     )}
                 </div>
             </div>
-
+            {/* ✅ ปุ่มแสดง/ซ่อนรายการที่ยังไม่ได้นับ */}
+            <button
+                className={`btn btn-md sm:btn-sm text-md sm:text-sm ${showZeroItems ? "btn-warning" : "btn-outline"}`}
+                onClick={() => setShowZeroItems(!showZeroItems)}
+                title={showZeroItems ? "ซ่อนรายการที่ยังไม่ได้นับ" : "แสดงรายการที่ยังไม่ได้นับ"}
+            >
+                <span className="hidden sm:inline">
+                    {showZeroItems ? "ซ่อนรายการที่ยังไม่ได้นับ" : `แสดงรายการที่ยังไม่ได้นับ (${zeroItems.length})`}
+                </span>
+                <span className="sm:hidden">
+                    {showZeroItems ? "ซ่อนรายการที่ยังไม่ได้นับ" : `ดูรายการที่ยังไม่ได้นับ (${zeroItems.length})`}
+                </span>
+            </button>
             {/* ✅ Card รายการเพิ่มเติม (แสดงเมื่อ showZeroItems = true) */}
             {showZeroItems && (
-                <div className="card bg-base-100 shadow border-2 border-warning">
+                <div className="card bg-base-100 shadow border-2 border-warning" style={{ contain: 'layout style' }}>
                     <div className="card-header p-3 md:p-4 border-b bg-warning/10">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <h2 className="text-md md:text-lg font-semibold text-warning-content">
-                                รายการเพิ่มเติม (รายการที่ไม่ได้สั่งซื้อเข้า)
+                                📝 รายการที่ยังไม่ได้นับ
                             </h2>
-                            <div className="badge badge-warning badge-sm md:badge-md">
-                                {zeroItems.filter(it => it.purchaseQTY !== "").length} / {zeroItems.length} รายการที่กรอก
+                            <div className="flex items-center gap-2">
+                                <div className="badge badge-warning badge-sm md:badge-md">
+                                    {itemsWithPurchaseQty.length} / {zeroItems.length} 
+                                </div>
+                                <div className="text-sm text-warning-content opacity-90">
+                                    รายการเหล่านี้ยังไม่ได้ทำการตรวจนับ สามารถซื้อเพิ่มได้
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -956,7 +969,7 @@ export default function StockInDetail() {
                                 <tbody>
                                     {(!zeroItems || zeroItems.length === 0) && (
                                         <tr>
-                                            <td colSpan="9" className="text-center text-base-content/60">ไม่มีรายการเพิ่มเติม</td>
+                                            <td colSpan="9" className="text-center text-base-content/60">ไม่มีรายการที่ยังไม่ได้นับ</td>
                                         </tr>
                                     )}
 
@@ -964,7 +977,7 @@ export default function StockInDetail() {
                                         <Fragment key={`zero-grp-${group.id}`}>
                                             {/* หัวข้อกลุ่ม */}
                                             <tr className="bg-base-200">
-                                                <td colSpan={9} className="font-bold text-lg bg-warning/20 p-1">
+                                                <td colSpan={9} className="font-bold text-lg bg-warning text-warning-content p-1">
                                                     {group.name}
                                                 </td>
                                             </tr>
@@ -972,12 +985,13 @@ export default function StockInDetail() {
                                             {/* รายการในกลุ่ม */}
                                             {group.items.map((it) => {
                                                 const modified = modifiedIds.includes(it.stockId);
-                                                const hasValue = it.purchaseQTY !== "";
-                                                const rowClass = hasValue ? "bg-success/20" : modified ? "bg-warning/20" : "border-warning";
-                                                const rowClassItemName = hasValue ? "bg-success/30" : modified ? "bg-warning" : "";
+                                                const hasValue = it.purchaseQTY !== "" && it.purchaseQTY !== "0" && it.purchaseQTY !== null;
+                                                const hasAnyChange = modified || it.price !== 0 || it.remark !== "";
+                                                const rowClass = hasValue ? "bg-info/20 border-info" : hasAnyChange ? "bg-info/10 border-info" : "bg-base-100 border-base-300";
+                                                const rowClassItemName = hasValue ? "bg-info/30" : hasAnyChange ? "bg-info/10" : "bg-base-100";
                                                 return (
-                                                    <tr key={it.stockId} className={rowClass}>
-                                                        <td className={`sticky left-0 bg-base-100 z-10 text-lg p-1 ${rowClassItemName}`}>{it.itemName}</td>
+                                                    <tr key={`zero-item-${it.stockId}`} className={rowClass}>
+                                                        <td className={`sticky left-0 z-10 text-lg p-1 ${rowClassItemName}`}>{it.itemName}</td>
                                                         <td className="text-right text-lg">{it.requiredQTY}</td>
                                                         <td className="text-right text-lg">{it.totalQTY}</td>
 
@@ -1001,6 +1015,7 @@ export default function StockInDetail() {
                                                                     className="btn btn-md btn-outline btn-error"
                                                                     onClick={() => {
                                                                         const n = Math.max(0, Number(it.purchaseQTY || 0) - 1);
+                                                                        // ✅ Batch state updates for better performance
                                                                         setZeroItems((prev) =>
                                                                             prev.map((x) => (x.stockId === it.stockId ? { ...x, purchaseQTY: String(n) } : x))
                                                                         );
@@ -1098,13 +1113,13 @@ export default function StockInDetail() {
                         {/* Tablet Zero Items - Grid (768px-1279px) */}
                         <div className="hidden md:block xl:hidden space-y-2 p-2">
                             {(!zeroItems || zeroItems.length === 0) && (
-                                <div className="text-center text-base-content/60 p-4">ไม่มีรายการเพิ่มเติม</div>
+                                <div className="text-center text-base-content/60 p-4">ไม่มีรายการที่ยังไม่ได้นับ</div>
                             )}
 
                             {zeroGroups.map(group => (
                                 <div key={`tablet-zero-grp-${group.id}`} className="space-y-1">
                                     {/* หัวข้อกลุ่ม */}
-                                    <div className="bg-warning/20 text-warning-content px-3 py-2 rounded font-bold text-base">
+                                    <div className="bg-warning text-warning-content px-3 py-2 rounded font-bold text-base">
                                         {group.name}
                                     </div>
 
@@ -1112,8 +1127,9 @@ export default function StockInDetail() {
                                     <div className="grid grid-cols-1 gap-2">
                                         {group.items.map((it) => {
                                             const modified = modifiedIds.includes(it.stockId);
-                                            const hasValue = it.purchaseQTY !== "";
-                                            const cardClass = hasValue ? "border-success bg-success/10" : modified ? "border-warning bg-warning/10" : "border-warning/50";
+                                            const hasValue = it.purchaseQTY !== "" && it.purchaseQTY !== "0" && it.purchaseQTY !== null;
+                                            const hasAnyChange = modified || it.price !== 0 || it.remark !== "";
+                                            const cardClass = hasValue ? "border-info bg-info/20" : hasAnyChange ? "border-info bg-info/10" : "border-base-300 bg-base-100";
 
                                             return (
                                                 <div key={`tablet-zero-${it.stockId}`} className={`border ${cardClass} rounded-lg p-2 shadow-sm`}>
@@ -1125,7 +1141,7 @@ export default function StockInDetail() {
                                                             </div>
                                                             <div className="text-sm text-base-content/70 space-x-2">
                                                                 <span>ต้องใช้: <span className="font-bold text-accent">{it.requiredQTY}</span></span>
-                                                                <span>นับได้: <span className="font-bold">{it.totalQTY}</span></span>
+                                                                {/* <span>นับได้: <span className="font-bold">{it.totalQTY}</span></span> */}
                                                             </div>
                                                             <div className="text-sm text-base-content/70">
                                                                 หน่วย: <span className="font-bold">{it.unitTypeName || it.stockUnitTypeName || "หน่วยไม่ระบุ"}</span>
@@ -1247,21 +1263,22 @@ export default function StockInDetail() {
                         {/* Mobile Zero Items - Compact Cards (<768px) */}
                         <div className="md:hidden space-y-1 p-2">
                             {(!zeroItems || zeroItems.length === 0) && (
-                                <div className="text-center text-base-content/60 p-2">ไม่มีรายการเพิ่มเติม</div>
+                                <div className="text-center text-base-content/60 p-2">ไม่มีรายการที่ยังไม่ได้นับ</div>
                             )}
 
                             {zeroGroups.map(group => (
                                 <div key={`mobile-zero-grp-${group.id}`} className="space-y-1">
                                     {/* หัวข้อกลุ่ม Mobile - Compact */}
-                                    <div className="bg-warning/20 text-warning-content px-2 py-1 rounded font-bold text-sm">
+                                    <div className="bg-warning text-warning-content px-2 py-1 rounded font-bold text-sm">
                                         {group.name}
                                     </div>
 
                                     {/* รายการในกลุ่ม Mobile - Compact */}
                                     {group.items.map((it) => {
                                         const modified = modifiedIds.includes(it.stockId);
-                                        const hasValue = it.purchaseQTY !== "";
-                                        const cardClass = hasValue ? "border-success bg-success/10" : modified ? "border-warning bg-warning/10" : "border-warning/50";
+                                        const hasValue = it.purchaseQTY !== "" && it.purchaseQTY !== "0" && it.purchaseQTY !== null;
+                                        const hasAnyChange = modified || it.price !== 0 || it.remark !== "";
+                                        const cardClass = hasValue ? "border-info bg-info/20" : hasAnyChange ? "border-info bg-info/10" : "border-base-300 bg-base-100";
 
                                         return (
                                             <div key={`mobile-zero-${it.stockId}`} className={`border ${cardClass} rounded p-2 space-y-1`}>
@@ -1271,7 +1288,7 @@ export default function StockInDetail() {
                                                         <div className="font-bold text-base text-primary break-words leading-tight">{it.itemName}</div>
                                                         <div className="text-sm text-base-content/70 flex gap-2">
                                                             <span>ต้องใช้: <span className="font-bold text-accent">{it.requiredQTY}</span></span>
-                                                            <span>นับได้: <span className="font-bold">{it.totalQTY}</span></span>
+                                                            {/* <span>นับได้: <span className="font-bold">{it.totalQTY}</span></span> */}
                                                             <span>หน่วย: <span className="font-bold">{it.unitTypeName || it.stockUnitTypeName || "ไม่ระบุ"}</span></span>
                                                         </div>
                                                     </div>
@@ -1383,73 +1400,32 @@ export default function StockInDetail() {
                 </div>
             )}
 
-            <div className="card bg-base-100 shadow">
-                <div className="card-body">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 items-center">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <span className="text-xs md:text-sm font-medium">📅 วันที่ซื้อเข้า:</span>
-                            <input
-                                type="date"
-                                className="input input-bordered input-xs sm:input-sm md:input-md w-full sm:w-40"
-                                value={orderDate}
-                                onChange={(e) => setOrderDate(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <span className="text-xs md:text-sm font-medium">💰 ราคารวม:</span>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    className="input input-bordered input-xs sm:input-sm md:input-md text-md w-full sm:w-32 text-right"
-                                    value={costPrice || ""}
-                                    onChange={(e) => setCostPrice(e.target.value)}
-                                    tabIndex={-1}
-                                />
-                                <span className="text-xs md:text-sm">บาท</span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                className="toggle toggle-xs sm:toggle-sm toggle-primary"
-                                checked={isPurchase}
-                                onChange={(e) => setIsPurchase(e.target.checked)}
-                            />
-                            <span className="text-xs md:text-sm font-medium">✅ ชำระเงินแล้ว</span>
-                        </div>
-
-                        <button
-                            className="btn btn-primary btn-sm md:btn-md xl:btn-lg w-full xl:w-auto"
-                            onClick={save}
-                            disabled={isSaveDisabled || isSaving}
-                            title={isSaveDisabled ? "กรุณากรอกจำนวนให้ครบก่อนบันทึก" : ""}
+            {/* ✅ Back to Top Button */}
+            {showBackToTop && (
+                <div className="fixed bottom-4 right-4 z-50">
+                    <button
+                        onClick={scrollToTop}
+                        className="btn btn-circle btn-primary shadow-lg hover:shadow-xl transition-all duration-300 animate-bounce"
+                        title="กลับไปข้างบน"
+                        aria-label="กลับไปข้างบน"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                         >
-                            <span className="text-sm md:text-md xl:text-lg">
-                                {isSaving ? "⏳ กำลังบันทึก..." : "💾 บันทึกนำเข้า"}
-                            </span>
-                        </button>
-                    </div>
-                    {alertOpen && (
-                        <div className="modal modal-open">
-                            <div className="modal-box">
-                                <h3 className="font-bold text-lg">{alertTitle}</h3>
-                                <p className="py-2">{alertMessage}</p>
-                                <div className="modal-action">
-                                    <button className="btn btn-primary" onClick={handleAlertOk}>
-                                        OK
-                                    </button>
-                                </div>
-                            </div>
-                            {/* ไม่ใส่ปุ่ม/label บน backdrop → ผู้ใช้กดพื้นหลังแล้วจะไม่ปิด */}
-                            <div className="modal-backdrop"></div>
-                        </div>
-                    )}
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M7 11l5-5m0 0l5 5m-5-5v12"
+                            />
+                        </svg>
+                    </button>
                 </div>
-            </div>
+            )}
 
         </div>
     );

@@ -25,7 +25,7 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
   const openStockIn = (orderId) => {
-    navigate(`/stockin/${orderId}`);
+    navigate(`/stockin/${orderId}`, { state: { from: '/cost' } });
   };
   const handleConfirm = () => {
     onConfirm?.();
