@@ -383,7 +383,14 @@ function Dashboard() {
             </div>
             <div className="stat-title">ต้นทุน</div>
             <div className="stat-value text-error">{formatNumber(costTotal)}</div>
-            <div className="stat-desc">{filterMode === 'month' ? `${months[selectedMonth]} ${selectedYear}` : `ปี ${selectedYear}`}</div>
+            <div className="stat-desc">
+              {filterMode === 'month' ? `${months[selectedMonth]} ${selectedYear}` : `ปี ${selectedYear}`}
+              {totalSales > 0 && (
+                <div className="text-error font-semibold">
+                  ({((costTotal / totalSales) * 100).toFixed(1)}% จากยอดขาย)
+                </div>
+              )}
+            </div>
           </div>
           <div className="stat flex-1 min-w-[220px] bg-success/10">
             <div className="stat-figure text-success">
@@ -393,7 +400,14 @@ function Dashboard() {
             </div>
             <div className="stat-title">คงเหลือสุทธิ</div>
             <div className="stat-value text-success">{formatNumber(netProfit)}</div>
-            <div className="stat-desc">{filterMode === 'month' ? `${months[selectedMonth]} ${selectedYear}` : `ปี ${selectedYear}`}</div>
+            <div className="stat-desc">
+              {filterMode === 'month' ? `${months[selectedMonth]} ${selectedYear}` : `ปี ${selectedYear}`}
+              {totalSales > 0 && (
+                <div className="text-success font-semibold">
+                  ({((netProfit / totalSales) * 100).toFixed(1)}% จากยอดขาย)
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
