@@ -88,11 +88,9 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
   // กรณีไม่มีข้อมูล
   if (!data || data.length === 0) {
     return (
-      <div className="text-center py-12 bg-gradient-to-br from-base-100 to-base-200 rounded-xl border border-base-300">
+      <div className="text-center py-1 bg-gradient-to-br from-base-100 to-base-200 rounded-xl border border-base-300">
         <div className="flex flex-col items-center gap-3">
-          <div className="p-4 bg-success/20 rounded-full">
-            <span className="text-4xl">👍🏻</span>
-          </div>
+
           <div>
             <div className="text-base font-semibold text-base-content">ไม่มีค่าใช้จ่ายคงค้าง</div>
             <div className="text-sm text-base-content/60">ขณะนี้ไม่มีรายการที่รอชำระเงิน</div>
@@ -137,7 +135,7 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
               return (
                 <tr key={item.id || idx} className="hover:bg-base-200">
                   <td>
-                    {item.costCategoryID == 1 && item.isStockIn 
+                    {item.costCategoryID == 1 && item.isStockIn
                       ? <button className="btn btn-sm lg:btn-sm btn-primary text-sm lg:text-sm" onClick={() => openStockIn(item.costID)}>รายการ</button>
                       : <ModalConfirmPayment onConfirm={handleConfirm} item={item} showToast={showToast} />}
                   </td>
@@ -182,46 +180,46 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
             default:
               badgeClass = "badge-accent";
           }
-          
-            return (
+
+          return (
             <div key={item.id || idx} className="bg-gradient-to-r from-base-100 to-base-50 border-2 border-base-300 hover:border-primary/30 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300">
               {/* Compact Header Row */}
               <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-base-200/50 rounded-lg px-2 py-1">
-                <span className="text-xs text-base-content/60">📅</span>
-                <span className="text-sm font-medium">{item.costDate}</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-base-200/50 rounded-lg px-2 py-1">
+                    <span className="text-xs text-base-content/60">📅</span>
+                    <span className="text-sm font-medium">{item.costDate}</span>
+                  </div>
+                  <span className={`badge ${badgeClass} badge-sm shadow-sm`}>
+                    {item.costCategory.description}
+                  </span>
                 </div>
-                <span className={`badge ${badgeClass} badge-sm shadow-sm`}>
-                {item.costCategory.description}
-                </span>
-              </div>
-              <div className="bg-primary/10 rounded-lg px-2 py-1">
-                <span className="font-bold text-sm text-primary">{item.costPrice.toLocaleString()} บาท</span>
-              </div>
+                <div className="bg-primary/10 rounded-lg px-2 py-1">
+                  <span className="font-bold text-sm text-primary">{item.costPrice.toLocaleString()} บาท</span>
+                </div>
               </div>
 
               {/* Description and Action Row */}
               <div className="flex justify-between items-center gap-2">
-              <div className="text-xs text-base-content/80 flex-1 truncate bg-base-200/30 rounded px-2 py-1" title={item.costDescription}>
-                💬 {item.costDescription}
-              </div>
-              <div className="flex-shrink-0 flex gap-2">
-                <button
-                className="btn btn-sm btn-error"
-                onClick={() => handleDeleteClick(item)}
-                >
-                🗑️ ลบ
-                </button>
-                {item.costCategoryID == 1 && item.isStockIn 
-                ? <button className="btn btn-sm btn-primary shadow-md hover:shadow-lg whitespace-nowrap transition-all duration-200" onClick={() => openStockIn(item.costID)}>
-                  📦 ดูรายการ
+                <div className="text-xs text-base-content/80 flex-1 truncate bg-base-200/30 rounded px-2 py-1" title={item.costDescription}>
+                  💬 {item.costDescription}
+                </div>
+                <div className="flex-shrink-0 flex gap-2">
+                  <button
+                    className="btn btn-sm btn-error"
+                    onClick={() => handleDeleteClick(item)}
+                  >
+                    🗑️ ลบ
                   </button>
-                : <ModalConfirmPayment onConfirm={handleConfirm} item={item} showToast={showToast} />}
-              </div>
+                  {item.costCategoryID == 1 && item.isStockIn
+                    ? <button className="btn btn-sm btn-primary shadow-md hover:shadow-lg whitespace-nowrap transition-all duration-200" onClick={() => openStockIn(item.costID)}>
+                      📦 ดูรายการ
+                    </button>
+                    : <ModalConfirmPayment onConfirm={handleConfirm} item={item} showToast={showToast} />}
+                </div>
               </div>
             </div>
-            );
+          );
         })}
       </div>
 
@@ -264,14 +262,14 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
 
             {/* Modal Actions */}
             <div className="modal-action gap-3">
-              <button 
+              <button
                 className="btn btn-outline btn-base-content hover:bg-base-200 transition-all duration-200"
                 onClick={handleDeleteCancel}
                 disabled={isDeleting}
               >
                 ยกเลิก
               </button>
-              <button 
+              <button
                 className="btn btn-error text-error-content shadow-lg hover:shadow-xl transition-all duration-200"
                 onClick={handleDeleteConfirm}
                 disabled={isDeleting}
@@ -296,10 +294,48 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
   );
 }
 
+const months = [
+  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
+];
+
+const getCurrentMonth = () => new Date().getMonth();
+const getCurrentYear = () => new Date().getFullYear();
+
 function GetCostIsPurchaseList({ refreshKey }) {
   // สร้าง state สำหรับข้อมูลและสถานะการโหลด
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+  const [selectedYear, setSelectedYear] = useState(getCurrentYear());
+  const [filterMode, setFilterMode] = useState('month'); // 'month' หรือ 'year'
+
+  // Handler functions
+  const handleMonthChange = (e) => {
+    setSelectedMonth(Number(e.target.value));
+  };
+
+  const handleYearChange = (e) => {
+    setSelectedYear(Number(e.target.value));
+  };
+
+  // ฟังก์ชันสำหรับกรองข้อมูลตามเดือนหรือปี
+  const getFilteredData = () => {
+    if (filterMode === 'month') {
+      return data.filter(item => {
+        const date = new Date(item.costDate);
+        return (
+          date.getMonth() === selectedMonth &&
+          date.getFullYear() === selectedYear
+        );
+      });
+    } else {
+      return data.filter(item => {
+        const date = new Date(item.costDate);
+        return date.getFullYear() === selectedYear;
+      });
+    }
+  };
 
   // ดึงข้อมูลจาก API เมื่อ component mount
   useEffect(() => {
@@ -318,6 +354,9 @@ function GetCostIsPurchaseList({ refreshKey }) {
     };
     fetchData();
   }, [refreshKey]); // เปลี่ยนจาก [] เป็น [refreshKey]
+
+  // Get filtered data
+  const filteredData = getFilteredData();
 
   // แสดงข้อความขณะกำลังโหลด
   if (loading) {
@@ -346,9 +385,266 @@ function GetCostIsPurchaseList({ refreshKey }) {
     );
   }
 
+  // กรณีกรองแล้วไม่มีข้อมูล
+  if (filteredData.length === 0) {
+    return (
+      <>
+        {/* Compact Filter Controls */}
+        <div className="bg-base-100 rounded-lg border border-base-300 p-3 mb-3">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-base-content/80 font-medium">🗓️ เดือน:</span>
+
+            <select
+              className="select select-sm select-bordered min-w-0 w-24"
+              value={selectedMonth}
+              onChange={handleMonthChange}
+              disabled={filterMode === 'year'}
+            >
+              {months.map((m, idx) => (
+                <option key={m} value={idx}>
+                  {m}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="select select-sm select-bordered min-w-0 w-20"
+              value={selectedYear}
+              onChange={handleYearChange}
+            >
+              {[...new Set(data.map(item => new Date(item.costDate).getFullYear()))]
+                .filter((v, i, arr) => arr.indexOf(v) === i)
+                .sort((a, b) => b - a)
+                .map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+            </select>
+
+            <label className="flex cursor-pointer items-center gap-1">
+              <input
+                type="checkbox"
+                className="toggle toggle-xs toggle-success"
+                checked={filterMode === 'year'}
+                onChange={() => setFilterMode(filterMode === 'month' ? 'year' : 'month')}
+              />
+              <span className="text-xs">{filterMode === 'year' ? 'รายปี' : 'รายเดือน'}</span>
+            </label>
+
+            <div className="ml-auto flex items-center gap-2 text-xs text-base-content/60">
+              <span className="badge badge-xs badge-outline">
+                0/{data.length}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center py-8 bg-gradient-to-br from-base-100 to-base-200 rounded-xl border border-base-300">
+          <div className="flex flex-col items-center gap-3">
+            <div className="p-3 bg-warning/20 rounded-full">
+              <span className="text-3xl">📅</span>
+            </div>
+            <div>
+              <div className="text-base font-semibold text-base-content">ไม่มีรายการในช่วงเวลาที่เลือก</div>
+              <div className="text-sm text-base-content/60">ลองเลือกช่วงเวลาอื่น</div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   // แสดงข้อมูลแบบ Responsive
   return (
     <>
+      {/* Compact Filter Controls */}
+      <div className="bg-base-100 rounded-lg border border-base-300 p-3 mb-3">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-base-content/80 font-medium">🗓️ เดือน:</span>
+
+          <select
+            className="select select-sm select-bordered min-w-0 w-24"
+            value={selectedMonth}
+            onChange={handleMonthChange}
+            disabled={filterMode === 'year'}
+          >
+            {months.map((m, idx) => (
+              <option key={m} value={idx}>
+                {m}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="select select-sm select-bordered min-w-0 w-20"
+            value={selectedYear}
+            onChange={handleYearChange}
+          >
+            {[...new Set(data.map(item => new Date(item.costDate).getFullYear()))]
+              .filter((v, i, arr) => arr.indexOf(v) === i)
+              .sort((a, b) => b - a)
+              .map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+          </select>
+
+          <label className="flex cursor-pointer items-center gap-1">
+            <input
+              type="checkbox"
+              className="toggle toggle-xs toggle-success"
+              checked={filterMode === 'year'}
+              onChange={() => setFilterMode(filterMode === 'month' ? 'year' : 'month')}
+            />
+            <span className="text-xs">{filterMode === 'year' ? 'รายปี' : 'รายเดือน'}</span>
+          </label>
+
+
+        </div>
+      </div>
+
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        {/* Total Amount Card */}
+        <div className="stat bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-3 shadow-sm">
+          <div className="stat-figure text-primary opacity-20">
+            <span className="text-2xl">💰</span>
+          </div>
+          <div className="stat-title text-xs text-primary/70">ค่าใช้จ่ายรวม</div>
+          <div className="stat-value text-base md:text-lg font-bold text-primary">
+            {filteredData.reduce((acc, item) => acc + item.costPrice, 0).toLocaleString()}
+          </div>
+          <div className="stat-desc text-xs text-primary/60">บาท</div>
+        </div>
+
+        {/* Total Items Card */}
+        <div className="stat bg-gradient-to-br from-info/10 to-info/5 border border-info/20 rounded-xl p-3 shadow-sm">
+          <div className="stat-figure text-info opacity-20">
+            <span className="text-2xl">📊</span>
+          </div>
+          <div className="stat-title text-xs text-info/70">จำนวนรายการ</div>
+          <div className="stat-value text-base md:text-lg font-bold text-info">
+            {filteredData.length}
+          </div>
+          <div className="stat-desc text-xs text-info/60">รายการ</div>
+        </div>
+
+        {/* Category Breakdown Cards */}
+        {(() => {
+          const categoryStats = filteredData.reduce((acc, item) => {
+            const categoryID = item.costCategoryID;
+            const categoryName = item.costCategory?.description || 'อื่นๆ';
+
+            if (!acc[categoryID]) {
+              acc[categoryID] = {
+                name: categoryName,
+                total: 0,
+                count: 0,
+                color: categoryID === 1 ? 'success' : categoryID === 2 ? 'error' : categoryID === 3 ? 'warning' : 'accent'
+              };
+            }
+            acc[categoryID].total += item.costPrice;
+            acc[categoryID].count += 1;
+            return acc;
+          }, {});
+
+          const sortedCategories = Object.entries(categoryStats)
+            .sort(([, a], [, b]) => b.total - a.total)
+            .slice(0, 2); // Show top 2 categories
+
+          return sortedCategories.map(([categoryID, stats]) => (
+            <div key={categoryID} className={`stat bg-gradient-to-br from-${stats.color}/10 to-${stats.color}/5 border border-${stats.color}/20 rounded-xl p-3 shadow-sm`}>
+              <div className={`stat-figure text-${stats.color} opacity-20`}>
+                <span className="text-2xl">
+                  {categoryID === '1' ? '🛒' : categoryID === '2' ? '🏠' : categoryID === '3' ? '⚡' : '📦'}
+                </span>
+              </div>
+              <div className={`stat-title text-xs text-${stats.color}/70 truncate`} title={stats.name}>
+                {stats.name}
+              </div>
+              <div className={`stat-value text-base md:text-lg font-bold text-${stats.color}`}>
+                {stats.total.toLocaleString()}
+              </div>
+              <div className={`stat-desc text-xs text-${stats.color}/60`}>
+                {stats.count} รายการ
+              </div>
+            </div>
+          ));
+        })()}
+      </div>
+
+      {/* Detailed Category Breakdown */}
+      {filteredData.length > 0 && (
+        <div className="bg-base-100 rounded-lg border border-base-300 p-3 mb-3">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-base-content flex items-center gap-2">
+              <span>📈</span>
+              <span>สรุปตามหมวดหมู่</span>
+            </h3>
+            <div className="text-xs text-base-content/60">
+              {filterMode === 'month'
+                ? `${months[selectedMonth]} ${selectedYear}`
+                : `ปี ${selectedYear}`
+              }
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {(() => {
+              const categoryStats = filteredData.reduce((acc, item) => {
+                const categoryID = item.costCategoryID;
+                const categoryName = item.costCategory?.description || 'อื่นๆ';
+
+                if (!acc[categoryID]) {
+                  acc[categoryID] = {
+                    name: categoryName,
+                    total: 0,
+                    count: 0,
+                    color: categoryID === 1 ? 'primary' : categoryID === 2 ? 'error' : categoryID === 3 ? 'success' : 'accent'
+                  };
+                }
+                acc[categoryID].total += item.costPrice;
+                acc[categoryID].count += 1;
+                return acc;
+              }, {});
+
+              const totalAmount = filteredData.reduce((acc, item) => acc + item.costPrice, 0);
+
+              return Object.entries(categoryStats)
+                .sort(([, a], [, b]) => b.total - a.total)
+                .map(([categoryID, stats]) => {
+                  const percentage = totalAmount > 0 ? (stats.total / totalAmount * 100) : 0;
+
+                  return (
+                    <div key={categoryID} className="flex items-center justify-between p-2 bg-base-50 rounded-lg">
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-sm">
+                          {categoryID === '1' ? '🛒' : categoryID === '2' ? '🏠' : categoryID === '3' ? '⚡' : '📦'}
+                        </span>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-base-content">{stats.name}</div>
+                          <div className="text-xs text-base-content/60">{stats.count} รายการ</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-base-content">
+                          {stats.total.toLocaleString()} บาท
+                        </div>
+                        <div className="text-xs text-base-content/60">
+                          {percentage.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+                  );
+                });
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* Desktop/Tablet Table View (≥768px) */}
       <div className="hidden md:block overflow-x-auto">
         <table className="table table-zebra">
@@ -361,7 +657,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
             </tr>
           </thead>
           <tbody>
-            {data.map((item, idx) => (
+            {filteredData.map((item, idx) => (
               <tr key={item.id || idx} className="hover:bg-base-200">
                 <td className="text-sm lg:text-base">{item.costDate}</td>
                 <td className="text-sm lg:text-base">
@@ -379,7 +675,12 @@ function GetCostIsPurchaseList({ refreshKey }) {
 
       {/* Mobile Card View (<768px) */}
       <div className="md:hidden space-y-2">
-        {data.map((item, idx) => (
+        <div className="ml-auto flex items-center gap-2 text-xs text-base-success/60">
+          <span className="badge badge-xs badge-outline">
+            รายการ {filteredData.length}/{data.length}
+          </span>
+        </div>
+        {filteredData.map((item, idx) => (
           <div key={item.id || idx} className="bg-gradient-to-r from-base-100 to-base-50 border-2 border-base-300 hover:border-success/30 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300">
             {/* Compact Header Row */}
             <div className="flex justify-between items-center mb-2">
@@ -427,47 +728,47 @@ export default function Cost() {
 
   return (
     <div className="p-2 md:p-4 space-y-2 md:space-y-3 max-w-7xl mx-auto">
-       {/* Global Toast */}
+      {/* Global Toast */}
       <Toast show={toast.show} message={toast.message} type={toast.type} position="bottom-center" />
 
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 backdrop-blur-sm border border-primary/20 rounded-xl p-3 md:p-4 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/20 rounded-lg">
-              <span className="text-2xl">💰</span>
+      <div className="bg-gradient-to-r from-accent/10 to-secondary/10 backdrop-blur-sm border border-accent/20 rounded-xl p-2 md:p-3 shadow-lg">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-accent/20 rounded-lg">
+              <span className="text-xl">💰</span>
             </div>
             <div>
-              <h1 className="text-lg md:text-xl font-bold text-primary">
+              <h1 className="text-base md:text-lg font-bold text-primary">
                 บันทึกค่าใช้จ่าย
               </h1>
-              <p className="text-xs md:text-sm text-base-content/70">
+              <p className="text-xs text-base-content/70 hidden sm:block">
                 จัดการรายการค่าใช้จ่ายของร้าน
               </p>
             </div>
           </div>
-          <div className="flex justify-end">
-            <ModalNewCost onCreated={refreshData} showToast={showToast}/>
+          <div className="flex-shrink-0">
+            <ModalNewCost onCreated={refreshData} showToast={showToast} />
           </div>
         </div>
       </div>
 
       {/* Unpaid Expenses Card */}
       <div className="card bg-base-100 shadow-xl border-2 border-error/30 hover:border-error/50 transition-all duration-300 rounded-xl overflow-hidden">
-        <div className="card-header bg-gradient-to-r from-error/10 to-error/5 border-b border-error/20 p-3 md:p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-error/20 rounded-lg">
-                <span className="text-lg">⚠️</span>
+        <div className="card-header bg-gradient-to-r from-error/10 to-error/5 border-b border-error/20 p-2 md:p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-error/20 rounded-lg">
+                <span className="text-base">⚠️</span>
               </div>
               <div>
-                <h2 className="text-base md:text-lg font-bold text-error">
+                <h2 className="text-sm md:text-base font-bold text-error">
                   รายการค่าใช้จ่ายที่ยังไม่ชำระเงิน
                 </h2>
-                <p className="text-xs text-error/70">รายการที่รอดำเนินการชำระเงิน</p>
+                <p className="text-xs text-error/70 hidden sm:block">รายการที่รอดำเนินการชำระเงิน</p>
               </div>
             </div>
-            <div className="badge badge-error badge-lg shadow-md">
+            <div className="badge badge-error badge-sm shadow-md">
               <span className="text-xs font-medium">รอดำเนินการ</span>
             </div>
           </div>
@@ -479,20 +780,20 @@ export default function Cost() {
 
       {/* Paid Expenses Card */}
       <div className="card bg-base-100 shadow-xl border-2 border-success/30 hover:border-success/50 transition-all duration-300 rounded-xl overflow-hidden">
-        <div className="card-header bg-gradient-to-r from-success/10 to-success/5 border-b border-success/20 p-3 md:p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-success/20 rounded-lg">
-                <span className="text-lg">✅</span>
+        <div className="card-header bg-gradient-to-r from-success/10 to-success/5 border-b border-success/20 p-2 md:p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-success/20 rounded-lg">
+                <span className="text-base">✅</span>
               </div>
               <div>
-                <h2 className="text-base md:text-lg font-bold text-success">
+                <h2 className="text-sm md:text-base font-bold text-success">
                   รายการค่าใช้จ่ายที่ชำระเงินแล้ว
                 </h2>
-                <p className="text-xs text-success/70">รายการที่ดำเนินการเสร็จสิ้นแล้ว</p>
+                <p className="text-xs text-success/70 hidden sm:block">รายการที่ดำเนินการเสร็จสิ้นแล้ว</p>
               </div>
             </div>
-            <div className="badge badge-success badge-lg shadow-md">
+            <div className="badge badge-success badge-sm shadow-md">
               <span className="text-xs font-medium">ดำเนินการแล้ว</span>
             </div>
           </div>
