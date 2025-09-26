@@ -190,50 +190,50 @@ function StaffWorktime() {
                       </div>
                     </div>
                     {/* ✅ ตำแหน่งเข้า-ออกงาน */}
-                      <div className="flex justify-between text-sm">
-                        <div>
-                          {item.clockInLocation ? (
-                            <button
-                              className={`btn btn-xs btn-outline mt-2 ${(() => {
-                                  try {
-                                    const clockInData = JSON.parse(item.clockInLocation);
-                                    return clockInData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
-                                  } catch {
-                                    return 'btn-primary';
-                                  }
-                                })()
-                                }`}
-                              onClick={() => window.open(getGoogleMapsUrl(item.clockInLocation), '_blank')}
-                              title="ดูตำแหน่งในแผนที่"
-                            >
-                              📍 ดูตำแหน่ง
-                            </button>
-                          ) : (
-                            <span className="text-xs text-gray-500 mt-2">-</span>
-                          )}
-                        </div>
-                        <div>
-                          {item.clockOutLocation ? (
-                            <button
-                              className={`btn btn-xs btn-outline mt-2 ${(() => {
-                                  try {
-                                    const clockOutData = JSON.parse(item.clockOutLocation);
-                                    return clockOutData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
-                                  } catch {
-                                    return 'btn-primary';
-                                  }
-                                })()
-                                }`}
-                              onClick={() => window.open(getGoogleMapsUrl(item.clockOutLocation), '_blank')}
-                              title="ดูตำแหน่งในแผนที่"
-                            >
-                              📍 ดูตำแหน่ง
-                            </button>
-                          ) : (
-                            <span className="text-xs text-gray-500 mt-2">-</span>
-                          )}
-                        </div>
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        {item.clockInLocation ? (
+                          <button
+                            className={`btn btn-xs btn-outline mt-2 ${(() => {
+                              try {
+                                const clockInData = JSON.parse(item.clockInLocation);
+                                return clockInData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
+                              } catch {
+                                return 'btn-primary';
+                              }
+                            })()
+                              }`}
+                            onClick={() => window.open(getGoogleMapsUrl(item.clockInLocation), '_blank')}
+                            title="ดูตำแหน่งในแผนที่"
+                          >
+                            📍 ดูตำแหน่ง
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-500 mt-2">-</span>
+                        )}
                       </div>
+                      <div>
+                        {item.clockOutLocation ? (
+                          <button
+                            className={`btn btn-xs btn-outline mt-2 ${(() => {
+                              try {
+                                const clockOutData = JSON.parse(item.clockOutLocation);
+                                return clockOutData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
+                              } catch {
+                                return 'btn-primary';
+                              }
+                            })()
+                              }`}
+                            onClick={() => window.open(getGoogleMapsUrl(item.clockOutLocation), '_blank')}
+                            title="ดูตำแหน่งในแผนที่"
+                          >
+                            📍 ดูตำแหน่ง
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-500 mt-2">-</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))
               )}
@@ -259,7 +259,7 @@ function EmployeeDetailWorktime({ employee, onBack }) {
     newTimeClockIn: '',
     employeeID: null
   });
-  
+
   // ✅ เพิ่ม state สำหรับ edit time clock out modal
   const [editTimeClockOutModal, setEditTimeClockOutModal] = React.useState({
     isOpen: false,
@@ -268,7 +268,7 @@ function EmployeeDetailWorktime({ employee, onBack }) {
     newTimeClockOut: '',
     employeeID: null
   });
-  
+
   const [editLoading, setEditLoading] = React.useState(false);
 
   // ✅ ดึงข้อมูล authData เพื่อตรวจสอบสิทธิ์
@@ -573,8 +573,8 @@ function EmployeeDetailWorktime({ employee, onBack }) {
                   return (
                     /* ✅ Card แบบกระชับ - เปลี่ยนสีเมื่อนอกพื้นที่ */
                     <div key={idx} className={`${isOutsideStore
-                        ? 'bg-error/10 border-error/30 border-2'
-                        : 'bg-base-100 border-base-300 border'
+                      ? 'bg-error/10 border-error/30 border-2'
+                      : 'bg-base-100 border-base-300 border'
                       } rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow`}>
 
                       {/* ✅ แสดงข้อความเตือนเมื่อนอกพื้นที่ */}
@@ -642,13 +642,13 @@ function EmployeeDetailWorktime({ employee, onBack }) {
                           {item.clockInLocation ? (
                             <button
                               className={`btn btn-xs btn-outline mt-2 ${(() => {
-                                  try {
-                                    const clockInData = JSON.parse(item.clockInLocation);
-                                    return clockInData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
-                                  } catch {
-                                    return 'btn-primary';
-                                  }
-                                })()
+                                try {
+                                  const clockInData = JSON.parse(item.clockInLocation);
+                                  return clockInData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
+                                } catch {
+                                  return 'btn-primary';
+                                }
+                              })()
                                 }`}
                               onClick={() => window.open(getGoogleMapsUrl(item.clockInLocation), '_blank')}
                               title="ดูตำแหน่งในแผนที่"
@@ -663,13 +663,13 @@ function EmployeeDetailWorktime({ employee, onBack }) {
                           {item.clockOutLocation ? (
                             <button
                               className={`btn btn-xs btn-outline mt-2 ${(() => {
-                                  try {
-                                    const clockOutData = JSON.parse(item.clockOutLocation);
-                                    return clockOutData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
-                                  } catch {
-                                    return 'btn-primary';
-                                  }
-                                })()
+                                try {
+                                  const clockOutData = JSON.parse(item.clockOutLocation);
+                                  return clockOutData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
+                                } catch {
+                                  return 'btn-primary';
+                                }
+                              })()
                                 }`}
                               onClick={() => window.open(getGoogleMapsUrl(item.clockOutLocation), '_blank')}
                               title="ดูตำแหน่งในแผนที่"
@@ -1143,6 +1143,18 @@ function ManagementWorktime() {
   // ✅ Define helper functions after hooks
   // Removed duplicate openPaymentModal declaration to fix redeclaration error.
 
+  // ✅ Helper function for Thai date formatting (short format)
+  function formatThaiDate(dateStr) {
+    const days = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+    const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+    const date = new Date(dateStr);
+    if (isNaN(date)) return dateStr;
+    const dayName = days[date.getDay()];
+    const day = date.getDate();
+    const monthName = months[date.getMonth()];
+    return `${dayName} ${day} ${monthName}`;
+  }
+
   const closePaymentModal = () => {
     setPaymentModal({
       isOpen: false,
@@ -1191,8 +1203,20 @@ function ManagementWorktime() {
 
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>ช่วงวันที่:</span>
-                <span className="font-semibold">{paymentModal.dateFrom} ถึง {paymentModal.dateTo}</span>
+                <span>วันที่ทำงาน:</span>
+                <div className="font-semibold text-right max-w-xs">
+                  {(() => {
+                    const unpaidWorkDates = paidWorktimes
+                      .filter(item => 
+                        item.employeeID === paymentModal.employee.employeeID && 
+                        !item.isPurchase && 
+                        item.totalWorktime > 0
+                      )
+                      .map(item => formatThaiDate(item.workDate))
+                      .join(', ');
+                    return unpaidWorkDates || 'ไม่ระบุ';
+                  })()}
+                </div>
               </div>
               <div className="flex justify-between">
                 <span>จำนวนชั่วโมง:</span>
@@ -1225,7 +1249,17 @@ function ManagementWorktime() {
         return;
       }
 
-      var CostDescription = `ค่าจ้างพนักงานชื่อ : ${paymentModal.employee.employeeName} | วันที่ : ${paymentModal.dateFrom} ถึง ${paymentModal.dateTo} (เวลาทำงานทั้งหมด ${formatWorktime(paymentModal.worktime)}) `;
+      // ✅ สร้างรายการวันที่ที่ยังไม่จ่ายเงิน
+      const unpaidWorkDates = paidWorktimes
+        .filter(item => 
+          item.employeeID === paymentModal.employee.employeeID && 
+          !item.isPurchase && 
+          item.totalWorktime > 0
+        )
+        .map(item => formatThaiDate(item.workDate))
+        .join(', ');
+
+      var CostDescription = `ค่าจ้างพนักงานชื่อ : ${paymentModal.employee.employeeName} | วันที่ทำงาน : ${unpaidWorkDates || 'ไม่ระบุ'} | (เวลาทำงานทั้งหมด ${formatWorktime(paymentModal.worktime)}) `;
 
       var data = {
         EmployeeID: paymentModal.employee.employeeID,
@@ -1261,7 +1295,7 @@ function ManagementWorktime() {
       employee: employee,
       worktime: employee.totalWorktime || 0,
       wageCost: employee.wageCost || 0,
-      dateFrom: dateFrom,
+      dateFrom: filterType === "daily" ? selectedDate : dateFrom,
       dateTo: filterType === "daily" ? selectedDate : dateTo
     });
 
@@ -1269,7 +1303,8 @@ function ManagementWorktime() {
     setPaymentLoading(true);
 
     try {
-      const fromDate = new Date(dateFrom);
+      // ✅ ใช้วันที่ที่ถูกต้องตาม filterType
+      const fromDate = new Date(filterType === "daily" ? selectedDate : dateFrom);
       const toDate = new Date(filterType === "daily" ? selectedDate : dateTo);
 
       const workYear = String(fromDate.getFullYear());
@@ -1355,6 +1390,9 @@ function ManagementWorktime() {
         wageCost = employeeData.wageCost || 0;
       }
 
+      // ✅ อัพเดทข้อมูลรายการที่จ่ายเงินแล้วด้วย
+      setPaidWorktimes(employeeData.worktimes || []);
+      
       // อัพเดทข้อมูลใน modal
       setPaymentModal(prev => ({
         ...prev,
@@ -1370,8 +1408,81 @@ function ManagementWorktime() {
         worktime: 0,
         wageCost: 0
       }));
+      // ✅ รีเซ็ต paidWorktimes ด้วย
+      setPaidWorktimes([]);
     } finally {
       setPaymentLoading(false);
+    }
+  };
+
+  // ✅ ฟังก์ชันแสดงรายการที่จ่ายเงินแล้ว
+  const renderPaidWorktimesList = () => {
+    // กรองข้อมูลที่มีการจ่ายเงินแล้ว
+    const filteredPaidWorktimes = paidWorktimes.filter(item =>
+      item.employeeID === paymentModal.employee?.employeeID
+    );
+
+    if (filteredPaidWorktimes.length === 0) {
+      return (
+        <div className="text-center text-base-content/60 py-2">
+          <span className="text-2xl">💼</span>
+          <p className="text-sm">ยังไม่มีการจ่ายเงินในช่วงนี้</p>
+        </div>
+      );
+    }
+
+    return filteredPaidWorktimes.map((item, index) => (
+      <div key={index} className="bg-base-100 p-2 rounded border border-base-300">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            {/* ✅ แสดงสถานะตาม isPurchase */}
+            {item.isPurchase ? (
+              <div className="font-semibold text-sm text-success">
+                ✅ จ่ายแล้ว
+              </div>
+            ) : (
+              <div className="font-semibold text-sm text-warning">
+                ⏳ ยังไม่จ่าย
+              </div>
+            )}
+            <div className="text-xs text-base-content/70 mb-1">
+              📅 วัน: {formatThaiDate(item.workDate) || 'ไม่ระบุ'}
+            </div>
+            {/* ย้าย wageCost มาไว้ด้านซ้ายล่างวันที่ */}
+            <div className={`font-bold text-sm ${item.isPurchase ? 'text-success' : 'text-warning'}`}>
+              💰 {formatCurrency(item.wageCost || 0)}
+            </div>
+            {/* แสดงวันที่จ่ายเงินหากจ่ายแล้ว */}
+            {item.isPurchase && item.purchaseDate && (
+              <div className="text-xs text-success/70 mt-1">
+                💳 จ่ายเมื่อ: {new Date(item.purchaseDate).toLocaleDateString('th-TH')}
+              </div>
+            )}
+          </div>
+          <div className="text-right flex-shrink-0 ml-2">
+            {/* แสดงเวลาเข้า-ออกงานแทน */}
+            <div className="text-xs text-base-content/70 mb-1">
+              ⏱️ เวลาทำงาน: {formatWorktime(item.totalWorktime || 0)}
+            </div>
+            <div className="text-xs text-success">
+              ⬇️ {item.timeClockIn || '-'}
+            </div>
+            <div className="text-xs text-error">
+              ⬆️ {item.timeClockOut || '-'}
+            </div>
+          </div>
+        </div>
+      </div>
+    ));
+  };
+
+    // ✅ ฟังก์ชันจัดการเมื่อเปลี่ยนวันที่ใน modal
+  const handleSelectDateChange = (newSelectDate) => {
+    setPaymentModal(prev => ({ ...prev, dateFrom: newSelectDate, dateTo: newSelectDate }));
+
+    // คำนวณใหม่ถ้ามีข้อมูลครบ
+    if (newSelectDate && paymentModal.employee?.employeeID) {
+      recalculatePaymentData(paymentModal.employee.employeeID, newSelectDate, newSelectDate);
     }
   };
 
@@ -1501,7 +1612,11 @@ function ManagementWorktime() {
 
                       {/* ✅ ปรับ layout ข้อมูล */}
                       <div className="space-y-3">
-                        <div className="bg-base-100 p-3 rounded-lg shadow-sm">
+                        <div className="bg-base-100 p-3 rounded-lg shadow-sm"
+                          onClick={() => setSelectedEmployee({
+                            employeeID: item.employeeID,
+                            employeeName: item.employeeName
+                          })}>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-lg">⏱️</span>
                             <span className="font-semibold text-base-content/80">เวลาทำงาน</span>
@@ -1586,26 +1701,43 @@ function ManagementWorktime() {
             {/* ✅ ช่วงเวลา พร้อมการคำนวณอัตโนมัติ */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-semibold">ช่วงเวลา</span>
+                <span className="label-text font-semibold">
+                  {filterType === "daily" ? "วันที่" : "ช่วงเวลา"}
+                </span>
               </label>
-              <div className="flex gap-2">
+              {filterType === "daily" ? (
+                // แสดงแค่วันที่เดียวเมื่อเป็นโหมดรายวัน
                 <input
                   type="date"
                   value={paymentModal.dateFrom}
-                  onChange={(e) => handleDateFromChange(e.target.value)}
-                  className="input input-bordered input-sm flex-1"
+                  onChange={(e) => {
+                    const selectedDate = e.target.value;
+                    handleSelectDateChange(selectedDate);
+                  }}
+                  className="input input-bordered input-sm"
                   disabled={paymentLoading}
                 />
-                <span className="self-center">ถึง</span>
-                <input
-                  type="date"
-                  value={paymentModal.dateTo}
-                  onChange={(e) => handleDateToChange(e.target.value)}
-                  min={paymentModal.dateFrom} // ป้องกันเลือกวันที่น้อยกว่า dateFrom
-                  className="input input-bordered input-sm flex-1"
-                  disabled={paymentLoading}
-                />
-              </div>
+              ) : (
+                // แสดงช่วงวันที่เมื่อเป็นโหมดช่วงเวลา
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={paymentModal.dateFrom}
+                    onChange={(e) => handleDateFromChange(e.target.value)}
+                    className="input input-bordered input-sm flex-1"
+                    disabled={paymentLoading}
+                  />
+                  <span className="self-center">ถึง</span>
+                  <input
+                    type="date"
+                    value={paymentModal.dateTo}
+                    onChange={(e) => handleDateToChange(e.target.value)}
+                    min={paymentModal.dateFrom} // ป้องกันเลือกวันที่น้อยกว่า dateFrom
+                    className="input input-bordered input-sm flex-1"
+                    disabled={paymentLoading}
+                  />
+                </div>
+              )}
               {/* ✅ แสดงสถานะการคำนวณ */}
               {paymentLoading && (
                 <div className="label">
@@ -1639,7 +1771,7 @@ function ManagementWorktime() {
             {/* ✅ ค่าตอบแทน - อัพเดทอัตโนมัติ */}
             <div className="form-control mb-6">
               <label className="label">
-                <span className="label-text font-semibold">💰 ค่าตอบแทน</span>
+                <span className="label-text font-semibold">💰 ค่าตอบแทนคงค้าง</span>
               </label>
               <input
                 type="number"
@@ -1700,70 +1832,20 @@ function ManagementWorktime() {
                 ) : (
                   <div className="space-y-2">
                     {/* ✅ แสดงรายการที่จ่ายเงินแล้ว */}
-                    {(() => {
-                      // กรองข้อมูลที่มีการจ่ายเงินแล้ว
-                      const filteredPaidWorktimes = paidWorktimes.filter(item =>
-                        item.employeeID === paymentModal.employee?.employeeID
-                      );
-
-                      if (filteredPaidWorktimes.length === 0) {
-                        return (
-                          <div className="text-center text-base-content/60 py-2">
-                            <span className="text-2xl">💼</span>
-                            <p className="text-sm">ยังไม่มีการจ่ายเงินในช่วงนี้</p>
-                          </div>
-                        );
-                      }
-
-                      return filteredPaidWorktimes.map((item, index) => (
-                        <div key={index} className="bg-base-100 p-2 rounded border border-base-300">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              {/* ✅ แสดงสถานะตาม isPurchase */}
-                              {item.isPurchase ? (
-                                <div className="font-semibold text-sm text-success">
-                                  ✅ จ่ายแล้ว
-                                </div>
-                              ) : (
-                                <div className="font-semibold text-sm text-warning">
-                                  ⏳ ยังไม่จ่าย
-                                </div>
-                              )}
-                              <div className="text-xs text-base-content/70">
-                                วันที่: {item.workDate || 'ไม่ระบุ'}
-                              </div>
-                              {/* แสดงวันที่จ่ายเงินหากจ่ายแล้ว */}
-                              {item.IsPurchase && item.purchaseDate && (
-                                <div className="text-xs text-success/70">
-                                  💰 จ่ายเมื่อ: {new Date(item.purchaseDate).toLocaleDateString('th-TH')}
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <div className={`font-bold text-sm ${item.IsPurchase ? 'text-success' : 'text-warning'
-                                }`}>
-                                {formatCurrency(item.wageCost)}
-                              </div>
-                              <div className="text-xs text-base-content/60">
-                                {formatWorktime(item.totalWorktime)}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ));
-                    })()}
+                    {renderPaidWorktimesList()}
 
                     {/* ✅ สรุปรวมที่จ่ายแล้ว */}
                     {(() => {
-                      const paidWorktimes = data.filter(item =>
+                      // ใช้ paidWorktimes ที่มาจาก API แทน data จากหน้าหลัก
+                      const paidItems = paidWorktimes.filter(item =>
                         item.employeeID === paymentModal.employee?.employeeID &&
-                        item.isPaid === true
+                        item.isPurchase === true
                       );
 
-                      if (paidWorktimes.length === 0) return null;
+                      if (paidItems.length === 0) return null;
 
-                      const totalPaidAmount = paidWorktimes.reduce((sum, item) => sum + (item.wageCost || 0), 0);
-                      const totalPaidHours = paidWorktimes.reduce((sum, item) => sum + (item.totalWorktime || 0), 0);
+                      const totalPaidAmount = paidItems.reduce((sum, item) => sum + (item.wageCost || 0), 0);
+                      const totalPaidHours = paidItems.reduce((sum, item) => sum + (item.totalWorktime || 0), 0);
 
                       return (
                         <div className="mt-3 pt-3 border-t border-base-300">
@@ -1773,7 +1855,7 @@ function ManagementWorktime() {
                                 📊 รวมที่จ่ายแล้ว
                               </div>
                               <div className="text-xs text-base-content/70">
-                                {paidWorktimes.length} รายการ
+                                {paidItems.length} รายการ
                               </div>
                             </div>
                             <div className="text-right">
