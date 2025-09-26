@@ -319,30 +319,28 @@ function GetCostIsPurchaseList({ refreshKey }) {
     setSelectedYear(Number(e.target.value));
   };
 
-  // ฟังก์ชันสำหรับกรองข้อมูลตามเดือนหรือปี
-  const getFilteredData = () => {
-    if (filterMode === 'month') {
-      return data.filter(item => {
-        const date = new Date(item.costDate);
-        return (
-          date.getMonth() === selectedMonth &&
-          date.getFullYear() === selectedYear
-        );
-      });
-    } else {
-      return data.filter(item => {
-        const date = new Date(item.costDate);
-        return date.getFullYear() === selectedYear;
-      });
-    }
-  };
-
-  // ดึงข้อมูลจาก API เมื่อ component mount
+  // ดึงข้อมูลจาก API เมื่อ component mount หรือเมื่อ filter เปลี่ยน
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true); // เพิ่มเพื่อให้ loading ทุกครั้งที่ refreshKey เปลี่ยน
+      setLoading(true);
       try {
-        const res = await api.post("/cost/GetAllCostList", { IsPurchase: true }); // ✅ path ตาม Controller
+        let res;
+
+        if (filterMode === 'month') {
+          // ✅ เรียก API GetCostListByMonth สำหรับรายเดือน
+          res = await api.post("/cost/GetAllCostList", {
+            IsPurchase: true,
+            Month: selectedMonth + 1, // API ใช้ 1-12, JavaScript ใช้ 0-11
+            Year: selectedYear
+          });
+        } else {
+          // ✅ เรียก API GetAllCostList สำหรับรายปี
+          res = await api.post("/cost/GetAllCostList", {
+            IsPurchase: true,
+            Year: selectedYear
+          });
+        }
+
         const items = res.data ?? [];
         setData(items);
       } catch (err) {
@@ -353,10 +351,10 @@ function GetCostIsPurchaseList({ refreshKey }) {
       }
     };
     fetchData();
-  }, [refreshKey]); // เปลี่ยนจาก [] เป็น [refreshKey]
+  }, [refreshKey, selectedMonth, selectedYear, filterMode]); // ✅ เพิ่ม dependencies
 
-  // Get filtered data
-  const filteredData = getFilteredData();
+  // ✅ ใช้ data โดยตรงแทนการกรอง เพราะ API ได้กรองให้แล้ว
+  const filteredData = data;
 
   // แสดงข้อความขณะกำลังโหลด
   if (loading) {
@@ -367,24 +365,6 @@ function GetCostIsPurchaseList({ refreshKey }) {
       </div>
     );
   }
-
-  // กรณีไม่มีข้อมูล
-  if (!data || data.length === 0) {
-    return (
-      <div className="text-center py-12 bg-gradient-to-br from-base-100 to-base-200 rounded-xl border border-base-300">
-        <div className="flex flex-col items-center gap-3">
-          <div className="p-4 bg-success/20 rounded-full">
-            <span className="text-4xl">✅</span>
-          </div>
-          <div>
-            <div className="text-base font-semibold text-base-content">ไม่มีรายการที่ชำระแล้ว</div>
-            <div className="text-sm text-base-content/60">ยังไม่มีประวัติการชำระเงิน</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // กรณีกรองแล้วไม่มีข้อมูล
   if (filteredData.length === 0) {
     return (
@@ -412,8 +392,8 @@ function GetCostIsPurchaseList({ refreshKey }) {
               value={selectedYear}
               onChange={handleYearChange}
             >
-              {[...new Set(data.map(item => new Date(item.costDate).getFullYear()))]
-                .filter((v, i, arr) => arr.indexOf(v) === i)
+              {/* ✅ แสดงปีย้อนหลัง 5 ปีและอนาคต 1 ปี */}
+              {Array.from({ length: 7 }, (_, i) => getCurrentYear() - 5 + i)
                 .sort((a, b) => b - a)
                 .map((y) => (
                   <option key={y} value={y}>
@@ -434,7 +414,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
 
             <div className="ml-auto flex items-center gap-2 text-xs text-base-content/60">
               <span className="badge badge-xs badge-outline">
-                0/{data.length}
+                0 รายการ
               </span>
             </div>
           </div>
@@ -481,8 +461,8 @@ function GetCostIsPurchaseList({ refreshKey }) {
             value={selectedYear}
             onChange={handleYearChange}
           >
-            {[...new Set(data.map(item => new Date(item.costDate).getFullYear()))]
-              .filter((v, i, arr) => arr.indexOf(v) === i)
+            {/* ✅ แสดงปีย้อนหลัง 5 ปีและอนาคต 1 ปี */}
+            {Array.from({ length: 7 }, (_, i) => getCurrentYear() - 5 + i)
               .sort((a, b) => b - a)
               .map((y) => (
                 <option key={y} value={y}>
@@ -490,7 +470,6 @@ function GetCostIsPurchaseList({ refreshKey }) {
                 </option>
               ))}
           </select>
-
           <label className="flex cursor-pointer items-center gap-1">
             <input
               type="checkbox"
@@ -677,7 +656,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
       <div className="md:hidden space-y-2">
         <div className="ml-auto flex items-center gap-2 text-xs text-base-success/60">
           <span className="badge badge-xs badge-outline">
-            รายการ {filteredData.length}/{data.length}
+            {filteredData.length} รายการ
           </span>
         </div>
         {filteredData.map((item, idx) => (
@@ -699,7 +678,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
             </div>
 
             {/* Description Row */}
-            <div className="text-xs text-base-content/80 truncate bg-base-200/30 rounded px-2 py-1" title={item.costDescription}>
+            <div className="text-xs text-base-content/80 bg-base-200/30 rounded px-2 py-1 break-words" title={item.costDescription}>
               💬 {item.costDescription}
             </div>
           </div>

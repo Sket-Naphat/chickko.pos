@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import React from "react";
 import { Bar } from "react-chartjs-2";
@@ -32,10 +32,7 @@ const months = [
 const getCurrentMonth = () => new Date().getMonth();
 const getCurrentYear = () => new Date().getFullYear();
 
-
-
 function Dashboard() {
-  const [isLoading, setIsLoading] = useState(false);
   const [dineInSalesData, setDineInSalesData] = useState([]);
   const [deliverySalesData, setDeliverySalesData] = useState([]);
   const [costData, setCostData] = useState([]);
@@ -45,19 +42,27 @@ function Dashboard() {
   const [filterMode, setFilterMode] = useState('month'); // 'month' หรือ 'year'
 
   // ✅ ดึงข้อมูลยอดขายรายวันตอนเปิดหน้า
-  useEffect(() => {
-    fetchDailySalesReport();
-  }, []);
-
-  const fetchDailySalesReport = async () => {
+  const fetchDailySalesReport = useCallback(async () => {
     try {
       setSalesLoading(true);
-      // ดึงข้อมูลยอดขายรายวันหน้าร้าน
-      const dineIn_response = await api.get("/orders/GetDailyDineInSalesReport");
+      
+      // ✅ ดึงข้อมูลทั้งปีเท่านั้น ไม่แยกตามเดือน
+      const params = {
+        Year: selectedYear
+      };
+      
+      const costParams = {
+        IsPurchase: true,
+        Year: selectedYear
+      };
+
+      const dineIn_response = await api.post("/orders/GetDailyDineInSalesReport", params);
       setDineInSalesData(dineIn_response.data.data || []);
-      const delivery_response = await api.get("/orders/GetDailyDeliverySalesReport");
+
+      const delivery_response = await api.post("/orders/GetDailyDeliverySalesReport", params);
       setDeliverySalesData(delivery_response.data.data || []);
-      const cost_response = await api.post("/cost/GetAllCostList", { IsPurchase: true });
+
+      const cost_response = await api.post("/cost/GetCostListReport", costParams);
       setCostData(cost_response.data || []);
 
     } catch (error) {
@@ -69,34 +74,12 @@ function Dashboard() {
     } finally {
       setSalesLoading(false);
     }
-  };
+  }, [selectedYear]); // ✅ เหลือแค่ selectedYear ใน dependencies
 
-  const handleCopyOrderFromFirestore = async () => {
-    try {
-      setIsLoading(true);
-      console.log("Copying order from Firestore...");
-
-      const response = await api.post(
-        "/orders/CopyOrderFromFirestore",
-        {},
-        { timeout: 1800000 }
-      );
-
-      console.log("Order copied successfully:", response.data);
-      alert(response.data.message + " Order copied successfully");
-
-      // ✅ รีเฟรชข้อมูลยอดขายหลังจากดึงข้อมูลเสร็จ
-      await fetchDailySalesReport();
-    } catch (error) {
-      console.error("Error copying order:", error);
-      alert(
-        "เกิดข้อผิดพลาดในการดึงข้อมูล: " +
-        (error.message || "ไม่ทราบสาเหตุ")
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // ✅ ตอนนี้ useEffect จะไม่มี warning แล้ว
+  useEffect(() => {
+    fetchDailySalesReport();
+  }, [fetchDailySalesReport]);
 
   // ✅ ฟังก์ชันจัดรูปแบบตัวเลข
   const formatNumber = (num) => {
@@ -203,9 +186,9 @@ function Dashboard() {
                 date.getFullYear() === selectedYear
               );
             })
-            .reduce((sum, item) => sum + (item.costPrice || 0), 0)
+            .reduce((sum, item) => sum + (item.totalAmount || 0), 0) // ✅ เปลี่ยนจาก costPrice เป็น totalAmount
         ),
-        backgroundColor: "oklch(60% 0.118 30.755)", // สีกราฟต้นทุน
+        backgroundColor: "oklch(60% 0.118 30.755)",
       },
     ],
   };
@@ -213,69 +196,108 @@ function Dashboard() {
   // คำนวณสรุปผลประกอบการ
   const dineInTotal = filterMode === 'month'
     ? dineInSalesData
-        .filter(item => {
-          const date = new Date(item.saleDate);
-          return (
-            date.getMonth() === selectedMonth &&
-            date.getFullYear() === selectedYear
-          );
-        })
-        .reduce((sum, item) => sum + item.totalAmount, 0)
+      .filter(item => {
+        const date = new Date(item.saleDate);
+        return (
+          date.getMonth() === selectedMonth &&
+          date.getFullYear() === selectedYear
+        );
+      })
+      .reduce((sum, item) => sum + item.totalAmount, 0)
     : dineInSalesData
-        .filter(item => new Date(item.saleDate).getFullYear() === selectedYear)
-        .reduce((sum, item) => sum + item.totalAmount, 0);
+      .filter(item => new Date(item.saleDate).getFullYear() === selectedYear)
+      .reduce((sum, item) => sum + item.totalAmount, 0);
 
   const deliveryTotal = filterMode === 'month'
     ? deliverySalesData
-        .filter(item => {
-          const date = new Date(item.saleDate);
-          return (
-            date.getMonth() === selectedMonth &&
-            date.getFullYear() === selectedYear
-          );
-        })
-        .reduce((sum, item) => sum + item.totalAmount, 0)
+      .filter(item => {
+        const date = new Date(item.saleDate);
+        return (
+          date.getMonth() === selectedMonth &&
+          date.getFullYear() === selectedYear
+        );
+      })
+      .reduce((sum, item) => sum + item.totalAmount, 0)
     : deliverySalesData
-        .filter(item => new Date(item.saleDate).getFullYear() === selectedYear)
-        .reduce((sum, item) => sum + item.totalAmount, 0);
+      .filter(item => new Date(item.saleDate).getFullYear() === selectedYear)
+      .reduce((sum, item) => sum + item.totalAmount, 0);
 
   const totalSales = dineInTotal + deliveryTotal;
 
   const costTotal = filterMode === 'month'
     ? costData
-        .filter(item => {
-          const date = new Date(item.costDate);
-          return (
-            date.getMonth() === selectedMonth &&
-            date.getFullYear() === selectedYear
-          );
-        })
-        .reduce((sum, item) => sum + (item.costPrice || 0), 0)
+      .filter(item => {
+        const date = new Date(item.costDate);
+        return (
+          date.getMonth() === selectedMonth &&
+          date.getFullYear() === selectedYear
+        );
+      })
+      .reduce((sum, item) => sum + (item.totalAmount || 0), 0) // ✅ เปลี่ยนจาก costPrice เป็น totalAmount
     : costData
-        .filter(item => new Date(item.costDate).getFullYear() === selectedYear)
-        .reduce((sum, item) => sum + (item.costPrice || 0), 0);
+      .filter(item => new Date(item.costDate).getFullYear() === selectedYear)
+      .reduce((sum, item) => sum + (item.totalAmount || 0), 0); // ✅ เปลี่ยนจาก costPrice เป็น totalAmount
 
   const netProfit = totalSales - costTotal;
+
+  // เพิ่มฟังก์ชันสำหรับจัดรูปแบบวันที่
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    return `${dayNames[date.getDay()]}ที่ ${date.getDate()}`;
+  };
+
+  // เพิ่มการคำนวณข้อมูลรายวันสำหรับเดือนที่เลือก
+  const getDailyData = () => {
+    const dailyData = [];
+    const year = selectedYear;
+    const month = selectedMonth;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
+      // หายอดขายหน้าร้าน
+      const dineInAmount = dineInSalesData
+        .filter(item => item.saleDate === dateStr)
+        .reduce((sum, item) => sum + item.totalAmount, 0);
+      
+      // หายอดขายเดลิเวอรี่
+      const deliveryAmount = deliverySalesData
+        .filter(item => item.saleDate === dateStr)
+        .reduce((sum, item) => sum + item.totalAmount, 0);
+      
+      // หาต้นทุน
+      const costAmount = costData
+        .filter(item => item.costDate === dateStr)
+        .reduce((sum, item) => sum + (item.totalAmount || 0), 0);
+      
+      const totalAmount = dineInAmount + deliveryAmount;
+      const profit = totalAmount - costAmount;
+      
+      // แสดงเฉพาะวันที่มีข้อมูล
+      if (totalAmount > 0 || costAmount > 0) {
+        dailyData.push({
+          date: dateStr,
+          day: day,
+          dineIn: dineInAmount,
+          delivery: deliveryAmount,
+          total: totalAmount,
+          cost: costAmount,
+          profit: profit
+        });
+      }
+    }
+    
+    return dailyData.sort((a, b) => b.day - a.day); // เรียงจากวันมากไปน้อย
+  };
 
   return (
     <>
       <div className="px-2 py-4 sm:px-6 sm:py-6 max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2 ">
+        {/* ✅ ลบส่วน header ที่มีปุ่ม "ดึงข้อมูลจาก Firestore" */}
+        <div className="mb-2">
           <h1 className="text-2xl sm:text-3xl font-bold text-primary">สรุปผลประกอบการ</h1>
-          <button
-            className={`btn btn-primary ${isLoading ? "loading" : ""} `}
-            onClick={handleCopyOrderFromFirestore}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="loading loading-spinner loading-sm"></span>
-                กำลังดึงข้อมูล...
-              </>
-            ) : (
-              "ดึงข้อมูลจาก Firestore"
-            )}
-          </button>
         </div>
 
         {/* Card ฟิลเตอร์เดือน/ปี */}
@@ -307,10 +329,8 @@ function Dashboard() {
                 value={selectedYear}
                 onChange={handleYearChange}
               >
-                {[...new Set(dineInSalesData.map(item => new Date(item.saleDate).getFullYear()))]
-                  .concat(...deliverySalesData.map(item => new Date(item.saleDate).getFullYear()))
-                  .concat(...costData.map(item => new Date(item.costDate).getFullYear()))
-                  .filter((v, i, arr) => arr.indexOf(v) === i)
+                {/* ✅ ใช้ Array.from เพื่อสร้างช่วงปีที่ยืดหยุ่น */}
+                {Array.from({ length: 7 }, (_, i) => getCurrentYear() - 5 + i)
                   .sort((a, b) => b - a)
                   .map((y) => (
                     <option key={y} value={y}>
@@ -411,12 +431,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {isLoading && (
-          <div className="alert alert-info">
-            <span className="loading loading-spinner loading-sm"></span>
-            <span>กำลังดึงข้อมูลกรุณารอสักครู่...</span>
-          </div>
-        )}
+        {/* ✅ ลบ isLoading alert */}
         {salesLoading ? (
           <div className="bg-base-100 rounded-xl shadow p-8 flex flex-col items-center justify-center mb-6">
             <span className="loading loading-spinner loading-lg text-primary mb-4"></span>
@@ -524,20 +539,20 @@ function Dashboard() {
                 <span className="text-2xl block sm:inline text-warning">
                   {filterMode === 'month'
                     ? formatNumber(
-                      costData
-                        .filter(item => {
-                          const date = new Date(item.costDate);
-                          return (
-                            date.getMonth() === selectedMonth &&
-                            date.getFullYear() === selectedYear
-                          );
-                        })
-                        .reduce((sum, item) => sum + (item.costPrice || 0), 0)
+                        costData
+                          .filter(item => {
+                            const date = new Date(item.costDate);
+                            return (
+                              date.getMonth() === selectedMonth &&
+                              date.getFullYear() === selectedYear
+                            );
+                          })
+                          .reduce((sum, item) => sum + (item.totalAmount || 0), 0) // ✅ เปลี่ยนจาก costPrice เป็น totalAmount
                     )
                     : formatNumber(
-                      costData
-                        .filter(item => new Date(item.costDate).getFullYear() === selectedYear)
-                        .reduce((sum, item) => sum + (item.costPrice || 0), 0)
+                        costData
+                          .filter(item => new Date(item.costDate).getFullYear() === selectedYear)
+                          .reduce((sum, item) => sum + (item.totalAmount || 0), 0) // ✅ เปลี่ยนจาก costPrice เป็น totalAmount
                     )}
                   บาท
                 </span>
@@ -545,10 +560,295 @@ function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* ✅ Card สรุปรายวัน (แสดงเฉพาะโหมดรายเดือน) */}
+        {filterMode === 'month' && !salesLoading && (
+          <div className="bg-base-100 rounded-xl shadow p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl sm:text-2xl font-semibold text-primary">
+                📊 สรุปรายวัน - {months[selectedMonth]} {selectedYear}
+              </h2>
+              <div className="badge badge-primary badge-outline">
+                {getDailyData().length} วันที่มีข้อมูล
+              </div>
+            </div>
+            
+            {getDailyData().length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-2">📈</div>
+                <div className="text-base-content/60">ยังไม่มีข้อมูลในเดือนนี้</div>
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="table table-zebra w-full">
+                    <thead>
+                      <tr className="bg-base-200">
+                        <th className="text-center">📅 วันที่</th>
+                        <th className="text-right">🏪 หน้าร้าน</th>
+                        <th className="text-right">🛵 เดลิเวอรี่</th>
+                        <th className="text-right">💰 ยอดรวม</th>
+                        <th className="text-right">💸 ต้นทุน</th>
+                        <th className="text-right">💚 กำไร</th>
+                        <th className="text-center">📊 %กำไร</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getDailyData().map((dayData) => {
+                        const profitPercent = dayData.total > 0 ? ((dayData.profit / dayData.total) * 100) : 0;
+                        const costPercent = dayData.total > 0 ? ((dayData.cost / dayData.total) * 100) : 0;
+                        
+                        return (
+                          <tr key={dayData.date} className="hover:bg-base-200/50">
+                            <td className="text-center font-medium">
+                              <div className="flex flex-col items-center">
+                                <div className="text-sm font-bold">{formatDate(dayData.date)}</div>
+                                <div className="text-xs text-base-content/60">{dayData.day}</div>
+                              </div>
+                            </td>
+                            <td className="text-right">
+                              {dayData.dineIn > 0 ? (
+                                <span className="font-medium text-info">
+                                  {formatNumber(dayData.dineIn)}
+                                </span>
+                              ) : (
+                                <span className="text-base-content/40">-</span>
+                              )}
+                            </td>
+                            <td className="text-right">
+                              {dayData.delivery > 0 ? (
+                                <span className="font-medium text-accent">
+                                  {formatNumber(dayData.delivery)}
+                                </span>
+                              ) : (
+                                <span className="text-base-content/40">-</span>
+                              )}
+                            </td>
+                            <td className="text-right">
+                              <span className="font-bold text-primary">
+                                {formatNumber(dayData.total)}
+                              </span>
+                            </td>
+                            <td className="text-right">
+                              {dayData.cost > 0 ? (
+                                <div className="flex flex-col items-end">
+                                  <span className="font-medium text-error">
+                                    {formatNumber(dayData.cost)}
+                                  </span>
+                                  <span className="text-xs text-error/60">
+                                    ({costPercent.toFixed(1)}%)
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-base-content/40">-</span>
+                              )}
+                            </td>
+                            <td className="text-right">
+                              <span className={`font-bold ${dayData.profit >= 0 ? 'text-success' : 'text-error'}`}>
+                                {formatNumber(dayData.profit)}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <div className={`badge ${profitPercent >= 20 ? 'badge-success' : profitPercent >= 10 ? 'badge-warning' : 'badge-error'} badge-sm`}>
+                                {profitPercent.toFixed(1)}%
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile/Tablet Card Layout */}
+                <div className="lg:hidden space-y-3">
+                  {getDailyData().map((dayData) => {
+                    const profitPercent = dayData.total > 0 ? ((dayData.profit / dayData.total) * 100) : 0;
+                    const costPercent = dayData.total > 0 ? ((dayData.cost / dayData.total) * 100) : 0;
+                    
+                    return (
+                      <div key={dayData.date} className="bg-gradient-to-r from-base-200/30 to-base-100 border border-base-300 rounded-lg p-4 shadow-sm">
+                        {/* Header with Date and Profit Badge */}
+                        <div className="flex justify-between items-center mb-3">
+                          <div>
+                            <div className="text-lg font-bold text-base-content">
+                              {formatDate(dayData.date)} ({dayData.day})
+                            </div>
+                            <div className="text-xs text-base-content/60">
+                              {new Date(dayData.date).toLocaleDateString('th-TH')}
+                            </div>
+                          </div>
+                          <div className={`badge ${profitPercent >= 20 ? 'badge-success' : profitPercent >= 10 ? 'badge-warning' : 'badge-error'} badge-lg font-bold`}>
+                            {profitPercent.toFixed(1)}% กำไร
+                          </div>
+                        </div>
+
+                        {/* Sales Data Grid */}
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div className="bg-info/10 rounded-lg p-3 border border-info/20">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-info/70">🏪 หน้าร้าน</span>
+                              <span className="font-bold text-info">
+                                {dayData.dineIn > 0 ? formatNumber(dayData.dineIn) : '-'
+                                }
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-accent/10 rounded-lg p-3 border border-accent/20">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-accent/70">🛵 เดลิเวอรี่</span>
+                              <span className="font-bold text-accent">
+                                {dayData.delivery > 0 ? formatNumber(dayData.delivery) : '-'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Financial Summary */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center bg-primary/10 rounded-lg p-2 border border-primary/20">
+                            <span className="text-sm font-medium text-primary">💰 ยอดขายรวม</span>
+                            <span className="font-bold text-lg text-primary">
+                              {formatNumber(dayData.total)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center bg-error/10 rounded-lg p-2 border border-error/20">
+                            <span className="text-sm font-medium text-error">
+                              💸 ต้นทุน {dayData.cost > 0 && `(${costPercent.toFixed(1)}%)`}
+                            </span>
+                            <span className="font-bold text-lg text-error">
+                              {dayData.cost > 0 ? formatNumber(dayData.cost) : '-'}
+                            </span>
+                          </div>
+                          
+                          <div className={`flex justify-between items-center ${dayData.profit >= 0 ? 'bg-success/10 border-success/20' : 'bg-error/10 border-error/20'} rounded-lg p-2 border`}>
+                            <span className={`text-sm font-medium ${dayData.profit >= 0 ? 'text-success' : 'text-error'}`}>
+                              💚 กำไรสุทธิ
+                            </span>
+                            <span className={`font-bold text-lg ${dayData.profit >= 0 ? 'text-success' : 'text-error'}`}>
+                              {formatNumber(dayData.profit)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Summary Footer */}
+                <div className="mt-6 bg-base-300/50 rounded-lg p-4">
+                  <div className="text-center mb-4">
+                    <h3 className="text-lg font-bold text-base-content">📈 สรุปรวมทั้งเดือน</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="text-center">
+                      <div className="text-xs text-info/70 mb-1">🏪 หน้าร้าน</div>
+                      <div className="font-bold text-lg text-info">
+                        {formatNumber(getDailyData().reduce((sum, day) => sum + day.dineIn, 0))}
+                      </div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="text-xs text-accent/70 mb-1">🛵 เดลิเวอรี่</div>
+                      <div className="font-bold text-lg text-accent">
+                        {formatNumber(getDailyData().reduce((sum, day) => sum + day.delivery, 0))}
+                      </div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="text-xs text-primary/70 mb-1">💰 ยอดรวม</div>
+                      <div className="font-bold text-lg text-primary">
+                        {formatNumber(getDailyData().reduce((sum, day) => sum + day.total, 0))}
+                      </div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="text-xs text-error/70 mb-1">💸 ต้นทุน</div>
+                      <div className="font-bold text-lg text-error">
+                        {formatNumber(getDailyData().reduce((sum, day) => sum + day.cost, 0))}
+                      </div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="text-xs text-success/70 mb-1">💚 กำไร</div>
+                      <div className="font-bold text-lg text-success">
+                        {formatNumber(getDailyData().reduce((sum, day) => sum + day.profit, 0))}
+                      </div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="text-xs text-base-content/70 mb-1">📊 % กำไร</div>
+                      <div className="font-bold text-lg">
+                        {(() => {
+                          const totalSalesSum = getDailyData().reduce((sum, day) => sum + day.total, 0);
+                          const totalProfitSum = getDailyData().reduce((sum, day) => sum + day.profit, 0);
+                          const avgPercent = totalSalesSum > 0 ? ((totalProfitSum / totalSalesSum) * 100) : 0;
+                          return (
+                            <span className={avgPercent >= 20 ? 'text-success' : avgPercent >= 10 ? 'text-warning' : 'text-error'}>
+                              {avgPercent.toFixed(1)}%
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* ✅ สรุปสถิติด่วน */}
+            {getDailyData().length > 0 && (
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-gradient-to-r from-success/10 to-success/5 border border-success/20 rounded-lg p-3 text-center">
+                  <div className="text-success font-bold text-lg">
+                    {getDailyData().filter(day => day.profit > 0).length}
+                  </div>
+                  <div className="text-xs text-success/70">วันที่มีกำไร</div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-warning/10 to-warning/5 border border-warning/20 rounded-lg p-3 text-center">
+                  <div className="text-warning font-bold text-lg">
+                    {(() => {
+                      const profits = getDailyData().filter(day => day.total > 0).map(day => (day.profit / day.total) * 100);
+                      const avgProfit = profits.length > 0 ? profits.reduce((sum, p) => sum + p, 0) / profits.length : 0;
+                      return avgProfit.toFixed(1);
+                    })()}%
+                  </div>
+                  <div className="text-xs text-warning/70">% กำไรเฉลี่ย</div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-info/10 to-info/5 border border-info/20 rounded-lg p-3 text-center">
+                  <div className="text-info font-bold text-lg">
+                    {(() => {
+                      const totals = getDailyData().map(day => day.total);
+                      const avgSales = totals.length > 0 ? totals.reduce((sum, t) => sum + t, 0) / totals.length : 0;
+                      return formatNumber(avgSales);
+                    })()}
+                  </div>
+                  <div className="text-xs text-info/70">ยอดขายเฉลี่ย/วัน</div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-error/10 to-error/5 border border-error/20 rounded-lg p-3 text-center">
+                  <div className="text-error font-bold text-lg">
+                    {(() => {
+                      const costs = getDailyData().map(day => day.cost);
+                      const avgCost = costs.length > 0 ? costs.reduce((sum, c) => sum + c, 0) / costs.length : 0;
+                      return formatNumber(avgCost);
+                    })()}
+                  </div>
+                  <div className="text-xs text-error/70">ต้นทุนเฉลี่ย/วัน</div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
-
 }
 
 export default Dashboard;
