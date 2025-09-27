@@ -10,8 +10,8 @@ const UserName = authData ? authData.name : "-";
 // }
 const getCurrentTime = () => {
     const now = new Date();
-    var currentTime =  now.toLocaleTimeString('en-GB', { hour12: false });
-     return currentTime;
+    var currentTime = now.toLocaleTimeString('en-GB', { hour12: false });
+    return currentTime;
 };
 
 const getTodayDate = () => {
@@ -76,8 +76,8 @@ const TimeClock = () => {
         if (!authData) return;
         const today = getTodayDate();
         api.post('/worktime/GetPeriodWorktimeByEmployeeID', {
-          employeeID: authData.userId,
-          workDate: today
+            employeeID: authData.userId,
+            workDate: today
         })
             .then(response => {
                 const clockInTime = response.data?.timeClockIn || null;
@@ -115,7 +115,7 @@ const TimeClock = () => {
             }
 
             setIsGettingLocation(true);
-            
+
             const locations = [];
             let attempts = 0;
             const maxAttempts = 5; // ขอตำแหน่ง 5 ครั้ง
@@ -142,21 +142,21 @@ const TimeClock = () => {
                         locations.push(locationData);
                         console.log(`GPS Attempt ${attempts}:`, {
                             lat: locationData.latitude.toFixed(6),
-                            lng: locationData.longitude.toFixed(6),   
+                            lng: locationData.longitude.toFixed(6),
                             accuracy: Math.round(locationData.accuracy) + 'm',
-                            quality: locationData.accuracy <= preferredAccuracy ? 'Excellent' : 
-                                    locationData.accuracy <= acceptableAccuracy ? 'Good' : 
+                            quality: locationData.accuracy <= preferredAccuracy ? 'Excellent' :
+                                locationData.accuracy <= acceptableAccuracy ? 'Good' :
                                     locationData.accuracy <= fallbackAccuracy ? 'Fair' : 'Poor'
                         });
 
                         // เงื่อนไขการหยุด: ได้ความแม่นยำดี หรือ ครบจำนวนครั้ง หรือ มีตำแหน่งที่ใช้งานได้
-                        const shouldStop = locationData.accuracy <= preferredAccuracy || 
-                                         attempts >= maxAttempts || 
-                                         (attempts >= 2 && locationData.accuracy <= acceptableAccuracy);
+                        const shouldStop = locationData.accuracy <= preferredAccuracy ||
+                            attempts >= maxAttempts ||
+                            (attempts >= 2 && locationData.accuracy <= acceptableAccuracy);
 
                         if (shouldStop) {
                             // เลือกตำแหน่งที่แม่นยำที่สุด
-                            const bestLocation = locations.reduce((best, current) => 
+                            const bestLocation = locations.reduce((best, current) =>
                                 current.accuracy < best.accuracy ? current : best
                             );
 
@@ -165,8 +165,8 @@ const TimeClock = () => {
                                 lng: bestLocation.longitude.toFixed(6),
                                 accuracy: Math.round(bestLocation.accuracy) + 'm',
                                 totalAttempts: attempts,
-                                quality: bestLocation.accuracy <= preferredAccuracy ? '🟢 Excellent' : 
-                                        bestLocation.accuracy <= acceptableAccuracy ? '🟡 Good' : 
+                                quality: bestLocation.accuracy <= preferredAccuracy ? '🟢 Excellent' :
+                                    bestLocation.accuracy <= acceptableAccuracy ? '🟡 Good' :
                                         bestLocation.accuracy <= fallbackAccuracy ? '🟠 Fair' : '🔴 Poor',
                                 usable: bestLocation.accuracy <= fallbackAccuracy ? 'Yes' : 'Limited'
                             });
@@ -186,26 +186,26 @@ const TimeClock = () => {
                             code: error.code,
                             message: error.message,
                             description: error.code === 1 ? 'Permission denied' :
-                                        error.code === 2 ? 'Position unavailable' :
-                                        error.code === 3 ? 'Timeout' : 'Unknown error'
+                                error.code === 2 ? 'Position unavailable' :
+                                    error.code === 3 ? 'Timeout' : 'Unknown error'
                         });
-                        
+
                         // ถ้าครบจำนวนครั้ง หรือ error ร้ายแรง
                         if (attempts >= maxAttempts) {
                             setIsGettingLocation(false);
                             if (locations.length > 0) {
                                 // ถ้ามีตำแหน่งบางค่า ให้ใช้ค่าที่แม่นยำที่สุด (แม้จะไม่ดีมาก)
-                                const bestLocation = locations.reduce((best, current) => 
+                                const bestLocation = locations.reduce((best, current) =>
                                     current.accuracy < best.accuracy ? current : best
                                 );
-                                
+
                                 console.warn('Using fallback location:', {
                                     lat: bestLocation.latitude.toFixed(6),
                                     lng: bestLocation.longitude.toFixed(6),
                                     accuracy: Math.round(bestLocation.accuracy) + 'm',
                                     note: 'Location quality may be poor but usable'
                                 });
-                                
+
                                 resolve(bestLocation);
                             } else {
                                 // ไม่มีตำแหน่งเลย
@@ -219,7 +219,7 @@ const TimeClock = () => {
                                 reject(error);
                                 return;
                             }
-                            
+
                             setTimeout(() => {
                                 getLocationAttempt();
                             }, 2000); // รอนานขึ้นหลัง error
@@ -246,15 +246,15 @@ const TimeClock = () => {
     // ฟังก์ชันคำนวณระยะทางระหว่างสองจุด (Haversine formula)
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
         const R = 6371e3; // รัศมีโลกเป็นเมตร
-        const φ1 = lat1 * Math.PI/180;
-        const φ2 = lat2 * Math.PI/180;
-        const Δφ = (lat2-lat1) * Math.PI/180;
-        const Δλ = (lon2-lon1) * Math.PI/180;
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return R * c; // ระยะทางเป็นเมตร
     };
@@ -267,7 +267,7 @@ const TimeClock = () => {
             STORE_LOCATION.latitude,
             STORE_LOCATION.longitude
         );
-        
+
         return {
             distance: Math.round(distance),
             isWithinRadius: distance <= STORE_LOCATION.radius
@@ -277,14 +277,14 @@ const TimeClock = () => {
     const handleClockIn = async () => {
         try {
             const location = await getCurrentLocation();
-            
+
             // ตรวจสอบระยะทางจากร้าน
             const locationCheck = checkLocationDistance(location);
-            
+
             if (!locationCheck.isWithinRadius) {
                 // ถ้าอยู่นอกรัศมี แสดงข้อความเตือน
-                setLocationWarning(`⚠️ คุณกดจากนอกพื้นที่ร้าน (ห่าง ${(locationCheck.distance/1000).toFixed(2)} กม.)`);
-                
+                setLocationWarning(`⚠️ คุณกดจากนอกพื้นที่ร้าน (ห่าง ${(locationCheck.distance / 1000).toFixed(2)} กม.)`);
+
                 // ซ่อนข้อความเตือนหลัง 5 วินาที
                 setTimeout(() => {
                     setLocationWarning('');
@@ -292,7 +292,7 @@ const TimeClock = () => {
             } else {
                 setLocationWarning('');
             }
-            
+
             const success = await saveTimesClockIn(currentTime, location, locationCheck);
             if (success) {
                 setClockInTime(currentTime);
@@ -301,7 +301,7 @@ const TimeClock = () => {
         } catch (error) {
             console.error('Error getting location:', error);
             setLocationWarning('⚠️ ไม่สามารถดึงข้อมูลตำแหน่งได้ กรุณาลองใหม่อีกครั้ง');
-            
+
             // ซ่อนข้อความเตือนหลัง 5 วินาที
             setTimeout(() => {
                 setLocationWarning('');
@@ -314,11 +314,11 @@ const TimeClock = () => {
             const location = await getCurrentLocation();
             // ตรวจสอบระยะทางจากร้าน
             const locationCheck = checkLocationDistance(location);
-            
+
             if (!locationCheck.isWithinRadius) {
                 // ถ้าอยู่นอกรัศมี แสดงข้อความเตือน
-                setLocationWarning(`⚠️ คุณกดจากนอกพื้นที่ร้าน (ห่าง ${(locationCheck.distance/1000).toFixed(2)} กม.)`);
-                
+                setLocationWarning(`⚠️ คุณกดจากนอกพื้นที่ร้าน (ห่าง ${(locationCheck.distance / 1000).toFixed(2)} กม.)`);
+
                 // ซ่อนข้อความเตือนหลัง 5 วินาที
                 setTimeout(() => {
                     setLocationWarning('');
@@ -326,7 +326,7 @@ const TimeClock = () => {
             } else {
                 setLocationWarning('');
             }
-            
+
             // เรียก saveTimesClockOut และรอผลลัพธ์
             const success = await saveTimesClockOut(clockInTime, currentTime, location, locationCheck);
             if (success) {
@@ -336,12 +336,12 @@ const TimeClock = () => {
         } catch (error) {
             console.error('Error getting location:', error);
             setLocationWarning('⚠️ ไม่สามารถระบุตำแหน่งได้ กรุณาลองใหม่');
-            
+
             // ซ่อนข้อความเตือนหลัง 5 วินาที
             setTimeout(() => {
                 setLocationWarning('');
             }, 5000);
-            
+
             // พยายามบันทึกโดยไม่มี location
             const success = await saveTimesClockOut(clockInTime, currentTime, null, null);
             if (success) {
@@ -378,12 +378,12 @@ const TimeClock = () => {
         } catch (error) {
             console.error('Error clocking in:', error);
             setLocationWarning('⚠️ ไม่สามารถบันทึกเวลาเข้างานได้ กรุณาลองใหม่อีกครั้ง');
-            
+
             // ซ่อนข้อความเตือนหลัง 5 วินาที
             setTimeout(() => {
                 setLocationWarning('');
             }, 5000);
-            
+
             return false; // บันทึกไม่สำเร็จ
         }
     };
@@ -414,12 +414,12 @@ const TimeClock = () => {
         } catch (error) {
             console.error('Error clocking out:', error);
             setLocationWarning('⚠️ เกิดข้อผิดพลาดในการบันทึกเวลาออกงาน กรุณาลองใหม่');
-            
+
             // ซ่อนข้อความเตือนหลัง 5 วินาที
             setTimeout(() => {
                 setLocationWarning('');
             }, 5000);
-            
+
             return false; // บันทึกไม่สำเร็จ
         }
     };
@@ -467,7 +467,7 @@ const TimeClock = () => {
                             <span className="text-lg font-semibold text-primary">เข้างาน</span>
                             <span className="text-xl font-mono">{clockInTime ? clockInTime : '-'}</span>
                             {ClockInLocations ? (
-                                <button 
+                                <button
                                     className="btn btn-xs btn-outline btn-primary mt-2"
                                     onClick={() => window.open(ClockInLocations, '_blank')}
                                     title="ดูตำแหน่งในแผนที่"
@@ -482,7 +482,7 @@ const TimeClock = () => {
                             <span className="text-lg font-semibold text-secondary">ออกงาน</span>
                             <span className="text-xl font-mono">{clockOutTime ? clockOutTime : '-'}</span>
                             {ClockOutLocations ? (
-                                <button 
+                                <button
                                     className="btn btn-xs btn-outline btn-secondary mt-2"
                                     onClick={() => window.open(ClockOutLocations, '_blank')}
                                     title="ดูตำแหน่งในแผนที่"

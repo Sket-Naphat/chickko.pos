@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import React from "react";
 import { Bar } from "react-chartjs-2";
@@ -46,9 +46,30 @@ const Income = () => {
     const navigate = useNavigate();
 
     // ✅ ดึงข้อมูลยอดขายรายวันตอนเปิดหน้า
+    const fetchDailySalesReport = useCallback(async () => {
+        try {
+            setSalesLoading(true);
+            
+            // ✅ เปลี่ยนจาก GET เป็น POST และส่ง Year ใน body
+            const response = await api.post("/orders/GetDailyDineInSalesReport", {
+                Year: selectedYear
+            });
+            
+            setSalesData(response.data.data || []);
+        } catch (error) {
+            console.error("Error fetching sales report:", error);
+            alert(
+                "เกิดข้อผิดพลาดในการดึงข้อมูลยอดขาย: " +
+                (error.response?.data?.message || error.message || "ไม่ทราบสาเหตุ")
+            );
+        } finally {
+            setSalesLoading(false);
+        }
+    }, [selectedYear]); // dependency ของ useCallback
+
     useEffect(() => {
         fetchDailySalesReport();
-    }, []);
+    }, [fetchDailySalesReport]); // ใช้ function เป็น dependency
 
     // ✅ จัดการ FAB scroll to top
     useEffect(() => {
@@ -62,22 +83,6 @@ const Income = () => {
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const fetchDailySalesReport = async () => {
-        try {
-            setSalesLoading(true);
-            const response = await api.get("/orders/GetDailyDineInSalesReport");
-            setSalesData(response.data.data || []);
-        } catch (error) {
-            console.error("Error fetching sales report:", error);
-            alert(
-                "เกิดข้อผิดพลาดในการดึงข้อมูลยอดขาย: " +
-                (error.message || "ไม่ทราบสาเหตุ")
-            );
-        } finally {
-            setSalesLoading(false);
-        }
     };
 
     const handleCopyOrderFromFirestore = async () => {
