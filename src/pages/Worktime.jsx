@@ -1580,6 +1580,36 @@ function ManagementWorktime() {
               : "เลือกวันเพื่อดูข้อมูลการทำงานของพนักงานในวันนั้น"}
           </div>
 
+          {/* ✅ ต้นทุนรวม - แสดงเฉพาะ Admin */}
+          {authData?.userPermissionId === 1 && (
+            <div className="mb-6 bg-info/10 rounded-lg border border-info/20 p-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-2xl">💸</span>
+                  <h3 className="text-lg font-bold text-primary">ต้นทุนค่าแรงพนักงาน</h3>
+                </div>
+                <div className="text-xs text-primary/70 bg-info/80 px-3 py-1 rounded-full inline-block mb-3">
+                  {filterType === "period" 
+                    ? `${new Date(dateFrom).toLocaleDateString('th-TH')} - ${new Date(dateTo).toLocaleDateString('th-TH')}`
+                    : new Date(selectedDate).toLocaleDateString('th-TH')
+                  }
+                </div>
+                <div className="text-2xl font-bold text-primary">
+                  {(() => {
+                    const totalCost = data.reduce((sum, item) => sum + (item.wageCost || 0), 0);
+                    return formatCurrency(totalCost);
+                  })()}
+                </div>
+                <div className="text-sm text-primary/70 mt-1">
+                  {data.filter(item => item.totalWorktime > 0).length} คน | {(() => {
+                    const totalHours = data.reduce((sum, item) => sum + (item.totalWorktime || 0), 0);
+                    return formatWorktime(totalHours);
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex flex-col items-center justify-center py-8">
               <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -1741,10 +1771,10 @@ function ManagementWorktime() {
               {/* ✅ แสดงสถานะการคำนวณ */}
               {paymentLoading && (
                 <div className="label">
-                  <span className="label-text-alt text-info flex items-center gap-1">
-                    <span className="loading loading-spinner loading-xs"></span>
+                  <span className="label-text-alt text-info flex items-center gap-1"></span>
+                    <span className="loading loading-spinner loading-xs">
                     กำลังคำนวณใหม่...
-                  </span>
+                    </span>
                 </div>
               )}
             </div>
