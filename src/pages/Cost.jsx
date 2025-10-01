@@ -118,20 +118,7 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
           </thead>
           <tbody>
             {data.map((item, idx) => {
-              let badgeClass = "badge-accent";
-              switch (item.costCategoryID) {
-                case 1:
-                  badgeClass = "badge-primary";
-                  break;
-                case 2:
-                  badgeClass = "badge-error";
-                  break;
-                case 3:
-                  badgeClass = "badge-success";
-                  break;
-                default:
-                  badgeClass = "badge-accent";
-              }
+              // No need for badgeClass, use inline logic below
               return (
                 <tr key={item.id || idx} className="hover:bg-base-200">
                   <td>
@@ -140,11 +127,19 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
                       : <ModalConfirmPayment onConfirm={handleConfirm} item={item} showToast={showToast} />}
                   </td>
                   <td className="text-sm lg:text-base">{item.costDate}</td>
-                  <td>
-                    <span className={`badge ${badgeClass} text-xs lg:text-sm whitespace-nowrap`}>
-                      {item.costCategory.description}
-                    </span>
-                  </td>
+                  <td className="text-sm lg:text-base">
+                  <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
+                    item.costCategoryID === 1 ? 'badge-primary' :      // ค่าวัตถุดิบรายวัน
+                    item.costCategoryID === 2 ? 'badge-secondary' :    // ค่าน้ำค่าไฟ
+                    item.costCategoryID === 3 ? 'badge-accent' :       // ค่าน้ำค่าไฟ
+                    item.costCategoryID === 4 ? 'badge-warning' :         // ค่าวัตถุดิบเก็บตุน
+                    item.costCategoryID === 5 ? 'badge-info' :      // ค่าแรงทีมบริหาร
+                    item.costCategoryID === 6 ? 'badge-error' :        // แกรปหักเพิ่มเติม
+                    'badge-neutral'                                     // default
+                  }`}>
+                    {item.costCategory.description}
+                  </span>
+                </td>
                   <td className="text-right font-medium text-sm lg:text-base">{item.costPrice.toLocaleString()} บาท</td>
                   <td className="text-sm lg:text-base max-w-xs truncate" title={item.costDescription}>{item.costDescription}</td>
                   <td>
@@ -166,20 +161,6 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
       {/* Mobile Card View (<768px) */}
       <div className="md:hidden space-y-2">
         {data.map((item, idx) => {
-          let badgeClass = "badge-accent";
-          switch (item.costCategoryID) {
-            case 1:
-              badgeClass = "badge-primary";
-              break;
-            case 2:
-              badgeClass = "badge-error";
-              break;
-            case 3:
-              badgeClass = "badge-success";
-              break;
-            default:
-              badgeClass = "badge-accent";
-          }
 
           return (
             <div key={item.id || idx} className="bg-gradient-to-r from-base-100 to-base-50 border-2 border-base-300 hover:border-primary/30 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300">
@@ -190,7 +171,15 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
                     <span className="text-xs text-base-content/60">📅</span>
                     <span className="text-sm font-medium">{item.costDate}</span>
                   </div>
-                  <span className={`badge ${badgeClass} badge-sm shadow-sm`}>
+                  <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
+                    item.costCategoryID === 1 ? 'badge-primary' :      // วัตถุดิบ - สีน้ำเงิน
+                    item.costCategoryID === 2 ? 'badge-secondary' :    // ค่าแรงงาน - สีเทา
+                    item.costCategoryID === 3 ? 'badge-accent' :       // ค่าสาธารณูปโภค - สีม่วง
+                    item.costCategoryID === 4 ? 'badge-info' :         // วัสดุสิ้นเปลือง - สีฟ้า
+                    item.costCategoryID === 5 ? 'badge-warning' :      // ค่าเช่าร้าน - สีเหลือง
+                    item.costCategoryID === 6 ? 'badge-error' :        // อื่นๆ (grab) - สีแดง
+                    'badge-neutral'                                     // default
+                  }`}>
                     {item.costCategory.description}
                   </span>
                 </div>
@@ -668,7 +657,15 @@ function GetCostIsPurchaseList({ refreshKey }) {
                   <span className="text-xs text-base-content/60">📅</span>
                   <span className="text-sm font-medium">{item.costDate}</span>
                 </div>
-                <span className="badge badge-success badge-sm shadow-sm whitespace-nowrap">
+                <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
+                  item.costCategoryID === 1 ? 'badge-primary' :      // วัตถุดิบ - สีน้ำเงิน
+                  item.costCategoryID === 2 ? 'badge-secondary' :    // ค่าแรงงาน - สีเทา
+                  item.costCategoryID === 3 ? 'badge-accent' :       // ค่าสาธารณูปโภค - สีม่วง
+                  item.costCategoryID === 4 ? 'badge-info' :         // วัสดุสิ้นเปลือง - สีฟ้า
+                  item.costCategoryID === 5 ? 'badge-warning' :      // ค่าเช่าร้าน - สีเหลือง
+                  item.costCategoryID === 6 ? 'badge-error' :        // อื่นๆ (grab) - สีแดง
+                  'badge-neutral'                                     // default
+                }`}>
                   {item.costCategory.description}
                 </span>
               </div>

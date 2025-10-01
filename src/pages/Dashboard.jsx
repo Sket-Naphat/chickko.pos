@@ -11,6 +11,8 @@ import {
   Legend,
 } from "chart.js";
 import SummaryGraphCarousel from '../components/Dashboard/3SummaryGraph';
+import DailySummary from '../components/Dashboard/DailySummary';
+import MonthlySummary from '../components/Dashboard/MonthlySummary';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -40,6 +42,7 @@ function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
   const [filterMode, setFilterMode] = useState('month'); // 'month' หรือ 'year'
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   // ✅ ดึงข้อมูลยอดขายรายวันตอนเปิดหน้า
   const fetchDailySalesReport = useCallback(async () => {
@@ -96,11 +99,13 @@ function Dashboard() {
     setSelectedYear(Number(e.target.value));
   };
 
+  // กำหนดสีธีมจาก Tailwind CSS
   const themeColors = {
     success: 'oklch(20.8% 0.042 265.755)',
     base: 'rgba(245, 245, 245, 1)', // tailwind base-100
   };
 
+  // กำหนด options ร่วมสำหรับกราฟทั้งหมด
   const options = {
     responsive: true,
     plugins: {
@@ -127,8 +132,8 @@ function Dashboard() {
       },
     },
   };
-
-  const data = {
+  // กราฟยอดขายหน้าร้าน
+  const dineInData = {
     labels: months,
     datasets: [
       {
@@ -170,7 +175,6 @@ function Dashboard() {
       },
     ],
   };
-
   // กราฟต้นทุน
   const costChartData = {
     labels: months,
@@ -193,7 +197,7 @@ function Dashboard() {
     ],
   };
 
-  // คำนวณสรุปผลประกอบการ
+  // ยอดขายหน้าร้าน
   const dineInTotal = filterMode === 'month'
     ? dineInSalesData
       .filter(item => {
@@ -207,7 +211,7 @@ function Dashboard() {
     : dineInSalesData
       .filter(item => new Date(item.saleDate).getFullYear() === selectedYear)
       .reduce((sum, item) => sum + item.totalAmount, 0);
-
+  // ยอดขายเดลิเวอรี่
   const deliveryTotal = filterMode === 'month'
     ? deliverySalesData
       .filter(item => {
@@ -221,9 +225,10 @@ function Dashboard() {
     : deliverySalesData
       .filter(item => new Date(item.saleDate).getFullYear() === selectedYear)
       .reduce((sum, item) => sum + item.totalAmount, 0);
-
+  // ยอดขายรวม
   const totalSales = dineInTotal + deliveryTotal;
 
+  // ต้นทุน
   const costTotal = filterMode === 'month'
     ? costData
       .filter(item => {
@@ -238,6 +243,7 @@ function Dashboard() {
       .filter(item => new Date(item.costDate).getFullYear() === selectedYear)
       .reduce((sum, item) => sum + (item.totalAmount || 0), 0); // ✅ เปลี่ยนจาก costPrice เป็น totalAmount
 
+  // กำไรสุทธิ
   const netProfit = totalSales - costTotal;
 
   // เพิ่มฟังก์ชันสำหรับจัดรูปแบบวันที่
@@ -385,6 +391,25 @@ function Dashboard() {
     return monthlyData.sort((a, b) => b.month - a.month); // เรียงจากเดือนมากไปน้อย
   };
 
+  // ✅ เพิ่ม useEffect สำหรับตรวจสอบการ scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      // แสดงปุ่มเมื่อ scroll ลงมาเกิน 300px
+      setShowBackToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // ✅ ฟังก์ชันสำหรับเลื่อนขึ้นด้านบน
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <div className="p-2 md:p-4 space-y-4 md:space-y-6">
       {/* ✅ ลบส่วน header ที่มีปุ่ม "ดึงข้อมูลจาก Firestore" */}
@@ -518,25 +543,158 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* ต้นทุน */}
-          <div className="bg-gradient-to-br from-error/15 to-error/8 rounded-xl shadow-sm p-3 sm:p-4 border border-error/30">
+          {/* จำนวนวันที่เปิดขาย */}
+          <div className="bg-gradient-to-br from-warning/15 to-warning/8 rounded-xl shadow-sm p-3 sm:p-4 border border-warning/30">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-error/25 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 stroke-current text-error">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-warning/25 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 stroke-current text-warning">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <div className="text-xs text-error/70">💸</div>
+              <div className="text-xs text-warning/70">🗓️</div>
             </div>
             <div className="space-y-1">
-              <div className="text-xs sm:text-sm font-medium text-error/80">ต้นทุน</div>
-              <div className="text-sm sm:text-lg font-bold text-error">{formatNumber(costTotal)}</div>
-              {totalSales > 0 && (
-                <div className="text-xs text-error/70">
-                  {((costTotal / totalSales) * 100).toFixed(1)}% จากยอดขาย
-                </div>
-              )}
+              <div className="text-xs sm:text-sm font-medium text-warning/80">วันที่เปิดขาย</div>
+              <div className="text-lg sm:text-xl font-bold text-warning">{getDailyData().filter(day => day.total > 0).length} วัน</div>
             </div>
+          </div>
+
+          {/* ต้นทุน - ✅ เปลี่ยนเป็น Collapse */}
+          <div className="col-span-2 bg-gradient-to-br from-error/15 to-error/8 rounded-xl shadow-sm border border-error/30">
+            <details className="collapse">
+              <summary className="collapse-title cursor-pointer p-3 sm:p-4 min-h-0 hover:bg-error/5 transition-colors rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-error/25 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 stroke-current text-error">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div className="text-xs text-error/70">💸</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs sm:text-sm font-medium text-error/80">ต้นทุนรวม</div>
+                    <div className="text-xs text-error/60 bg-error/10 px-2 py-1 rounded-full">
+                      คลิกเพื่อดูรายละเอียด
+                    </div>
+                  </div>
+                  <div className="text-sm sm:text-lg font-bold text-error">{formatNumber(costTotal)}</div>
+                  {totalSales > 0 && (
+                    <div className="text-xs text-error/70">
+                      {((costTotal / totalSales) * 100).toFixed(1)}% จากยอดขาย
+                    </div>
+                  )}
+                </div>
+              </summary>
+
+              <div className="collapse-content px-3 sm:px-4 pb-3 sm:pb-4">
+                {(() => {
+                  // กรองข้อมูลต้นทุนตามโหมดที่เลือก
+                  const currentCosts = costData.filter(item => {
+                    const date = new Date(item.costDate);
+                    if (filterMode === 'month') {
+                      return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
+                    } else {
+                      return date.getFullYear() === selectedYear;
+                    }
+                  });
+
+                  if (currentCosts.length === 0) {
+                    return (
+                      <div className="text-center py-6">
+                        <div className="text-2xl mb-2">📊</div>
+                        <div className="text-sm text-error/60">ไม่มีข้อมูลต้นทุน</div>
+                      </div>
+                    );
+                  }
+
+                  // คำนวณยอดรวมแต่ละประเภทต้นทุน
+                  const totalRawMaterial = currentCosts.reduce((sum, cost) => sum + (cost.totalRawMaterialCost || 0), 0);
+                  const totalStaff = currentCosts.reduce((sum, cost) => sum + (cost.totalStaffCost || 0), 0);
+                  const totalOwner = currentCosts.reduce((sum, cost) => sum + (cost.totalOwnerCost || 0), 0);
+                  const totalUtility = currentCosts.reduce((sum, cost) => sum + (cost.totalUtilityCost || 0), 0);
+                  const totalOther = currentCosts.reduce((sum, cost) => sum + (cost.totalOtherCost || 0), 0);
+
+                  // สร้างรายการประเภทต้นทุนที่มีค่า
+                  const costCategories = [
+                    { 
+                      name: 'วัตถุดิบ', 
+                      icon: '🥗', 
+                      amount: totalRawMaterial,
+                      textColor: 'text-red-700'
+                    },
+                    { 
+                      name: 'ค่าแรงพนักงาน', 
+                      icon: '👥', 
+                      amount: totalStaff,
+                      textColor: 'text-orange-700'
+                    },
+                    { 
+                      name: 'เงินเดือนทีมบริหาร', 
+                      icon: '👑', 
+                      amount: totalOwner,
+                      textColor: 'text-blue-700'
+                    },
+                    { 
+                      name: 'ค่าสาธารณูปโภค', 
+                      icon: '⚡', 
+                      amount: totalUtility,
+                      textColor: 'text-yellow-700'
+                    },
+                    { 
+                      name: 'ค่าใช้จ่ายอื่นๆ', 
+                      icon: '📦', 
+                      amount: totalOther,
+                      textColor: 'text-gray-700'
+                    }
+                  ].filter(category => category.amount > 0); // แสดงเฉพาะประเภทที่มีค่า
+
+                  return (
+                    <div className="pt-3 space-y-3">
+                      {/* Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-error/20">
+                        <h4 className="text-sm font-semibold text-error flex items-center gap-1">
+                          <span>💰</span>
+                          สรุปต้นทุน
+                        </h4>
+                        <span className="text-xs text-error/60 bg-error/10 px-2 py-1 rounded-full">
+                          {costCategories.length} ประเภท
+                        </span>
+                      </div>
+
+                      {/* รายการต้นทุน */}
+                      <div className="space-y-2">
+                        {costCategories.map((category, index) => {
+                          const percentage = totalSales > 0 ? ((category.amount / totalSales) * 100) : 0;
+                          
+                          return (
+                            <div key={index} className="flex items-center justify-between py-2 px-3 bg-base-50 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg">{category.icon}</span>
+                                <div>
+                                  <span className={`text-sm font-medium ${category.textColor}`}>
+                                    {category.name}
+                                  </span>
+                                  <div className="text-xs text-base-content/60">
+                                    {percentage.toFixed(1)}% ของยอดขาย
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-base font-bold text-error">
+                                  {formatNumber(category.amount)}
+                                </div>
+                                <div className="text-xs text-base-content/50">บาท</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </details>
           </div>
 
           {/* กำไรสุทธิ - แสดงเต็ม 2 columns */}
@@ -585,13 +743,6 @@ function Dashboard() {
                   {getDailyData().filter(day => day.profit < 0).length}
                 </div>
                 <div className="text-xs text-error/70">วันที่ขาดทุน</div>
-              </div>
-
-              <div className="bg-gradient-to-r from-warning/10 to-warning/5 border border-warning/20 rounded-lg p-3 text-center">
-                <div className="text-warning font-bold text-lg">
-                  {getDailyData().filter(day => day.total > 0).length}
-                </div>
-                <div className="text-xs text-warning/70">วันที่มีการขาย</div>
               </div>
 
               <div className="bg-gradient-to-r from-purple-100/80 to-purple-50 border border-purple-300 rounded-lg p-3 text-center">
@@ -712,7 +863,7 @@ function Dashboard() {
                         <span className="text-lg font-bold text-warning">
                           รายการที่ขายดี Top 5 ประจำเดือน {months[selectedMonth]}
                         </span>
-                      </div>                   
+                      </div>
                     </div>
                   </div>
                   <div className="collapse-content px-4 pb-4">
@@ -794,7 +945,7 @@ function Dashboard() {
       {/* ✅ ใช้ SummaryGraphCarousel แทนโค้ดเดิม */}
       <SummaryGraphCarousel
         salesLoading={salesLoading}
-        data={data}
+        data={dineInData}
         deliveryData={deliveryData}
         costChartData={costChartData}
         options={options}
@@ -810,701 +961,50 @@ function Dashboard() {
 
       {/* ✅ Card สรุปรายวัน (แสดงเฉพาะโหมดรายเดือน) */}
       {filterMode === 'month' && !salesLoading && (
-        <div className="bg-base-100 rounded-xl shadow p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl sm:text-2xl font-semibold text-primary">
-              📊 สรุปรายวัน - {months[selectedMonth]} {selectedYear}
-            </h2>
-            <div className="badge badge-primary badge-outline">
-              {getDailyData().length} วันที่มีข้อมูล
-            </div>
-          </div>
-
-          {getDailyData().length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-2">📈</div>
-              <div className="text-base-content/60">ยังไม่มีข้อมูลในเดือนนี้</div>
-            </div>
-          ) : (
-            <>
-              {/* Desktop Table */}
-              <div className="hidden lg:block overflow-x-auto">
-                <table className="table table-zebra w-full">
-                  <thead>
-                    <tr className="bg-base-200">
-                      <th className="text-center">📅 วันที่</th>
-                      <th className="text-right">🏪 หน้าร้าน</th>
-                      <th className="text-right">🛵 เดลิเวอรี่</th>
-                      <th className="text-right">💰 ยอดรวม</th>
-                      <th className="text-right">📦 ออเดอร์</th>
-                      <th className="text-right">💸 ต้นทุน</th>
-                      <th className="text-right">💚 กำไร</th>
-                      <th className="text-center">📊 %กำไร</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {getDailyData().map((dayData) => {
-                      const profitPercent = dayData.total > 0 ? ((dayData.profit / dayData.total) * 100) : 0;
-                      const costPercent = dayData.total > 0 ? ((dayData.cost / dayData.total) * 100) : 0;
-
-                      return (
-                        <tr key={dayData.date} className="hover:bg-base-200/50">
-                          <td className="text-center font-medium">
-                            <div className="flex flex-col items-center">
-                              <div className="text-sm font-bold">{formatDate(dayData.date)}</div>
-                              <div className="text-xs text-base-content/60">{dayData.day}</div>
-                            </div>
-                          </td>
-                          <td className="text-right">
-                            {dayData.dineIn > 0 ? (
-                              <div className="flex flex-col items-end">
-                                <span className="font-medium text-info">
-                                  {formatNumber(dayData.dineIn)}
-                                </span>
-                                <span className="text-xs text-info/60">
-                                  {dayData.dineInOrders} ออเดอร์
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-base-content/40">-</span>
-                            )}
-                          </td>
-                          <td className="text-right">
-                            {dayData.delivery > 0 ? (
-                              <div className="flex flex-col items-end">
-                                <span className="font-medium text-accent">
-                                  {formatNumber(dayData.delivery)}
-                                </span>
-                                <span className="text-xs text-accent/60">
-                                  {dayData.deliveryOrders} ออเดอร์
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-base-content/40">-</span>
-                            )}
-                          </td>
-                          <td className="text-right">
-                            <span className="font-bold text-primary">
-                              {formatNumber(dayData.total)}
-                            </span>
-                          </td>
-                          <td className="text-right">
-                            <span className="font-bold text-warning">
-                              {dayData.totalOrders}
-                            </span>
-                          </td>
-                          <td className="text-right">
-                            {dayData.cost > 0 ? (
-                              <div className="flex flex-col items-end">
-                                <span className="font-medium text-error">
-                                  {formatNumber(dayData.cost)}
-                                </span>
-                                <span className="text-xs text-error/60">
-                                  ({costPercent.toFixed(1)}%)
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-base-content/40">-</span>
-                            )}
-                          </td>
-                          <td className="text-right">
-                            <span className={`font-bold ${dayData.profit >= 0 ? 'text-success' : 'text-error'}`}>
-                              {formatNumber(dayData.profit)}
-                            </span>
-                          </td>
-                          <td className="text-center">
-                            <div className={`badge ${profitPercent >= 20 ? 'badge-success' : profitPercent >= 10 ? 'badge-warning' : 'badge-error'} badge-sm`}>
-                              {profitPercent.toFixed(1)}%
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile/Tablet Collapse Layout */}
-              <div className="lg:hidden space-y-3">
-                {getDailyData().map((dayData) => {
-                  const profitPercent = dayData.total > 0 ? ((dayData.profit / dayData.total) * 100) : 0;
-                  const costPercent = dayData.total > 0 ? ((dayData.cost / dayData.total) * 100) : 0;
-
-                  return (
-                    <details key={dayData.date} className="collapse bg-base-100 border border-base-300 rounded-lg shadow-sm">
-                      {/* Summary - แสดงข้อมูลสำคัญ */}
-                      <summary className="collapse-title font-medium p-4 cursor-pointer">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="text-lg font-bold text-base-content">
-                              {formatDate(dayData.date)}
-                            </div>
-                            <div className="text-xs text-base-content/60">
-                              {new Date(dayData.date).toLocaleDateString('th-TH')}
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <div className={`badge ${profitPercent >= 20 ? 'badge-success' : profitPercent >= 10 ? 'badge-warning' : 'badge-error'} badge-sm font-bold`}>
-                              {profitPercent.toFixed(1)}% กำไร
-                            </div>
-                            <div className="text-sm font-bold text-primary">
-                              {formatNumber(dayData.total)} บาท
-                            </div>
-                          </div>
-                        </div>
-                      </summary>
-
-                      {/* Content - รายละเอียดทั้งหมด */}
-                      <div className="collapse-content">
-                        <div className="pt-0 pb-4">
-                          {/* Sales Data Grid */}
-                          <div className="grid grid-cols-2 gap-3 mb-3">
-                            <div className="bg-info/10 rounded-lg p-3 border border-info/20">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-info/70">🏪 หน้าร้าน</span>
-                                <div className="text-right">
-                                  <div className="font-bold text-info">
-                                    {dayData.dineIn > 0 ? formatNumber(dayData.dineIn) : '-'}
-                                  </div>
-                                  {dayData.dineInOrders > 0 && (
-                                    <div className="text-xs text-info/60">
-                                      {dayData.dineInOrders} ออเดอร์
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="bg-accent/10 rounded-lg p-3 border border-accent/20">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-accent/70">🛵 เดลิเวอรี่</span>
-                                <div className="text-right">
-                                  <div className="font-bold text-accent">
-                                    {dayData.delivery > 0 ? formatNumber(dayData.delivery) : '-'}
-                                  </div>
-                                  {dayData.deliveryOrders > 0 && (
-                                    <div className="text-xs text-accent/60">
-                                      {dayData.deliveryOrders} ออเดอร์
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Financial Summary */}
-                          <div className="space-y-2 mb-4">
-                            <div className="flex justify-between items-center bg-primary/10 rounded-lg p-2 border border-primary/20">
-                              <span className="text-sm font-medium text-primary">💰 ยอดขายรวม</span>
-                              <span className="font-bold text-lg text-primary">
-                                {formatNumber(dayData.total)}
-                              </span>
-                            </div>
-
-                            {dayData.totalOrders > 0 && (
-                              <div className="flex justify-between items-center bg-warning/10 rounded-lg p-2 border border-warning/20">
-                                <span className="text-sm font-medium text-warning">📦 จำนวนออเดอร์</span>
-                                <span className="font-bold text-lg text-warning">
-                                  {dayData.totalOrders}
-                                </span>
-                              </div>
-                            )}
-
-                            {/* สรุปต้นทุนของวัน - แบบ Collapse */}
-                            {dayData.cost > 0 && (() => {
-                              const dayCosts = costData.filter(item => item.costDate === dayData.date);
-                              return dayCosts.length > 0 ? (
-                                <div className="bg-error/5 rounded-lg border border-error/20 mt-4">
-                                  <details className="collapse">
-                                    <summary className="collapse-title min-h-0 p-0 cursor-pointer">
-                                      <div className="flex justify-between items-center p-2">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-error text-lg">💸</span>
-                                          <span className="text-sm font-medium text-error">ต้นทุนรวม</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-bold text-lg text-error">
-                                            {formatNumber(dayData.cost)} บาท
-                                          </span>
-                                          <span className="text-xs text-error/70">
-                                            ({costPercent.toFixed(1)}%)
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </summary>
-
-                                    <div className="collapse-content px-3 pb-3">
-                                      <div className="pt-3 space-y-3">
-                                        {/* แยกประเภทต้นทุน */}
-                                        {(() => {
-                                          // รวมต้นทุนแต่ละประเภทของวันนั้น
-                                          const dayTotalRawMaterial = dayCosts.reduce((sum, cost) =>
-                                            sum + (cost.totalRawMaterialCost || 0), 0);
-                                          const dayTotalStaff = dayCosts.reduce((sum, cost) =>
-                                            sum + (cost.totalStaffCost || 0), 0);
-                                          const dayTotalOther = dayCosts.reduce((sum, cost) =>
-                                            sum + (cost.totalOtherCost || 0), 0);
-
-                                          return (
-                                            <>
-                                              {/* วัตถุดิบ */}
-                                              {dayTotalRawMaterial > 0 && (
-                                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                                                  <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                      <span className="text-orange-600">🥗</span>
-                                                      <span className="text-sm font-semibold text-orange-700">ต้นทุนวัตถุดิบ</span>
-                                                    </div>
-                                                    <div className="text-right">
-                                                      <div className="flex items-center gap-2">
-                                                        <span className="font-bold text-lg text-error">
-                                                          {formatNumber(dayTotalRawMaterial)} บาท
-                                                        </span>
-                                                        <span className="text-xs text-error/70">
-                                                          ({((dayTotalRawMaterial / dayData.total) * 100).toFixed(1)}%)
-                                                        </span>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              )}
-
-                                              {/* ค่าแรง */}
-                                              {dayTotalStaff > 0 && (
-                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                                  <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                      <span className="text-blue-600">👥</span>
-                                                      <span className="text-sm font-semibold text-blue-700">ต้นทุนค่าแรง</span>
-                                                    </div>
-
-
-                                                    <div className="text-right">
-                                                      <div className="flex items-center gap-2">
-                                                        <span className="text-lg font-bold text-blue-600">
-                                                          {formatNumber(dayTotalStaff)} บาท
-                                                        </span>
-                                                        {dayData.total > 0 && (
-                                                          <div className="text-xs text-blue-600/70">
-                                                            ({((dayTotalStaff / dayData.total) * 100).toFixed(1)}%)
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              )}
-
-                                              {/* อื่นๆ */}
-                                              {dayTotalOther > 0 && (
-                                                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                                                  <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                      <span className="text-purple-600">📦</span>
-                                                      <span className="text-sm font-semibold text-purple-700">ต้นทุนอื่นๆ</span>
-                                                    </div>
-                                                    <div className="text-right">
-                                                      <div className="flex items-center gap-2">
-                                                        <span className="text-lg font-bold text-purple-600">
-                                                          {formatNumber(dayTotalOther)} บาท
-                                                        </span>
-                                                        {dayData.total > 0 && (
-                                                          <div className="text-xs text-purple-600/70">
-                                                            ({((dayTotalOther / dayData.total) * 100).toFixed(1)}%)
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                    </div>
-                                                  </div>
-
-                                                </div>
-                                              )}
-                                            </>
-                                          );
-                                        })()}
-                                      </div>
-                                    </div>
-                                  </details>
-                                </div>
-                              ) : null;
-                            })()}
-
-                            <div className={`flex justify-between items-center ${dayData.profit >= 0 ? 'bg-success/10 border-success/20' : 'bg-error/10 border-error/20'} rounded-lg p-2 border`}>
-                              <span className={`text-sm font-medium ${dayData.profit >= 0 ? 'text-success' : 'text-error'}`}>
-                                💚 กำไรสุทธิ
-                              </span>
-                              <div className="text-right">
-                                <span className={`font-bold text-lg ${dayData.profit >= 0 ? 'text-success' : 'text-error'}`}>
-                                  {formatNumber(dayData.profit)} บาท
-                                </span>
-                                {dayData.total > 0 && (
-                                  <div className={`text-xs ${dayData.profit >= 0 ? 'text-success/70' : 'text-error/70'}`}>
-                                    ({profitPercent.toFixed(1)}% ของยอดขาย)
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Top 5 Selling Items */}
-                          {dayData.topItems && dayData.topItems.length > 0 && (
-                            <div className="collapse bg-base-100 border-base-300 border">
-                              <input type="checkbox" />
-                              <div className="collapse-title font-semibold min-h-0 p-0">
-                                <div className="flex justify-between items-center p-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-warning text-lg">🏆</span>
-                                    <span className="text-sm font-medium text-warning">รายการที่ขายดี Top 5</span>
-                                  </div>
-                                  <div className="text-xs text-warning/70">
-                                    {dayData.topItems.length} รายการ
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="collapse-content px-3 pb-3">
-                                <div className="pt-3 space-y-2">
-                                  {dayData.topItems.slice(0, 5).map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-base-100/50 rounded p-2">
-                                      <div className="flex items-center gap-2">
-                                        <span className={`badge badge-sm ${index === 0 ? 'badge-warning' : index === 1 ? 'badge-info' : index === 2 ? 'badge-accent' : 'badge-neutral'}`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="text-xs font-medium truncate max-w-[120px]">
-                                          {item.menuName || item.MenuName}
-                                        </span>
-                                      </div>
-                                      <div className="flex flex-col items-end">
-                                        <span className="text-xs font-bold text-warning">
-                                          {item.quantitySold || item.QuantitySold} ออเดอร์
-                                        </span>
-                                        <span className="text-xs text-base-content/60">
-                                          {formatNumber(item.totalSales || item.TotalSales)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-
-                        </div>
-                      </div>
-                    </details>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
+        <DailySummary
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          months={months}
+          getDailyData={getDailyData}
+          formatDate={formatDate}
+          formatNumber={formatNumber}
+          costData={costData}
+        />
       )}
 
       {/* ✅ Card สรุปรายเดือน (แสดงเฉพาะโหมดรายปี) */}
       {filterMode === 'year' && !salesLoading && (
-        <div className="bg-base-100 rounded-xl shadow p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl sm:text-2xl font-semibold text-primary">
-              📊 สรุปรายเดือน - ปี {selectedYear}
-            </h2>
-            <div className="badge badge-primary badge-outline">
-              {getMonthlyData().length} เดือนที่มีข้อมูล
-            </div>
-          </div>
+        <MonthlySummary
+          selectedYear={selectedYear}
+          getMonthlyData={getMonthlyData}
+          formatNumber={formatNumber}
+          costData={costData}
+          costTotal={costTotal}
+        />
+      )}
 
-          {getMonthlyData().length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-2">📈</div>
-              <div className="text-base-content/60">ยังไม่มีข้อมูลในปีนี้</div>
-            </div>
-          ) : (
-            <>
-              {/* Desktop Table */}
-              <div className="hidden lg:block overflow-x-auto">
-                <table className="table table-zebra w-full">
-                  <thead>
-                    <tr className="bg-base-200">
-                      <th className="text-center">📅 เดือน</th>
-                      <th className="text-right">🏪 หน้าร้าน</th>
-                      <th className="text-right">🛵 เดลิเวอรี่</th>
-                      <th className="text-right">💰 ยอดรวม</th>
-                      <th className="text-right">💸 ต้นทุน</th>
-                      <th className="text-right">💚 กำไร</th>
-                      <th className="text-center">📊 %กำไร</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {getMonthlyData().map((monthData) => {
-                      const profitPercent = monthData.total > 0 ? ((monthData.profit / monthData.total) * 100) : 0;
-                      const costPercent = monthData.total > 0 ? ((monthData.cost / monthData.total) * 100) : 0;
-
-                      return (
-                        <tr key={monthData.month} className="hover:bg-base-200/50">
-                          <td className="text-center font-medium">
-                            <div className="flex flex-col items-center">
-                              <div className="text-sm font-bold">{monthData.monthName}</div>
-                              <div className="text-xs text-base-content/60">{selectedYear}</div>
-                            </div>
-                          </td>
-                          <td className="text-right">
-                            {monthData.dineIn > 0 ? (
-                              <span className="font-medium text-info">
-                                {formatNumber(monthData.dineIn)}
-                              </span>
-                            ) : (
-                              <span className="text-base-content/40">-</span>
-                            )}
-                          </td>
-                          <td className="text-right">
-                            {monthData.delivery > 0 ? (
-                              <span className="font-medium text-accent">
-                                {formatNumber(monthData.delivery)}
-                              </span>
-                            ) : (
-                              <span className="text-base-content/40">-</span>
-                            )}
-                          </td>
-                          <td className="text-right">
-                            <span className="font-bold text-primary">
-                              {formatNumber(monthData.total)}
-                            </span>
-                          </td>
-                          <td className="text-right">
-                            {monthData.cost > 0 ? (
-                              <div className="flex flex-col items-end">
-                                <span className="font-medium text-error">
-                                  {formatNumber(monthData.cost)}
-                                </span>
-                                <span className="text-xs text-error/60">
-                                  ({costPercent.toFixed(1)}%)
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-base-content/40">-</span>
-                            )}
-                          </td>
-                          <td className="text-right">
-                            <span className={`font-bold ${monthData.profit >= 0 ? 'text-success' : 'text-error'}`}>
-                              {formatNumber(monthData.profit)}
-                            </span>
-                          </td>
-                          <td className="text-center">
-                            <div className={`badge ${profitPercent >= 20 ? 'badge-success' : profitPercent >= 10 ? 'badge-warning' : 'badge-error'} badge-sm`}>
-                              {profitPercent.toFixed(1)}%
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile/Tablet Collapse Layout */}
-              <div className="lg:hidden space-y-3">
-                {getMonthlyData().map((monthData) => {
-                  const profitPercent = monthData.total > 0 ? ((monthData.profit / monthData.total) * 100) : 0;
-                  const costPercent = monthData.total > 0 ? ((monthData.cost / monthData.total) * 100) : 0;
-
-                  return (
-                    <details key={monthData.month} className="collapse bg-base-100 border border-base-300 rounded-lg shadow-sm">
-                      {/* Summary - แสดงข้อมูลสำคัญ */}
-                      <summary className="collapse-title font-medium p-4 cursor-pointer">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="text-lg font-bold text-base-content">
-                              {monthData.monthName}
-                            </div>
-                            <div className="text-xs text-base-content/60">
-                              ปี {selectedYear}
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <div className={`badge ${profitPercent >= 20 ? 'badge-success' : profitPercent >= 10 ? 'badge-warning' : 'badge-error'} badge-sm font-bold`}>
-                              {profitPercent.toFixed(1)}% กำไร
-                            </div>
-                            <div className="text-sm font-bold text-primary">
-                              {formatNumber(monthData.total)} บาท
-                            </div>
-                          </div>
-                        </div>
-                      </summary>
-
-                      {/* Content - รายละเอียดทั้งหมด */}
-                      <div className="collapse-content">
-                        <div className="pt-0 pb-4 px-4">
-                          {/* Sales Data Grid */}
-                          <div className="grid grid-cols-2 gap-3 mb-3">
-                            <div className="bg-info/10 rounded-lg p-3 border border-info/20">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-info/70">🏪 หน้าร้าน</span>
-                                <span className="font-bold text-info">
-                                  {monthData.dineIn > 0 ? formatNumber(monthData.dineIn) : '-'}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="bg-accent/10 rounded-lg p-3 border border-accent/20">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-accent/70">🛵 เดลิเวอรี่</span>
-                                <span className="font-bold text-accent">
-                                  {monthData.delivery > 0 ? formatNumber(monthData.delivery) : '-'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Financial Summary */}
-                          <div className="space-y-2 mb-4">
-                            <div className="flex justify-between items-center bg-primary/10 rounded-lg p-2 border border-primary/20">
-                              <span className="text-sm font-medium text-primary">💰 ยอดขายรวม</span>
-                              <span className="font-bold text-lg text-primary">
-                                {formatNumber(monthData.total)}
-                              </span>
-                            </div>
-
-                            {monthData.cost > 0 && (
-                              <div className="flex justify-between items-center bg-error/10 rounded-lg p-2 border border-error/20">
-                                <span className="text-sm font-medium text-error">
-                                  💸 ต้นทุน ({costPercent.toFixed(1)}%)
-                                </span>
-                                <span className="font-bold text-lg text-error">
-                                  {formatNumber(monthData.cost)}
-                                </span>
-                              </div>
-                            )}
-
-                            <div className={`flex justify-between items-center ${monthData.profit >= 0 ? 'bg-success/10 border-success/20' : 'bg-error/10 border-error/20'} rounded-lg p-2 border`}>
-                              <span className={`text-sm font-medium ${monthData.profit >= 0 ? 'text-success' : 'text-error'}`}>
-                                💚 กำไรสุทธิ
-                              </span>
-                              <div className="text-right">
-                                <span className={`font-bold text-lg ${monthData.profit >= 0 ? 'text-success' : 'text-error'}`}>
-                                  {formatNumber(monthData.profit)} บาท
-                                </span>
-                                {monthData.total > 0 && (
-                                  <div className={`text-xs ${monthData.profit >= 0 ? 'text-success/70' : 'text-error/70'}`}>
-                                    ({profitPercent.toFixed(1)}% ของยอดขาย)
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Top 5 Selling Items ของเดือน */}
-                          {monthData.topItems && monthData.topItems.length > 0 && (
-                            <div className="collapse bg-base-100 border-base-300 border mb-4">
-                              <input type="checkbox" />
-                              <div className="collapse-title font-semibold min-h-0 p-0">
-                                <div className="flex justify-between items-center p-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-warning text-lg">🏆</span>
-                                    <span className="text-sm font-medium text-warning">รายการที่ขายดี Top 5</span>
-                                  </div>
-                                  <div className="text-xs text-warning/70">
-                                    {monthData.topItems.length} รายการ
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="collapse-content px-3 pb-3">
-                                <div className="pt-3 space-y-2">
-                                  {monthData.topItems.slice(0, 5).map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-base-100/50 rounded p-2">
-                                      <div className="flex items-center gap-2">
-                                        <span className={`badge badge-sm ${index === 0 ? 'badge-warning' : index === 1 ? 'badge-info' : index === 2 ? 'badge-accent' : 'badge-neutral'}`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="text-xs font-medium truncate max-w-[120px]">
-                                          {item.menuName}
-                                        </span>
-                                      </div>
-                                      <div className="flex flex-col items-end">
-                                        <span className="text-xs font-bold text-warning">
-                                          {item.quantitySold} ออเดอร์
-                                        </span>
-                                        <span className="text-xs text-base-content/60">
-                                          {formatNumber(item.totalSales)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* สรุปต้นทุนของเดือน */}
-                          {(() => {
-                            const monthCosts = costData.filter(item => {
-                              const date = new Date(item.costDate);
-                              return date.getMonth() === monthData.month && date.getFullYear() === selectedYear;
-                            });
-
-                            return monthCosts.length > 0 ? (
-                              <div className="bg-error/5 rounded-lg p-3 border border-error/20 mb-4">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <span className="text-error text-lg">💸</span>
-                                  <span className="text-sm font-semibold text-error">สรุปต้นทุนประจำเดือน</span>
-                                </div>
-
-                                {/* กลุ่มต้นทุนตามประเภท */}
-                                {(() => {
-                                  const costsByType = monthCosts.reduce((acc, cost) => {
-                                    const type = cost.costType || 'อื่นๆ';
-                                    if (!acc[type]) {
-                                      acc[type] = [];
-                                    }
-                                    acc[type].push(cost);
-                                    return acc;
-                                  }, {});
-
-                                  return Object.entries(costsByType).map(([type, costs]) => (
-                                    <div key={type} className="mb-3">
-                                      <div className="text-xs font-semibold text-error/80 mb-2 px-2">
-                                        📁 {type} ({costs.length} รายการ)
-                                      </div>
-                                      <div className="space-y-1">
-                                        {costs.slice(0, 3).map((cost, index) => (
-                                          <div key={index} className="flex justify-between items-center bg-base-100/50 rounded p-2">
-                                            <span className="text-xs font-medium text-base-content truncate max-w-[120px]">
-                                              {cost.costName || cost.description || 'รายการต้นทุน'}
-                                            </span>
-                                            <span className="text-sm font-bold text-error">
-                                              {formatNumber(cost.totalAmount || cost.costPrice || 0)}
-                                            </span>
-                                          </div>
-                                        ))}
-                                        {costs.length > 3 && (
-                                          <div className="text-xs text-base-content/60 px-2">
-                                            และอีก {costs.length - 3} รายการ...
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ));
-                                })()}
-
-                                {/* แสดงยอดรวมต้นทุนของเดือน */}
-                                <div className="border-t border-error/20 pt-2 mt-2">
-                                  <div className="flex justify-between items-center bg-error/10 rounded p-2">
-                                    <span className="text-sm font-bold text-error">รวมต้นทุนเดือนนี้</span>
-                                    <span className="text-lg font-bold text-error">
-                                      {formatNumber(monthData.cost)} บาท
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : null;
-                          })()}
-                        </div>
-                      </div>
-                    </details>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
+      {/* ✅ ปุ่มกลับขึ้นด้านบน */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 btn btn-circle btn-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+          aria-label="กลับขึ้นด้านบน"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-6 h-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4.5 15.75l7.5-7.5 7.5 7.5"
+            />
+          </svg>
+        </button>
       )}
     </div>
   );

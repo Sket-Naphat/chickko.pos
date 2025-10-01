@@ -11,7 +11,7 @@ import {
     Tooltip,
     Legend,
 } from "chart.js";
-import { useLocation, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import Delivery from "./Delivery";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -467,48 +467,42 @@ const Income = () => {
     }
 }
 const AllIncome = () => {
-    const location = useLocation();
     const [activeTab, setActiveTab] = useState('income');
 
-    // ตรวจสอบ state จาก navigation เพื่อเปิด tab ที่ถูกต้อง
-    useEffect(() => {
-        if (location.state?.activeTab === 'delivery') {
-            setActiveTab('delivery');
-        }
-    }, [location.state]);
-
     return (
-        <div>
-            <div className="tabs tabs-lift w-full">
-                <label className={`tab w-1/2 ${activeTab === 'income' ? 'border-b-2 border-primary font-bold text-primary' : ''}`}>
-                    <input
-                        type="radio"
-                        name="my_tabs_4"
-                        checked={activeTab === 'income'}
-                        onChange={() => setActiveTab('income')}
-                    />
+        <div className="w-full">
+            {/* Tab Headers - ใช้ button แทน radio */}
+            <div className="flex w-full border-b border-base-300">
+                <button
+                    className={`flex-1 py-3 px-4 text-center transition-all duration-200 ${
+                        activeTab === 'income'
+                            ? 'border-b-2 border-primary font-bold text-primary bg-primary/5'
+                            : 'text-base-content/70 hover:text-base-content hover:bg-base-200/50'
+                    }`}
+                    onClick={() => setActiveTab('income')}
+                >
                     🏪 รายได้หน้าร้าน
-                </label>
-                {activeTab === 'income' && (
-                    <div className="tab-content bg-base-100">
-                        <Income />
-                    </div>
-                )}
-
-                <label className={`tab w-1/2 ${activeTab === 'delivery' ? 'border-b-2 border-secondary font-bold text-secondary' : ''}`}>
-                    <input
-                        type="radio"
-                        name="my_tabs_4"
-                        checked={activeTab === 'delivery'}
-                        onChange={() => setActiveTab('delivery')}
-                    />
+                </button>
+                <button
+                    className={`flex-1 py-3 px-4 text-center transition-all duration-200 ${
+                        activeTab === 'delivery'
+                            ? 'border-b-2 border-secondary font-bold text-secondary bg-secondary/5'
+                            : 'text-base-content/70 hover:text-base-content hover:bg-base-200/50'
+                    }`}
+                    onClick={() => setActiveTab('delivery')}
+                >
                     🛵 รายได้เดลิเวอรี่
-                </label>
-                {activeTab === 'delivery' && (
-                    <div className="tab-content bg-base-100">
-                        <Delivery />
-                    </div>
-                )}
+                </button>
+            </div>
+
+            {/* Tab Content - ทั้งคู่ mount เสมอ แต่ซ่อน/แสดง */}
+            <div className="bg-base-100">
+                <div className={activeTab === 'income' ? 'block' : 'hidden'}>
+                    <Income />
+                </div>
+                <div className={activeTab === 'delivery' ? 'block' : 'hidden'}>
+                    <Delivery />
+                </div>
             </div>
         </div>
     );
