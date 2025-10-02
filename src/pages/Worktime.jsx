@@ -1010,39 +1010,39 @@ function ManagementWorktime() {
       }
 
       // ✅ สร้างรายการวันที่ที่ยังไม่จ่ายเงิน
-      const unpaidWorkDates = paidWorktimes
+      const unpaidWorkItems = paidWorktimes
         .filter(item =>
           item.employeeID === paymentModal.employee.employeeID &&
           !item.isPurchase &&
           item.totalWorktime > 0
-        )
-        .map(item => formatThaiDate(item.workDate))
-        .join(', ');
-      // ✅ สร้าง object WorkDate เฉพาะวันที่ยังไม่จ่ายเงิน
+        );
 
-      const unpaidWorkDatesList = paidWorktimes
-        .filter(item =>
-          item.employeeID === paymentModal.employee.employeeID &&
-          !item.isPurchase &&
-          item.totalWorktime > 0
-        )
-        .map(item => item.workDate); // ✅ เปลี่ยนเป็น .map() เพื่อให้ได้ array
-      var CostDescription = `ค่าจ้างพนักงานชื่อ : ${paymentModal.employee.employeeName} | วันที่ทำงาน : ${unpaidWorkDates || 'ไม่ระบุ'} | (เวลาทำงานทั้งหมด ${formatWorktime(paymentModal.worktime)}) `;
-
-      var data = {
-        EmployeeID: paymentModal.employee.employeeID,
-        StartDate: paymentModal.dateFrom,
-        EndDate: paymentModal.dateTo,
-        TotalWorktime: paymentModal.worktime,
-        WageCost: paymentModal.wageCost,
+      // ✅ สร้าง array ของข้อมูลแต่ละวัน
+      const workDateItems = unpaidWorkItems.map(item => ({
+        EmployeeID: item.employeeID,
+        WorkDate: item.workDate,
+        TotalWorktime: item.totalWorktime,
+        WageCost: item.wageCost, // ค่าจ้างต่อวัน
         PurchaseDate: new Date().toISOString().slice(0, 10),
         IsPurchase: true,
-        Remark: CostDescription,
-        WorkDatePurchase: unpaidWorkDatesList,
-        CreatedBy: authData ? authData.userId : null
-      };
+        Remark: (() => {
+          // ✅ สร้าง Remark สำหรับกรณีจ่ายหลายวันในครั้งเดียว
+          const purchaseDate = new Date().toISOString().slice(0, 10);
+          const totalAmount = formatCurrency(paymentModal.wageCost);
 
-      await api.post('/cost/UpdateWageCost', data);
+          if (unpaidWorkItems.length === 1) {
+            // จ่ายวันเดียว
+            return `ค่าจ้างพนักงาน ${paymentModal.employee.employeeName} วัน ${formatThaiDate(item.workDate)} (${formatWorktime(item.totalWorktime)}) | จ่ายเมื่อ วัน ${formatThaiDate(purchaseDate)}`;
+          } else {
+            // จ่ายหลายวันในครั้งเดียว
+            return `ค่าจ้างพนักงาน ${paymentModal.employee.employeeName} วัน ${formatThaiDate(item.workDate)} (${formatWorktime(item.totalWorktime)}) | จ่ายเมื่อ วัน ${formatThaiDate(purchaseDate)} | รวมอยู่ในยอด ${unpaidWorkItems.length} วัน รวม ${totalAmount} บาท`;
+          }
+        })(),
+        CreatedBy: authData ? authData.userId : null
+      }));
+
+      // ✅ ส่งข้อมูลเป็น array ของแต่ละวัน
+      await api.post('/cost/UpdateWageCost', workDateItems);
       // alert(JSON.stringify(data));
       // ✅ แสดง success message
       alert('✅ จ่ายเงินเรียบร้อยแล้ว!');
