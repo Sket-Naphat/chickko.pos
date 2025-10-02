@@ -10,9 +10,9 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import SummaryGraphCarousel from '../components/Dashboard/3SummaryGraph';
-import DailySummary from '../components/Dashboard/DailySummary';
-import MonthlySummary from '../components/Dashboard/MonthlySummary';
+import SummaryGraphCarousel from '../components/dashboard/3SummaryGraph';
+import DailySummary from '../components/dashboard/DailySummary';
+import MonthlySummary from '../components/dashboard/MonthlySummary';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 

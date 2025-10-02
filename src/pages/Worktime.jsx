@@ -14,236 +14,7 @@ function formatCurrency(val) {
 import React, { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import { api } from '../lib/api';
-
-// หน้านี้สำหรับพนักงาน (userPermissionId === 3) เท่านั้น
-function StaffWorktime() {
-  const [history, setHistory] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState("");
-  const authData = React.useMemo(() => {
-    const raw = Cookies.get("authData");
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  }, []);
-  const EmployeeID = authData ? authData.userId : null;
-
-  // สร้าง options เดือนตั้งแต่ ก.ย. 2025 ถึงปัจจุบัน
-  const startYear = 2025, startMonth = 9;
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  let monthOptions = [];
-  for (let y = startYear; y <= currentYear; y++) {
-    let mStart = (y === startYear) ? startMonth : 1;
-    let mEnd = (y === currentYear) ? currentMonth : 12;
-    for (let m = mStart; m <= mEnd; m++) {
-      monthOptions.push({
-        value: `${y}-${String(m).padStart(2, '0')}`,
-        label: `${y} - ${m}`,
-        year: y,
-        month: String(m).padStart(2, '0')
-      });
-    }
-  }
-
-  const nowMonth = String(currentMonth).padStart(2, '0');
-  const nowYear = String(currentYear);
-  const [month, setMonth] = useState(nowMonth);
-  const [year, setYear] = useState(nowYear);
-
-  React.useEffect(() => {
-    if (!EmployeeID || !month || !year) return;
-    setLoading(true);
-    setError("");
-    api.post('/worktime/GetWorkTimeHistoryByEmployeeID', {
-      employeeID: EmployeeID,
-      workMonth: month,
-      workYear: year
-    })
-      .then(res => {
-        const mapped = (res.data || []).map(item => ({
-          workDate: item.workDate,
-          timeClockIn: item.timeClockIn,
-          timeClockOut: item.timeClockOut,
-          totalWorktime: item.totalWorktime,
-          clockInLocation: item.clockInLocation,
-          clockOutLocation: item.clockOutLocation
-        }));
-        setHistory(mapped.sort((a, b) => new Date(b.workDate) - new Date(a.workDate)));
-      })
-      .catch(err => {
-        setError("เกิดข้อผิดพลาดในการโหลดข้อมูล " + (err.message || ""));
-      })
-      .finally(() => setLoading(false));
-  }, [EmployeeID, month, year]);
-
-  function formatThaiDate(dateStr) {
-    const days = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
-    const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-    const date = new Date(dateStr);
-    if (isNaN(date)) return dateStr;
-    const dayName = days[date.getDay()];
-    const day = date.getDate();
-    const monthName = months[date.getMonth()];
-    return `${dayName} ${day} ${monthName}`;
-  }
-  const getGoogleMapsUrl = (clockInLocation) => {
-    if (!clockInLocation) return null;
-
-    var location = JSON.parse(clockInLocation);
-    var latitude = location.latitude;
-    var longitude = location.longitude;
-    return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-  }
-
-  return (
-    <div className="min-h-screen bg-base-200 flex flex-col items-center px-2 py-4 sm:px-4 sm:py-6">
-      {/* ✅ ปรับขนาด container ให้กระชับ */}
-      <div className="w-full max-w-lg card bg-base-100 shadow-xl p-3 sm:p-6">
-        <h1 className="text-xl font-bold text-primary mb-4 text-center">ประวัติการเข้าออกงาน</h1>
-
-        {/* ✅ แสดงชื่อพนักงานแบบกระชับ */}
-        <div className="bg-primary/10 p-3 rounded-lg mb-4 flex items-center gap-2">
-          <span className="text-lg">👤</span>
-          <span className="font-semibold text-primary">
-            {authData?.name || 'ไม่ระบุชื่อ'}
-          </span>
-        </div>
-
-        <section>
-          {/* ✅ เลือกเดือนแบบกระชับ */}
-          <div className="mb-4 flex items-center gap-2 justify-center">
-            <label className="font-semibold text-sm">เดือน:</label>
-            <div className="dropdown">
-              <label tabIndex={0} className="btn btn-sm btn-outline flex items-center gap-2">
-                {(() => {
-                  const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-                  const monthLabel = months[parseInt(month, 10) - 1];
-                  return `${monthLabel} ${year}`;
-                })()}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </label>
-              <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 max-h-60 overflow-y-auto z-50">
-                {monthOptions.map(opt => {
-                  const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-                  const monthLabel = months[parseInt(opt.month, 10) - 1];
-                  return (
-                    <li key={opt.value}>
-                      <button
-                        className={`w-full text-left text-sm ${month === opt.month && year === String(opt.year) ? 'bg-primary text-white' : ''}`}
-                        onClick={() => {
-                          setMonth(opt.month);
-                          setYear(String(opt.year));
-                        }}
-                      >{`${monthLabel} ${opt.year}`}</button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
-              <span className="mt-2 text-sm">⏳ กำลังโหลดข้อมูล…</span>
-            </div>
-          ) : error ? (
-            <div className="alert alert-error shadow-lg mb-4">
-              <span>{error}</span>
-            </div>
-          ) : (
-            /* ✅ แสดงข้อมูลแบบกระชับ */
-            <div className="space-y-2">
-              {history.length === 0 ? (
-                <div className="text-center py-8 text-base-content/60">ไม่มีข้อมูล</div>
-              ) : (
-                history.map((item, idx) => (
-                  /* ✅ Card แบบกระชับ */
-                  <div key={idx} className="bg-base-100 border border-base-300 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-primary text-sm">
-                        {formatThaiDate(item.workDate)}
-                      </div>
-                      <div className="text-xs text-base-content/60">
-                        {item.totalWorktime ? formatWorktime(item.totalWorktime) : '-'}
-                      </div>
-                    </div>
-
-                    {/* ✅ เวลาเข้า-ออกแบบ inline */}
-                    <div className="flex justify-between text-sm">
-                      <div className="flex items-center gap-1">
-                        <span className="text-success">เข้างาน ⬇️</span>
-                        <span>{item.timeClockIn || '-'}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-error">⬆️ ออกงาน</span>
-                        <span>{item.timeClockOut || '-'}</span>
-                      </div>
-                    </div>
-                    {/* ✅ ตำแหน่งเข้า-ออกงาน */}
-                    <div className="flex justify-between text-sm">
-                      <div>
-                        {item.clockInLocation ? (
-                          <button
-                            className={`btn btn-xs btn-outline mt-2 ${(() => {
-                              try {
-                                const clockInData = JSON.parse(item.clockInLocation);
-                                return clockInData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
-                              } catch {
-                                return 'btn-primary';
-                              }
-                            })()
-                              }`}
-                            onClick={() => window.open(getGoogleMapsUrl(item.clockInLocation), '_blank')}
-                            title="ดูตำแหน่งในแผนที่"
-                          >
-                            📍 ดูตำแหน่ง
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-500 mt-2">-</span>
-                        )}
-                      </div>
-                      <div>
-                        {item.clockOutLocation ? (
-                          <button
-                            className={`btn btn-xs btn-outline mt-2 ${(() => {
-                              try {
-                                const clockOutData = JSON.parse(item.clockOutLocation);
-                                return clockOutData.isWithinStoreRadius === false ? 'btn-error' : 'btn-primary';
-                              } catch {
-                                return 'btn-primary';
-                              }
-                            })()
-                              }`}
-                            onClick={() => window.open(getGoogleMapsUrl(item.clockOutLocation), '_blank')}
-                            title="ดูตำแหน่งในแผนที่"
-                          >
-                            📍 ดูตำแหน่ง
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-500 mt-2">-</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
+import StaffWorktime from '../components/Worktime/StaffWorktime';
 
 // ✅  EmployeeDetailWorktime
 function EmployeeDetailWorktime({ employee, onBack }) {
@@ -1091,17 +862,11 @@ function ManagementWorktime() {
         return;
       }
 
-      const fromDate = new Date(dateFrom);
-      const toDate = new Date(dateTo);
 
-      const workYear = String(fromDate.getFullYear());
-      const workMonth = String(fromDate.getMonth() + 1);
-      const startDay = String(fromDate.getDate());
-      const endDay = String(toDate.getDate());
+      const startDay = dateFrom
+      const endDay = dateTo
 
       api.post('/worktime/GetWorkTimeHistoryByPeriod', {
-        WorkYear: workYear,
-        WorkMonth: workMonth,
         StartDate: startDay,
         EndDate: endDay
       })
@@ -1119,16 +884,11 @@ function ManagementWorktime() {
         return;
       }
 
-      const selectedDay = new Date(selectedDate);
-      const workYear = String(selectedDay.getFullYear());
-      const workMonth = String(selectedDay.getMonth() + 1);
-      const dayOfMonth = String(selectedDay.getDate());
+
 
       api.post('/worktime/GetWorkTimeHistoryByPeriod', {
-        workYear: workYear,
-        workMonth: workMonth,
-        startDate: dayOfMonth,
-        endDate: dayOfMonth
+        startDate: selectedDate,
+        endDate: selectedDate
       })
         .then(res => {
           setData(res.data || []);
@@ -1207,9 +967,9 @@ function ManagementWorktime() {
                 <div className="font-semibold text-right max-w-xs">
                   {(() => {
                     const unpaidWorkDates = paidWorktimes
-                      .filter(item => 
-                        item.employeeID === paymentModal.employee.employeeID && 
-                        !item.isPurchase && 
+                      .filter(item =>
+                        item.employeeID === paymentModal.employee.employeeID &&
+                        !item.isPurchase &&
                         item.totalWorktime > 0
                       )
                       .map(item => formatThaiDate(item.workDate))
@@ -1251,14 +1011,22 @@ function ManagementWorktime() {
 
       // ✅ สร้างรายการวันที่ที่ยังไม่จ่ายเงิน
       const unpaidWorkDates = paidWorktimes
-        .filter(item => 
-          item.employeeID === paymentModal.employee.employeeID && 
-          !item.isPurchase && 
+        .filter(item =>
+          item.employeeID === paymentModal.employee.employeeID &&
+          !item.isPurchase &&
           item.totalWorktime > 0
         )
         .map(item => formatThaiDate(item.workDate))
         .join(', ');
+      // ✅ สร้าง object WorkDate เฉพาะวันที่ยังไม่จ่ายเงิน
 
+      const unpaidWorkDatesList = paidWorktimes
+        .filter(item =>
+          item.employeeID === paymentModal.employee.employeeID &&
+          !item.isPurchase &&
+          item.totalWorktime > 0
+        )
+        .map(item => item.workDate); // ✅ เปลี่ยนเป็น .map() เพื่อให้ได้ array
       var CostDescription = `ค่าจ้างพนักงานชื่อ : ${paymentModal.employee.employeeName} | วันที่ทำงาน : ${unpaidWorkDates || 'ไม่ระบุ'} | (เวลาทำงานทั้งหมด ${formatWorktime(paymentModal.worktime)}) `;
 
       var data = {
@@ -1270,6 +1038,7 @@ function ManagementWorktime() {
         PurchaseDate: new Date().toISOString().slice(0, 10),
         IsPurchase: true,
         Remark: CostDescription,
+        WorkDatePurchase: unpaidWorkDatesList,
         CreatedBy: authData ? authData.userId : null
       };
 
@@ -1303,21 +1072,22 @@ function ManagementWorktime() {
     setPaymentLoading(true);
 
     try {
+      // // ✅ ใช้วันที่ที่ถูกต้องตาม filterType
+      // const fromDate = new Date(filterType === "daily" ? selectedDate : dateFrom);
+      // const toDate = new Date(filterType === "daily" ? selectedDate : dateTo);
+
+      // const workYear = String(fromDate.getFullYear());
+      // const workMonth = String(fromDate.getMonth() + 1);
+      // const startDay = String(fromDate.getDate());
+      // const endDay = String(toDate.getDate());
+
       // ✅ ใช้วันที่ที่ถูกต้องตาม filterType
-      const fromDate = new Date(filterType === "daily" ? selectedDate : dateFrom);
-      const toDate = new Date(filterType === "daily" ? selectedDate : dateTo);
-
-      const workYear = String(fromDate.getFullYear());
-      const workMonth = String(fromDate.getMonth() + 1);
-      const startDay = String(fromDate.getDate());
-      const endDay = String(toDate.getDate());
-
+      const fromDate = filterType === "daily" ? selectedDate : dateFrom;
+      const toDate = filterType === "daily" ? selectedDate : dateTo;
       const response = await api.post('/worktime/GetWorkTimeCostByEmployeeIDandPeriod', {
         EmployeeID: employee.employeeID,
-        WorkYear: workYear,
-        WorkMonth: workMonth,
-        StartDate: startDay,
-        EndDate: endDay
+        StartDate: fromDate,
+        EndDate: toDate
       });
 
       const employeeData = response.data;
@@ -1358,20 +1128,20 @@ function ManagementWorktime() {
       setPaymentLoading(true);
 
       // แปลงวันที่เป็นรูปแบบที่ API ต้องการ
-      const fromDate = new Date(dateFrom);
-      const toDate = new Date(dateTo);
+      // const fromDate = new Date(dateFrom);
+      // const toDate = new Date(dateTo);
 
-      const workYear = String(fromDate.getFullYear());
-      const workMonth = String(fromDate.getMonth() + 1);
-      const startDay = String(fromDate.getDate());
-      const endDay = String(toDate.getDate());
+      // const workYear = String(fromDate.getFullYear());
+      // const workMonth = String(fromDate.getMonth() + 1);
+      // const startDay = String(fromDate.getDate());
+      // const endDay = String(toDate.getDate());
 
       const response = await api.post('/worktime/GetWorkTimeCostByEmployeeIDandPeriod', {
         EmployeeID: employeeID,
-        WorkYear: workYear,
-        WorkMonth: workMonth,
-        StartDate: startDay,
-        EndDate: endDay
+        // WorkYear: workYear,
+        // WorkMonth: workMonth,
+        StartDate: dateFrom,
+        EndDate: dateTo
       });
 
       const employeeData = response.data;
@@ -1392,7 +1162,7 @@ function ManagementWorktime() {
 
       // ✅ อัพเดทข้อมูลรายการที่จ่ายเงินแล้วด้วย
       setPaidWorktimes(employeeData.worktimes || []);
-      
+
       // อัพเดทข้อมูลใน modal
       setPaymentModal(prev => ({
         ...prev,
@@ -1476,7 +1246,7 @@ function ManagementWorktime() {
     ));
   };
 
-    // ✅ ฟังก์ชันจัดการเมื่อเปลี่ยนวันที่ใน modal
+  // ✅ ฟังก์ชันจัดการเมื่อเปลี่ยนวันที่ใน modal
   const handleSelectDateChange = (newSelectDate) => {
     setPaymentModal(prev => ({ ...prev, dateFrom: newSelectDate, dateTo: newSelectDate }));
 
@@ -1589,7 +1359,7 @@ function ManagementWorktime() {
                   <h3 className="text-lg font-bold text-primary">ต้นทุนค่าแรงพนักงาน</h3>
                 </div>
                 <div className="text-xs text-primary/70 bg-info/80 px-3 py-1 rounded-full inline-block mb-3">
-                  {filterType === "period" 
+                  {filterType === "period"
                     ? `${new Date(dateFrom).toLocaleDateString('th-TH')} - ${new Date(dateTo).toLocaleDateString('th-TH')}`
                     : new Date(selectedDate).toLocaleDateString('th-TH')
                   }
@@ -1699,7 +1469,7 @@ function ManagementWorktime() {
             {confirmModal.content}
             <div className="modal-action">
               <button
-                className="btn btn-ghost"
+                className="btn btn-error"
                 onClick={handleCancel}
               >
                 ❌ ยกเลิก
@@ -1772,9 +1542,9 @@ function ManagementWorktime() {
               {paymentLoading && (
                 <div className="label">
                   <span className="label-text-alt text-info flex items-center gap-1"></span>
-                    <span className="loading loading-spinner loading-xs">
+                  <span className="loading loading-spinner loading-xs">
                     กำลังคำนวณใหม่...
-                    </span>
+                  </span>
                 </div>
               )}
             </div>
@@ -1824,11 +1594,11 @@ function ManagementWorktime() {
             {/* ✅ ปุ่มการกระทำ */}
             <div className="modal-action">
               <button
-                className="btn btn-ghost"
+                className="btn btn-error"
                 onClick={closePaymentModal}
                 disabled={paymentLoading}
               >
-                ยกเลิก
+                ❌ ยกเลิก
               </button>
               <button
                 className="btn btn-success"
