@@ -75,11 +75,11 @@ export default function DeliveryDetail() {
                         orderId: order.orderId,
                         orderTime: order.orderTime,
                         customerName: order.customerName,
-                        totalPrice: order.totalPrice , // ✅ ใช้ totalPrice จาก API
+                        totalPrice: order.totalPrice, // ✅ ใช้ totalPrice จาก API
                         items: order.orderDetails?.map(detail => ({
                             name: detail.menuName,
                             qty: detail.quantity,
-                            price: detail.price   / detail.quantity, // ✅ คำนวณราคาต่อชิ้น
+                            price: detail.price / detail.quantity, // ✅ คำนวณราคาต่อชิ้น
                             toppings: detail.toppings || []
                         })) || []
                     }));
@@ -163,7 +163,7 @@ export default function DeliveryDetail() {
                     <div>
                         <h1 className="text-2xl font-bold text-primary">🛵 รายละเอียดยอดขาย Grab</h1>
                         <p className="text-base-content/70">
-                             {formatDate(deliveryData.saleDate)}
+                            {formatDate(deliveryData.saleDate)}
                         </p>
                     </div>
                 </div>
@@ -191,7 +191,7 @@ export default function DeliveryDetail() {
                                             <span className="font-semibold">ยอดขายรวม</span>
                                             <span className="text-info font-bold text-xl">
                                                 ฿{detailData?.totalSales?.toLocaleString() || 0}
-                                            </span>                                            
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="space-y-4">
@@ -205,6 +205,32 @@ export default function DeliveryDetail() {
                                             <span className="font-semibold">จำนวน GP ที่หักไป</span>
                                             <span className="text-error font-bold text-xl">
                                                 ฿{detailData?.gpAmount?.toLocaleString() || 0}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
+                                            <span className="font-semibold">เทียบกับราคาหน้าร้าน</span>
+                                            <span className={`font-bold text-xl ${(() => {
+                                                // ✅ คำนวณส่วนต่าง: ยอดหลังหัก GP - สรุปรวมราคาหน้าร้าน
+                                                const netSales = detailData?.netSales || 0;
+                                                const totalOrderPrice = ordersData.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+                                                const difference = netSales - totalOrderPrice;
+
+                                                // ✅ กำหนดสีตามผลลัพธ์
+                                                if (difference > 0) return 'text-success'; // เขียว = ได้มากกว่าราคาหน้าร้าน
+                                                if (difference < 0) return 'text-error';   // แดง = ได้น้อยกว่าราคาหน้าร้าน
+                                                return 'text-warning'; // เหลือง = เท่ากัน
+                                            })()}`}>
+                                                {(() => {
+                                                    // ✅ คำนวณส่วนต่าง: ยอดหลังหัก GP - สรุปรวมราคาหน้าร้าน
+                                                    const netSales = detailData?.netSales || 0;
+                                                    const totalOrderPrice = ordersData.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+                                                    const difference = netSales - totalOrderPrice;
+
+                                                    // ✅ แสดงผลพร้อมเครื่องหมาย + หรือ - และสัญลักษณ์บาท
+                                                    return `${difference >= 0 ? '+' : ''}${difference.toLocaleString()}`;
+                                                })()}
                                             </span>
                                         </div>
                                     </div>

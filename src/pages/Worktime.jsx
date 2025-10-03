@@ -1274,6 +1274,23 @@ function ManagementWorktime() {
       recalculatePaymentData(paymentModal.employee.employeeID, paymentModal.dateFrom, newDateTo);
     }
   };
+  const unpaidDaysInfo = React.useMemo(() => {
+    if (!paymentModal.employee?.employeeID) {
+      return { count: 0, days: [] };
+    }
+
+    const unpaidDays = paidWorktimes.filter(item =>
+      item.employeeID === paymentModal.employee.employeeID &&
+      !item.isPurchase &&
+      item.totalWorktime > 0
+    );
+
+    return {
+      count: unpaidDays.length,
+      days: unpaidDays
+    };
+  }, [paidWorktimes, paymentModal.employee?.employeeID]);
+
 
   // ✅ NOW the conditional return comes AFTER all hooks
   if (selectedEmployee) {
@@ -1369,13 +1386,13 @@ function ManagementWorktime() {
                     } else {
                       const startDate = new Date(dateFrom);
                       const endDate = new Date(dateTo);
-                      
+
                       // คำนวณความต่างเป็นมิลลิวินาที
                       const timeDifference = endDate.getTime() - startDate.getTime();
-                      
+
                       // แปลงเป็นจำนวนวัน (+1 เพื่อนับวันเริ่มต้นด้วย)
                       const daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)) + 1;
-                      
+
                       return ` | ${daysDifference} วัน`;
                     }
                   })()}
@@ -1568,17 +1585,20 @@ function ManagementWorktime() {
             {/* ✅ ชั่วโมงทำงาน - อัพเดทอัตโนมัติ */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-semibold">⏱️ ชั่วโมงทำงาน</span>
+                <span className="label-text font-semibold">⏱️ ชั่วโมงทำงาน และ วันที่ทำงาน</span>
               </label>
               <div className="bg-base-200 p-3 rounded-lg">
-                <div className="text-lg font-bold text-primary">
+                <div className="text-lg font-bold text-primary flex justify-between items-center">
                   {paymentLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="loading loading-spinner loading-sm"></span>
                       คำนวณใหม่...
                     </span>
                   ) : (
-                    formatWorktime(paymentModal.worktime)
+                    <>
+                      <span>{formatWorktime(paymentModal.worktime)}</span>
+                      <span className="text-sm">จาก {unpaidDaysInfo.count} วัน (ที่ยังไม่จ่าย)</span>
+                    </>
                   )}
                 </div>
               </div>

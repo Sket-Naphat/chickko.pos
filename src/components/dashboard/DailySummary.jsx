@@ -4,23 +4,23 @@ const DailySummary = ({
   selectedMonth,
   selectedYear,
   months,
-  getDailyData,
+  dailyData, // ✅ รับเป็น array โดยตรง
   formatDate,
   formatNumber,
   costData
 }) => {
   return (
-    <div className="bg-base-100 rounded-xl shadow p-4">
+    <div className="bg-base-100 rounded-xl shadow p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl sm:text-2xl font-semibold text-primary">
           📊 สรุปรายวัน - {months[selectedMonth]} {selectedYear}
         </h2>
         <div className="badge badge-primary badge-outline">
-          {getDailyData().length} วันที่มีข้อมูล
+          {dailyData.length} วันที่มีข้อมูล
         </div>
       </div>
 
-      {getDailyData().length === 0 ? (
+      {dailyData.length === 0 ? (
         <div className="text-center py-8">
           <div className="text-4xl mb-2">📈</div>
           <div className="text-base-content/60">ยังไม่มีข้อมูลในเดือนนี้</div>
@@ -43,7 +43,7 @@ const DailySummary = ({
                 </tr>
               </thead>
               <tbody>
-                {getDailyData().map((dayData) => {
+                {dailyData.map((dayData) => {
                   const profitPercent = dayData.total > 0 ? ((dayData.profit / dayData.total) * 100) : 0;
                   const costPercent = dayData.total > 0 ? ((dayData.cost / dayData.total) * 100) : 0;
 
@@ -126,7 +126,7 @@ const DailySummary = ({
 
           {/* Mobile/Tablet Collapse Layout */}
           <div className="lg:hidden space-y-3">
-            {getDailyData().map((dayData) => {
+            {dailyData.map((dayData) => {
               const profitPercent = dayData.total > 0 ? ((dayData.profit / dayData.total) * 100) : 0;
               const costPercent = dayData.total > 0 ? ((dayData.cost / dayData.total) * 100) : 0;
 
@@ -354,7 +354,7 @@ const DailySummary = ({
                       </div>
 
                       {/* Top 5 Selling Items */}
-                      {dayData.topItems && dayData.topItems.length > 0 && (
+                      {(dayData.topItems?.length > 0 || dayData.topDeliveryItems?.length > 0) && (
                         <div className="collapse bg-base-100 border-base-300 border">
                           <input type="checkbox" />
                           <div className="collapse-title font-semibold min-h-0 p-0">
@@ -364,32 +364,121 @@ const DailySummary = ({
                                 <span className="text-sm font-medium text-warning">รายการที่ขายดี Top 5</span>
                               </div>
                               <div className="text-xs text-warning/70">
-                                {dayData.topItems.length} รายการ
+                                {formatDate(dayData.date)}
                               </div>
                             </div>
                           </div>
                           <div className="collapse-content px-3 pb-3">
-                            <div className="pt-3 space-y-2">
-                              {dayData.topItems.slice(0, 5).map((item, index) => (
-                                <div key={index} className="flex justify-between items-center bg-base-100/50 rounded p-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className={`badge badge-sm ${index === 0 ? 'badge-warning' : index === 1 ? 'badge-info' : index === 2 ? 'badge-accent' : 'badge-neutral'}`}>
-                                      #{index + 1}
-                                    </span>
-                                    <span className="text-xs font-medium truncate max-w-[120px]">
-                                      {item.menuName}
-                                    </span>
+                            <div className="pt-3">
+                              <div className="tabs tabs-lifted">
+                                {/* Tab Dine-in */}
+                                {dayData.topItems?.length > 0 && (
+                                  <>
+                                    <input 
+                                      type="radio" 
+                                      name={`daily_top5_${dayData.date}`} 
+                                      className="tab" 
+                                      aria-label="🏪 หน้าร้าน" 
+                                      defaultChecked 
+                                    />
+                                    <div className="tab-content bg-base-100 border-base-300 p-4">
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <span className="text-info text-lg">🏪</span>
+                                          <span className="text-sm font-bold text-info">รายการขายดี Top 5 หน้าร้าน</span>
+                                          <div className="badge badge-info badge-sm">
+                                            {dayData.topItems.length} รายการ
+                                          </div>
+                                        </div>
+
+                                        {dayData.topItems.slice(0, 5).map((item, index) => (
+                                          <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 border border-info/10">
+                                            <div className="flex items-center gap-2">
+                                              <span className={`badge badge-sm font-bold text-white ${
+                                                index === 0 ? 'bg-yellow-500' :
+                                                index === 1 ? 'bg-gray-400' :
+                                                index === 2 ? 'bg-orange-600' :
+                                                'bg-gray-500'
+                                              }`}>
+                                                #{index + 1}
+                                              </span>
+                                              <span className="text-sm font-medium truncate max-w-[120px]">
+                                                {item.menuName || item.MenuName}
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                              <span className="text-sm font-bold text-info">
+                                                {item.quantitySold || item.QuantitySold} ออเดอร์
+                                              </span>
+                                              <span className="text-xs text-base-content/60">
+                                                {formatNumber(item.totalSales || item.TotalSales)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+
+                                {/* Tab Delivery */}
+                                {dayData.topDeliveryItems?.length > 0 && (
+                                  <>
+                                    <input 
+                                      type="radio" 
+                                      name={`daily_top5_${dayData.date}`} 
+                                      className="tab" 
+                                      aria-label="🛵 เดลิเวอรี่" 
+                                    />
+                                    <div className="tab-content bg-base-100 border-base-300 p-4">
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <span className="text-accent text-lg">🛵</span>
+                                          <span className="text-sm font-bold text-accent">รายการขายดี Top 5 เดลิเวอรี่</span>
+                                          <div className="badge badge-accent badge-sm">
+                                            {dayData.topDeliveryItems.length} รายการ
+                                          </div>
+                                        </div>
+
+                                        {dayData.topDeliveryItems.slice(0, 5).map((item, index) => (
+                                          <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 border border-accent/10">
+                                            <div className="flex items-center gap-2">
+                                              <span className={`badge badge-sm font-bold text-white ${
+                                                index === 0 ? 'bg-yellow-500' :
+                                                index === 1 ? 'bg-gray-400' :
+                                                index === 2 ? 'bg-orange-600' :
+                                                'bg-gray-500'
+                                              }`}>
+                                                #{index + 1}
+                                              </span>
+                                              <span className="text-sm font-medium truncate max-w-[120px]">
+                                                {item.menuName || item.MenuName}
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                              <span className="text-sm font-bold text-accent">
+                                                {item.quantitySold || item.QuantitySold} ออเดอร์
+                                              </span>
+                                              <span className="text-xs text-base-content/60">
+                                                {formatNumber(item.totalSales || item.TotalSales)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+
+                                {/* แสดง Message ถ้าไม่มีข้อมูล */}
+                                {(!dayData.topItems || dayData.topItems.length === 0) && 
+                                 (!dayData.topDeliveryItems || dayData.topDeliveryItems.length === 0) && (
+                                  <div className="text-center py-4">
+                                    <div className="text-2xl mb-2">📊</div>
+                                    <div className="text-sm text-base-content/60">ไม่มีข้อมูลรายการขายดี</div>
                                   </div>
-                                  <div className="flex flex-col items-end">
-                                    <span className="text-xs font-bold text-warning">
-                                      {item.quantitySold} ออเดอร์
-                                    </span>
-                                    <span className="text-xs text-base-content/60">
-                                      {formatNumber(item.totalSales)}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>

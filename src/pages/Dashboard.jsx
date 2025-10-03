@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { api } from "../lib/api";
 import React from "react";
 import {
@@ -13,22 +13,21 @@ import {
 import SummaryGraphCarousel from '../components/dashboard/3SummaryGraph';
 import DailySummary from '../components/dashboard/DailySummary';
 import MonthlySummary from '../components/dashboard/MonthlySummary';
+import { 
+  filterDataByDate, 
+  calculateTotals, 
+  processTopSellingItems,
+  calculateCostBreakdown,
+  generateDailyData,
+  generateMonthlyData
+} from '../services/dashboardService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+// ✅ ย้าย months ออกไปนอก component
 const months = [
-  "มกราคม",
-  "กุมภาพันธ์",
-  "มีนาคม",
-  "เมษายน",
-  "พฤษภาคม",
-  "มิถุนายน",
-  "กรกฎาคม",
-  "สิงหาคม",
-  "กันยายน",
-  "ตุลาคม",
-  "พฤศจิกายน",
-  "ธันวาคม",
+  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
 ];
 
 const getCurrentMonth = () => new Date().getMonth();
@@ -132,283 +131,193 @@ function Dashboard() {
       },
     },
   };
-  // กราฟยอดขายหน้าร้าน
-  const dineInData = {
-    labels: months,
-    datasets: [
-      {
+
+  // ✅ 1. ใช้ utility แทนการ Memoize การกรองข้อมูลพื้นฐาน
+  const filteredData = useMemo(() => {
+    const dineInFilter = filterDataByDate(dineInSalesData, 'saleDate');
+    const deliveryFilter = filterDataByDate(deliverySalesData, 'saleDate');
+    const costFilter = filterDataByDate(costData, 'costDate');
+
+    return {
+      dineInMonth: dineInFilter.filterByMonth(selectedMonth, selectedYear),
+      dineInYear: dineInFilter.filterByYear(selectedYear),
+      deliveryMonth: deliveryFilter.filterByMonth(selectedMonth, selectedYear),
+      deliveryYear: deliveryFilter.filterByYear(selectedYear),
+      costMonth: costFilter.filterByMonth(selectedMonth, selectedYear),
+      costYear: costFilter.filterByYear(selectedYear)
+    };
+  }, [dineInSalesData, deliverySalesData, costData, selectedMonth, selectedYear]);
+
+  // ✅ 2. ใช้ utility แทนการคำนวณยอดรวม
+  const totals = useMemo(() => {
+    const dineInTotal = filterMode === 'month'
+      ? calculateTotals(filteredData.dineInMonth)
+      : calculateTotals(filteredData.dineInYear);
+
+    const deliveryTotal = filterMode === 'month'
+      ? calculateTotals(filteredData.deliveryMonth)
+      : calculateTotals(filteredData.deliveryYear);
+
+    const costTotal = filterMode === 'month'
+      ? calculateTotals(filteredData.costMonth)
+      : calculateTotals(filteredData.costYear);
+
+    const totalSales = dineInTotal + deliveryTotal;
+    const netProfit = totalSales - costTotal;
+
+    return { dineInTotal, deliveryTotal, totalSales, costTotal, netProfit };
+  }, [filteredData, filterMode]);
+
+  // ✅ 3. ใช้ utility แทน getDailyData
+  const dailyData = useMemo(() => {
+    return generateDailyData(dineInSalesData, deliverySalesData, costData, selectedMonth, selectedYear);
+  }, [dineInSalesData, deliverySalesData, costData, selectedMonth, selectedYear]);
+
+  // ✅ 4. ใช้ utility แทน getMonthlyData
+  const monthlyData = useMemo(() => {
+    return generateMonthlyData(dineInSalesData, deliverySalesData, costData, selectedYear, months);
+  }, [dineInSalesData, deliverySalesData, costData, selectedYear]);
+
+  // ✅ 5. ใช้ utility แทนการคำนวณต้นทุนแยกประเภท
+  const costBreakdown = useMemo(() => {
+    const currentCosts = filterMode === 'month' ? filteredData.costMonth : filteredData.costYear;
+    return calculateCostBreakdown(currentCosts);
+  }, [filteredData, filterMode]);
+
+  // ✅ 6. ใช้ utility สำหรับ Top Items (เอาออกจาก comment)
+  const topItems = useMemo(() => {
+    return {
+      dineIn: processTopSellingItems(
+        dailyData.map(day => ({ topSellingItems: day.topItems }))
+      ),
+      delivery: processTopSellingItems(filteredData.deliveryMonth)
+    };
+  }, [dailyData, filteredData.deliveryMonth]);
+
+  // ✅ 1. Memoize ข้อมูลกราฟ - แก้ไข syntax
+  const chartData = useMemo(() => {
+    const dineInData = {
+      labels: months,
+      datasets: [{
         label: "ยอดขายรายเดือน",
         data: months.map((_, monthIdx) =>
-          dineInSalesData
-            .filter(item => {
-              const date = new Date(item.saleDate);
-              return (
-                date.getMonth() === monthIdx &&
-                date.getFullYear() === selectedYear
-              );
-            })
+          filteredData.dineInYear
+            .filter(item => new Date(item.saleDate).getMonth() === monthIdx)
             .reduce((sum, item) => sum + item.totalAmount, 0)
         ),
-        backgroundColor: "oklch(60% 0.118 184.704)", // สีกราฟ
-      },
-    ],
-  };
+        backgroundColor: "oklch(60% 0.118 184.704)",
+      }] // ✅ เพิ่ม closing bracket
+    }; // ✅ เพิ่ม semicolon
 
-  // กราฟยอดขายเดลิเวอรี่
-  const deliveryData = {
-    labels: months,
-    datasets: [
-      {
+    const deliveryData = {
+      labels: months,
+      datasets: [{
         label: "ยอดขายเดลิเวอรี่รายเดือน",
         data: months.map((_, monthIdx) =>
-          deliverySalesData
-            .filter(item => {
-              const date = new Date(item.saleDate);
-              return (
-                date.getMonth() === monthIdx &&
-                date.getFullYear() === selectedYear
-              );
-            })
+          filteredData.deliveryYear
+            .filter(item => new Date(item.saleDate).getMonth() === monthIdx)
             .reduce((sum, item) => sum + item.totalAmount, 0)
         ),
-        backgroundColor: "oklch(60% 0.118 265.755)", // สีกราฟเดลิเวอรี่
-      },
-    ],
-  };
-  // กราฟต้นทุน
-  const costChartData = {
-    labels: months,
-    datasets: [
-      {
+        backgroundColor: "oklch(60% 0.118 265.755)",
+      }] // ✅ เพิ่ม closing bracket
+    }; // ✅ เพิ่ม semicolon
+
+    const costChartData = {
+      labels: months,
+      datasets: [{
         label: "ต้นทุนรายเดือน",
         data: months.map((_, monthIdx) =>
-          costData
-            .filter(item => {
-              const date = new Date(item.costDate);
-              return (
-                date.getMonth() === monthIdx &&
-                date.getFullYear() === selectedYear
-              );
-            })
-            .reduce((sum, item) => sum + (item.totalAmount || 0), 0) // ✅ เปลี่ยนจาก costPrice เป็น totalAmount
+          filteredData.costYear
+            .filter(item => new Date(item.costDate).getMonth() === monthIdx)
+            .reduce((sum, item) => sum + (item.totalAmount || 0), 0)
         ),
         backgroundColor: "oklch(60% 0.118 30.755)",
-      },
-    ],
-  };
+      }] // ✅ เพิ่ม closing bracket
+    }; // ✅ เพิ่ม semicolon
 
-  // ยอดขายหน้าร้าน
-  const dineInTotal = filterMode === 'month'
-    ? dineInSalesData
-      .filter(item => {
-        const date = new Date(item.saleDate);
-        return (
-          date.getMonth() === selectedMonth &&
-          date.getFullYear() === selectedYear
-        );
-      })
-      .reduce((sum, item) => sum + item.totalAmount, 0)
-    : dineInSalesData
-      .filter(item => new Date(item.saleDate).getFullYear() === selectedYear)
-      .reduce((sum, item) => sum + item.totalAmount, 0);
-  // ยอดขายเดลิเวอรี่
-  const deliveryTotal = filterMode === 'month'
-    ? deliverySalesData
-      .filter(item => {
-        const date = new Date(item.saleDate);
-        return (
-          date.getMonth() === selectedMonth &&
-          date.getFullYear() === selectedYear
-        );
-      })
-      .reduce((sum, item) => sum + item.totalAmount, 0)
-    : deliverySalesData
-      .filter(item => new Date(item.saleDate).getFullYear() === selectedYear)
-      .reduce((sum, item) => sum + item.totalAmount, 0);
-  // ยอดขายรวม
-  const totalSales = dineInTotal + deliveryTotal;
+    return { dineInData, deliveryData, costChartData };
+  }, [filteredData]); // ✅ แก้ไข dependencies และปิด useMemo ให้ถูกต้อง
+  // ✅ 6. Memoize Top 5 Items
+  // const topItems = useMemo(() => {
+  //   const monthlyTopItems = dailyData
+  //     .flatMap(day => day.topItems || [])
+  //     .reduce((acc, item) => {
+  //       const key = item.menuName || item.MenuName;
+  //       if (!acc[key]) {
+  //         acc[key] = { menuName: key, quantitySold: 0, totalSales: 0 };
+  //       }
+  //       acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
+  //       acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
+  //       return acc;
+  //     }, {});
 
-  // ต้นทุน
-  const costTotal = filterMode === 'month'
-    ? costData
-      .filter(item => {
-        const date = new Date(item.costDate);
-        return (
-          date.getMonth() === selectedMonth &&
-          date.getFullYear() === selectedYear
-        );
-      })
-      .reduce((sum, item) => sum + (item.totalAmount || 0), 0) // ✅ เปลี่ยนจาก costPrice เป็น totalAmount
-    : costData
-      .filter(item => new Date(item.costDate).getFullYear() === selectedYear)
-      .reduce((sum, item) => sum + (item.totalAmount || 0), 0); // ✅ เปลี่ยนจาก costPrice เป็น totalAmount
+  //   const monthlyDeliveryTopItems = filteredData.deliveryMonth
+  //     .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
+  //     .reduce((acc, item) => {
+  //       const key = item.menuName || item.MenuName;
+  //       if (!acc[key]) {
+  //         acc[key] = { menuName: key, quantitySold: 0, totalSales: 0 };
+  //       }
+  //       acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
+  //       acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
+  //       return acc;
+  //     }, {});
 
-  // กำไรสุทธิ
-  const netProfit = totalSales - costTotal;
+  //   return {
+  //     dineIn: Object.values(monthlyTopItems).sort((a, b) => b.quantitySold - a.quantitySold).slice(0, 5),
+  //     delivery: Object.values(monthlyDeliveryTopItems).sort((a, b) => b.quantitySold - a.quantitySold).slice(0, 5)
+  //   };
+  // }, [dailyData, filteredData.deliveryMonth]);
 
-  // เพิ่มฟังก์ชันสำหรับจัดรูปแบบวันที่
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-    return `${dayNames[date.getDay()]}ที่ ${date.getDate()}`;
-  };
+  // ✅ 7. Memoize สถิติด่วน
+  const quickStats = useMemo(() => {
+    const profitDays = dailyData.filter(day => day.profit > 0).length;
+    const lossDays = dailyData.filter(day => day.profit < 0).length;
+    const salesDays = dailyData.filter(day => day.total > 0);
 
-  // เพิ่มการคำนวณข้อมูลรายวันสำหรับเดือนที่เลือก
-  const getDailyData = () => {
-    const dailyData = [];
-    const year = selectedYear;
-    const month = selectedMonth;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const avgOrders = salesDays.length > 0
+      ? Math.round(salesDays.reduce((sum, day) => sum + (day.totalOrders || 0), 0) / salesDays.length)
+      : 0;
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const avgSales = salesDays.length > 0
+      ? salesDays.reduce((sum, day) => sum + day.total, 0) / salesDays.length
+      : 0;
 
-      // หายอดขายหน้าร้าน
-      const dineInData = dineInSalesData
-        .filter(item => item.saleDate === dateStr);
-      const dineInAmount = dineInData
-        .reduce((sum, item) => sum + item.totalAmount, 0);
+    const avgCost = dailyData.length > 0
+      ? dailyData.reduce((sum, day) => sum + day.cost, 0) / dailyData.length
+      : 0;
 
-      // หายอดขายเดลิเวอรี่  
-      const deliveryData = deliverySalesData
-        .filter(item => item.saleDate === dateStr);
-      const deliveryAmount = deliveryData
-        .reduce((sum, item) => sum + item.totalAmount, 0);
+    return { profitDays, lossDays, avgOrders, avgSales, avgCost };
+  }, [dailyData]);
 
-      // หาต้นทุน
-      const costAmount = costData
-        .filter(item => item.costDate === dateStr)
-        .reduce((sum, item) => sum + (item.totalAmount || 0), 0);
 
-      // หา TopSellingItems จาก dineInSalesData (ใช้ข้อมูลจาก dineIn เป็นหลัก)
-      const topItems = dineInData
-        .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
-        .sort((a, b) => (b.quantitySold || b.QuantitySold) - (a.quantitySold || a.QuantitySold));
+  // ✅ เพิ่มฟังก์ชัน formatDate ที่หาย
+  const formatDate = useCallback((dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }, []);
 
-      // รวมจำนวนออเดอร์จาก orders field
-      const dineInOrders = dineInData
-        .reduce((sum, item) => sum + (item.orders || 0), 0);
-      const deliveryOrders = deliveryData
-        .reduce((sum, item) => sum + (item.orders || 0), 0);
-      const totalOrders = dineInOrders + deliveryOrders;
+  // ✅ เพิ่มหลัง formatDate callback
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, []);
 
-      const totalAmount = dineInAmount + deliveryAmount;
-      const profit = totalAmount - costAmount;
-
-      // แสดงเฉพาะวันที่มีข้อมูล
-      if (totalAmount > 0 || costAmount > 0) {
-        dailyData.push({
-          date: dateStr,
-          day: day,
-          dineIn: dineInAmount,
-          delivery: deliveryAmount,
-          total: totalAmount,
-          cost: costAmount,
-          profit: profit,
-          topItems: topItems,
-          dineInOrders: dineInOrders,
-          deliveryOrders: deliveryOrders,
-          totalOrders: totalOrders
-        });
-      }
-    }
-
-    return dailyData.sort((a, b) => b.day - a.day); // เรียงจากวันมากไปน้อย
-  };
-
-  // เพิ่มฟังก์ชันสำหรับคำนวณข้อมูลรายเดือนสำหรับปีที่เลือก (สำหรับโหมดรายปี)
-  const getMonthlyData = () => {
-    const monthlyData = [];
-    const year = selectedYear;
-
-    for (let monthIdx = 0; monthIdx < 12; monthIdx++) {
-      // หายอดขายหน้าร้าน
-      const dineInAmount = dineInSalesData
-        .filter(item => {
-          const date = new Date(item.saleDate);
-          return date.getMonth() === monthIdx && date.getFullYear() === year;
-        })
-        .reduce((sum, item) => sum + item.totalAmount, 0);
-
-      // หายอดขายเดลิเวอรี่
-      const deliveryAmount = deliverySalesData
-        .filter(item => {
-          const date = new Date(item.saleDate);
-          return date.getMonth() === monthIdx && date.getFullYear() === year;
-        })
-        .reduce((sum, item) => sum + item.totalAmount, 0);
-
-      // หาต้นทุน
-      const costAmount = costData
-        .filter(item => {
-          const date = new Date(item.costDate);
-          return date.getMonth() === monthIdx && date.getFullYear() === year;
-        })
-        .reduce((sum, item) => sum + (item.totalAmount || 0), 0);
-
-      // หา TopSellingItems จาก dineInSalesData ของเดือนนั้น
-      const monthTopItems = dineInSalesData
-        .filter(item => {
-          const date = new Date(item.saleDate);
-          return date.getMonth() === monthIdx && date.getFullYear() === year;
-        })
-        .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
-        .reduce((acc, item) => {
-          const key = item.menuName || item.MenuName;
-          if (!acc[key]) {
-            acc[key] = {
-              menuName: key,
-              quantitySold: 0,
-              totalSales: 0
-            };
-          }
-          acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
-          acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
-          return acc;
-        }, {});
-
-      const topItems = Object.values(monthTopItems)
-        .sort((a, b) => b.quantitySold - a.quantitySold);
-
-      const totalAmount = dineInAmount + deliveryAmount;
-      const profit = totalAmount - costAmount;
-
-      // แสดงเฉพาะเดือนที่มีข้อมูล
-      if (totalAmount > 0 || costAmount > 0) {
-        monthlyData.push({
-          month: monthIdx,
-          monthName: months[monthIdx],
-          dineIn: dineInAmount,
-          delivery: deliveryAmount,
-          total: totalAmount,
-          cost: costAmount,
-          profit: profit,
-          topItems: topItems
-        });
-      }
-    }
-
-    return monthlyData.sort((a, b) => b.month - a.month); // เรียงจากเดือนมากไปน้อย
-  };
-
-  // ✅ เพิ่ม useEffect สำหรับตรวจสอบการ scroll
+  // ✅ เพิ่ม scroll event listener
   useEffect(() => {
     const handleScroll = () => {
-      // แสดงปุ่มเมื่อ scroll ลงมาเกิน 300px
       setShowBackToTop(window.scrollY > 300);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // ✅ ฟังก์ชันสำหรับเลื่อนขึ้นด้านบน
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
 
   return (
     <div className="p-2 md:p-4 space-y-4 md:space-y-6">
@@ -507,7 +416,7 @@ function Dashboard() {
             </div>
             <div className="space-y-1">
               <div className="text-xs sm:text-sm font-medium text-info/80">ยอดขายหน้าร้าน</div>
-              <div className="text-sm sm:text-lg font-bold text-info">{formatNumber(dineInTotal)}</div>
+              <div className="text-sm sm:text-lg font-bold text-info">{formatNumber(totals.dineInTotal)}</div>
             </div>
           </div>
 
@@ -523,7 +432,7 @@ function Dashboard() {
             </div>
             <div className="space-y-1">
               <div className="text-xs sm:text-sm font-medium text-accent/80">ยอดขายเดลิเวอรี่</div>
-              <div className="text-sm sm:text-lg font-bold text-accent">{formatNumber(deliveryTotal)}</div>
+              <div className="text-sm sm:text-lg font-bold text-accent">{formatNumber(totals.deliveryTotal)}</div>
             </div>
           </div>
 
@@ -539,7 +448,7 @@ function Dashboard() {
             </div>
             <div className="space-y-1">
               <div className="text-xs sm:text-sm font-medium text-primary/80">ยอดขายรวม</div>
-              <div className="text-lg sm:text-xl font-bold text-primary">{formatNumber(totalSales)}</div>
+              <div className="text-lg sm:text-xl font-bold text-primary">{formatNumber(totals.totalSales)}</div>
             </div>
           </div>
 
@@ -555,7 +464,7 @@ function Dashboard() {
             </div>
             <div className="space-y-1">
               <div className="text-xs sm:text-sm font-medium text-warning/80">วันที่เปิดขาย</div>
-              <div className="text-lg sm:text-xl font-bold text-warning">{getDailyData().filter(day => day.total > 0).length} วัน</div>
+              <div className="text-lg sm:text-xl font-bold text-warning">{dailyData.filter(day => day.total > 0).length} วัน</div>
             </div>
           </div>
 
@@ -578,10 +487,10 @@ function Dashboard() {
                       คลิกเพื่อดูรายละเอียด
                     </div>
                   </div>
-                  <div className="text-sm sm:text-lg font-bold text-error">{formatNumber(costTotal)}</div>
-                  {totalSales > 0 && (
+                  <div className="text-sm sm:text-lg font-bold text-error">{formatNumber(totals.costTotal)}</div>
+                  {totals.totalSales > 0 && (
                     <div className="text-xs text-error/70">
-                      {((costTotal / totalSales) * 100).toFixed(1)}% จากยอดขาย
+                      {((totals.costTotal / totals.totalSales) * 100).toFixed(1)}% จากยอดขาย
                     </div>
                   )}
                 </div>
@@ -589,17 +498,7 @@ function Dashboard() {
 
               <div className="collapse-content px-3 sm:px-4 pb-3 sm:pb-4">
                 {(() => {
-                  // กรองข้อมูลต้นทุนตามโหมดที่เลือก
-                  const currentCosts = costData.filter(item => {
-                    const date = new Date(item.costDate);
-                    if (filterMode === 'month') {
-                      return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
-                    } else {
-                      return date.getFullYear() === selectedYear;
-                    }
-                  });
-
-                  if (currentCosts.length === 0) {
+                  if (filteredData.costMonth.length === 0 && filteredData.costYear.length === 0) {
                     return (
                       <div className="text-center py-6">
                         <div className="text-2xl mb-2">📊</div>
@@ -608,46 +507,39 @@ function Dashboard() {
                     );
                   }
 
-                  // คำนวณยอดรวมแต่ละประเภทต้นทุน
-                  const totalRawMaterial = currentCosts.reduce((sum, cost) => sum + (cost.totalRawMaterialCost || 0), 0);
-                  const totalStaff = currentCosts.reduce((sum, cost) => sum + (cost.totalStaffCost || 0), 0);
-                  const totalOwner = currentCosts.reduce((sum, cost) => sum + (cost.totalOwnerCost || 0), 0);
-                  const totalUtility = currentCosts.reduce((sum, cost) => sum + (cost.totalUtilityCost || 0), 0);
-                  const totalOther = currentCosts.reduce((sum, cost) => sum + (cost.totalOtherCost || 0), 0);
-
-                  // สร้างรายการประเภทต้นทุนที่มีค่า
+                  // ✅ ใช้ costBreakdown แทนการคำนวณซ้ำ
                   const costCategories = [
-                    { 
-                      name: 'วัตถุดิบ', 
-                      icon: '🥗', 
-                      amount: totalRawMaterial,
+                    {
+                      name: 'วัตถุดิบ',
+                      icon: '🥗',
+                      amount: costBreakdown.totalRawMaterial,
                       textColor: 'text-red-700'
                     },
-                    { 
-                      name: 'ค่าแรงพนักงาน', 
-                      icon: '👥', 
-                      amount: totalStaff,
+                    {
+                      name: 'ค่าแรงพนักงาน',
+                      icon: '👥',
+                      amount: costBreakdown.totalStaff,
                       textColor: 'text-orange-700'
                     },
-                    { 
-                      name: 'เงินเดือนทีมบริหาร', 
-                      icon: '👑', 
-                      amount: totalOwner,
+                    {
+                      name: 'เงินเดือนทีมบริหาร',
+                      icon: '👑',
+                      amount: costBreakdown.totalOwner,
                       textColor: 'text-blue-700'
                     },
-                    { 
-                      name: 'ค่าสาธารณูปโภค', 
-                      icon: '⚡', 
-                      amount: totalUtility,
+                    {
+                      name: 'ค่าสาธารณูปโภค',
+                      icon: '⚡',
+                      amount: costBreakdown.totalUtility,
                       textColor: 'text-yellow-700'
                     },
-                    { 
-                      name: 'ค่าใช้จ่ายอื่นๆ', 
-                      icon: '📦', 
-                      amount: totalOther,
+                    {
+                      name: 'ค่าใช้จ่ายอื่นๆ',
+                      icon: '📦',
+                      amount: costBreakdown.totalOther,
                       textColor: 'text-gray-700'
                     }
-                  ].filter(category => category.amount > 0); // แสดงเฉพาะประเภทที่มีค่า
+                  ].filter(category => category.amount > 0);
 
                   return (
                     <div className="pt-3 space-y-3">
@@ -665,8 +557,8 @@ function Dashboard() {
                       {/* รายการต้นทุน */}
                       <div className="space-y-2">
                         {costCategories.map((category, index) => {
-                          const percentage = totalSales > 0 ? ((category.amount / totalSales) * 100) : 0;
-                          
+                          const percentage = totals.totalSales > 0 ? ((category.amount / totals.totalSales) * 100) : 0;
+
                           return (
                             <div key={index} className="flex items-center justify-between py-2 px-3 bg-base-50 rounded-lg">
                               <div className="flex items-center gap-2">
@@ -709,10 +601,10 @@ function Dashboard() {
             </div>
             <div className="space-y-1">
               <div className="text-xs sm:text-sm font-medium text-success/80">กำไรสุทธิ</div>
-              <div className="text-lg sm:text-xl font-bold text-success">{formatNumber(netProfit)}</div>
-              {totalSales > 0 && (
+              <div className="text-lg sm:text-xl font-bold text-success">{formatNumber(totals.netProfit)}</div>
+              {totals.totalSales > 0 && (
                 <div className="text-xs text-success/70">
-                  {((netProfit / totalSales) * 100).toFixed(1)}% จากยอดขาย
+                  {((totals.netProfit / totals.totalSales) * 100).toFixed(1)}% จากยอดขาย
                 </div>
               )}
             </div>
@@ -720,7 +612,7 @@ function Dashboard() {
         </div>
 
         {/* รวมสถิติรายเดือน (แสดงเฉพาะโหมดรายเดือน) */}
-        {filterMode === 'month' && !salesLoading && getDailyData().length > 0 && (
+        {filterMode === 'month' && !salesLoading && dailyData.length > 0 && (
           <>
 
 
@@ -733,107 +625,64 @@ function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
               <div className="bg-gradient-to-r from-success/10 to-success/5 border border-success/20 rounded-lg p-3 text-center">
                 <div className="text-success font-bold text-lg">
-                  {getDailyData().filter(day => day.profit > 0).length}
+                  {quickStats.profitDays}
                 </div>
                 <div className="text-xs text-success/70">วันที่มีกำไร</div>
               </div>
 
               <div className="bg-gradient-to-r from-error/10 to-error/5 border border-error/20 rounded-lg p-3 text-center">
                 <div className="text-error font-bold text-lg">
-                  {getDailyData().filter(day => day.profit < 0).length}
+                  {quickStats.lossDays}
                 </div>
                 <div className="text-xs text-error/70">วันที่ขาดทุน</div>
               </div>
 
               <div className="bg-gradient-to-r from-purple-100/80 to-purple-50 border border-purple-300 rounded-lg p-3 text-center">
                 <div className="text-purple-600 font-bold text-lg">
-                  {(() => {
-                    const salesDays = getDailyData().filter(day => day.total > 0);
-                    if (salesDays.length === 0) return 0;
-
-                    // คำนวณจำนวนออเดอร์เฉลี่ยจาก orders field
-                    const totalOrders = salesDays.reduce((sum, day) => {
-                      return sum + (day.totalOrders || 0);
-                    }, 0);
-
-                    const avgOrders = totalOrders / salesDays.length;
-                    return Math.round(avgOrders);
-                  })()}
+                  {quickStats.avgOrders}
                 </div>
                 <div className="text-xs text-purple-600/70">ออเดอร์เฉลี่ย/วัน</div>
               </div>
 
               <div className="bg-gradient-to-r from-info/10 to-info/5 border border-info/20 rounded-lg p-3 text-center">
                 <div className="text-info font-bold text-lg">
-                  {(() => {
-                    const totals = getDailyData().map(day => day.total);
-                    const avgSales = totals.length > 0 ? totals.reduce((sum, t) => sum + t, 0) / totals.length : 0;
-                    return formatNumber(avgSales);
-                  })()}
+                  {formatNumber(quickStats.avgSales)}
                 </div>
                 <div className="text-xs text-info/70">ยอดขายเฉลี่ย/วัน</div>
               </div>
 
               <div className="bg-gradient-to-r from-error/10 to-error/5 border border-error/20 rounded-lg p-3 text-center">
                 <div className="text-error font-bold text-lg">
-                  {(() => {
-                    const costs = getDailyData().map(day => day.cost);
-                    const avgCost = costs.length > 0 ? costs.reduce((sum, c) => sum + c, 0) / costs.length : 0;
-                    return formatNumber(avgCost);
-                  })()}
+                  {formatNumber(quickStats.avgCost)}
                 </div>
                 <div className="text-xs text-error/70">ต้นทุนเฉลี่ย/วัน</div>
               </div>
 
               {/* เพิ่ม TotalOwnerCost ถ้ามี */}
-              {(() => {
-                const monthOwnerCost = costData
-                  .filter(item => {
-                    const date = new Date(item.costDate);
-                    return (
-                      date.getMonth() === selectedMonth &&
-                      date.getFullYear() === selectedYear
-                    );
-                  })
-                  .reduce((sum, item) => sum + (item.totalOwnerCost || 0), 0);
-
-                return monthOwnerCost > 0 ? (
-                  <div className="bg-gradient-to-r from-orange-100/80 to-orange-50 border border-orange-300 rounded-lg p-3 text-center">
-                    <div className="text-orange-600 font-bold text-lg">
-                      {formatNumber(monthOwnerCost)}
-                    </div>
-                    <div className="text-xs text-orange-600/70">เงินเดือนทีมบริหาร</div>
+              {costBreakdown.totalOwner > 0 && (
+                <div className="bg-gradient-to-r from-orange-100/80 to-orange-50 border border-orange-300 rounded-lg p-3 text-center">
+                  <div className="text-orange-600 font-bold text-lg">
+                    {formatNumber(costBreakdown.totalOwner)}
                   </div>
-                ) : null;
-              })()}
+                  <div className="text-xs text-orange-600/70">เงินเดือนทีมบริหาร</div>
+                </div>
+              )}
 
               {/* เพิ่ม TotalUtilityCost ถ้ามี */}
-              {(() => {
-                const monthUtilityCost = costData
-                  .filter(item => {
-                    const date = new Date(item.costDate);
-                    return (
-                      date.getMonth() === selectedMonth &&
-                      date.getFullYear() === selectedYear
-                    );
-                  })
-                  .reduce((sum, item) => sum + (item.totalUtilityCost || 0), 0);
-
-                return monthUtilityCost > 0 ? (
-                  <div className="bg-gradient-to-r from-cyan-100/80 to-cyan-50 border border-cyan-300 rounded-lg p-3 text-center">
-                    <div className="text-cyan-600 font-bold text-lg">
-                      {formatNumber(monthUtilityCost)}
-                    </div>
-                    <div className="text-xs text-cyan-600/70">ต้นทุนค่าน้ำค่าไฟ</div>
+              {costBreakdown.totalUtility > 0 && (
+                <div className="bg-gradient-to-r from-cyan-100/80 to-cyan-50 border border-cyan-300 rounded-lg p-3 text-center">
+                  <div className="text-cyan-600 font-bold text-lg">
+                    {formatNumber(costBreakdown.totalUtility)}
                   </div>
-                ) : null;
-              })()}
+                  <div className="text-xs text-cyan-600/70">ต้นทุนค่าน้ำค่าไฟ</div>
+                </div>
+              )}
             </div>
 
-            {/* Top 5 Selling Items ของเดือน - เปลี่ยนเป็น Collapse */}
+            {/* Top 5 Selling Items ของเดือน - รวมทั้งหน้าร้านและ Delivery ใน Collapse เดียว */}
             {(() => {
-              // รวบรวม TopItems จากทุกวันในเดือน
-              const monthlyTopItems = getDailyData()
+              // รวบรวม TopItems จากทุกวันในเดือน (Dine-in)
+              const monthlyTopItems = dailyData
                 .flatMap(day => day.topItems || [])
                 .reduce((acc, item) => {
                   const key = item.menuName || item.MenuName;
@@ -849,86 +698,503 @@ function Dashboard() {
                   return acc;
                 }, {});
 
-              const sortedItems = Object.values(monthlyTopItems)
-                .sort((a, b) => b.quantitySold - a.quantitySold)
-                .slice(0, 5); // แสดง Top 5
+              // รวบรวม TopItems จาก Delivery
+              const monthlyDeliveryTopItems = deliverySalesData
+                .filter(item => {
+                  const date = new Date(item.saleDate);
+                  return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
+                })
+                .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
+                .reduce((acc, item) => {
+                  const key = item.menuName || item.MenuName;
+                  if (!acc[key]) {
+                    acc[key] = {
+                      menuName: key,
+                      quantitySold: 0,
+                      totalSales: 0
+                    };
+                  }
+                  acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
+                  acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
+                  return acc;
+                }, {});
 
-              return sortedItems.length > 0 ? (
-                <div className="collapse bg-base-100 border border-warning/20 rounded-lg">
+              const sortedDineInItems = Object.values(monthlyTopItems)
+                .sort((a, b) => b.quantitySold - a.quantitySold)
+                .slice(0, 5);
+
+              const sortedDeliveryItems = Object.values(monthlyDeliveryTopItems)
+                .sort((a, b) => b.quantitySold - a.quantitySold)
+                .slice(0, 5);
+
+              return (sortedDineInItems.length > 0 || sortedDeliveryItems.length > 0) ? (
+                <div className="collapse bg-base-100 border border-primary/20 rounded-lg">
                   <input type="checkbox" />
                   <div className="collapse-title font-semibold min-h-0 p-0">
                     <div className="flex justify-between items-center p-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-warning text-xl">🏆</span>
-                        <span className="text-lg font-bold text-warning">
-                          รายการที่ขายดี Top 5 ประจำเดือน {months[selectedMonth]}
+                        <span className="text-primary text-xl">🏆</span>
+                        <span className="text-lg font-bold text-primary">
+                          รายการขายดี Top 5 - {months[selectedMonth]}
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="collapse-content px-4 pb-4">
-                    <div className="pt-0 space-y-3">
-                      {/* Grid สำหรับ Desktop */}
-                      <div className="hidden md:grid grid-cols-1 gap-3">
-                        {sortedItems.map((item, index) => (
-                          <div key={index} className="flex justify-between items-center bg-base-100/70 rounded-lg p-3 shadow-sm">
-                            <div className="flex items-center gap-3">
-                              <span className={`badge badge-lg font-bold text-white ${index === 0 ? 'bg-yellow-500' :
-                                index === 1 ? 'bg-gray-400' :
-                                  index === 2 ? 'bg-orange-600' :
-                                    'bg-gray-500'
-                                }`}>
-                                #{index + 1}
-                              </span>
-                              <span className="font-medium text-base">
-                                {item.menuName}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <div className="font-bold text-warning text-lg">
-                                  {item.quantitySold} ออเดอร์
+                    <div className="pt-0">
+                      <div className="tabs tabs-lift">
+                        {/* Tab หน้าร้าน */}
+                        {topItems.dineIn.length > 0 && (
+                          <>
+                            <input type="radio" name="top5_tabs_unique" className="tab" aria-label="🏪 หน้าร้าน" defaultChecked />
+                            <div className="tab-content bg-base-100 border-base-300 p-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="text-info text-lg">🏪</span>
+                                  <span className="font-bold text-info">รายการขายดี Top 5 หน้าร้าน</span>
                                 </div>
-                                <div className="text-sm text-base-content/60">
-                                  {formatNumber(item.totalSales)} บาท
+
+                                {/* Grid สำหรับ Desktop */}
+                                <div className="hidden md:grid grid-cols-1 gap-3">
+                                  {topItems.dineIn.map((item, index) => (
+                                    <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 shadow-sm border border-info/10">
+                                      <div className="flex items-center gap-3">
+                                        <span className={`badge badge-lg font-bold text-white ${
+                                          index === 0 ? 'bg-yellow-500' :
+                                          index === 1 ? 'bg-gray-400' :
+                                          index === 2 ? 'bg-orange-600' :
+                                          'bg-gray-500'
+                                        }`}>
+                                          #{index + 1}
+                                        </span>
+                                        <span className="font-medium text-base">
+                                          {item.menuName}
+                                        </span>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="font-bold text-info text-lg">
+                                          {item.quantitySold} ออเดอร์
+                                        </div>
+                                        <div className="text-sm text-base-content/60">
+                                          {formatNumber(item.totalSales)} บาท
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* List สำหรับ Mobile */}
+                                <div className="md:hidden space-y-2">
+                                  {topItems.dineIn.map((item, index) => (
+                                    <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 border border-info/10">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`badge badge-sm font-bold text-white ${
+                                          index === 0 ? 'bg-yellow-500' :
+                                          index === 1 ? 'bg-gray-400' :
+                                          index === 2 ? 'bg-orange-600' :
+                                          'bg-gray-500'
+                                        }`}>
+                                          #{index + 1}
+                                        </span>
+                                        <span className="text-sm font-medium truncate max-w-[120px]">
+                                          {item.menuName}
+                                        </span>
+                                      </div>
+                                      <div className="flex flex-col items-end">
+                                        <span className="text-sm font-bold text-info">
+                                          {item.quantitySold} ออเดอร์
+                                        </span>
+                                        <span className="text-xs text-base-content/60">
+                                          {formatNumber(item.totalSales)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          </>
+                        )}
 
-                      {/* List สำหรับ Mobile */}
-                      <div className="md:hidden space-y-2">
-                        {sortedItems.map((item, index) => (
-                          <div key={index} className="flex justify-between items-center bg-base-100/70 rounded-lg p-3">
-                            <div className="flex items-center gap-2">
-                              <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
-                                index === 1 ? 'bg-gray-400' :
-                                  index === 2 ? 'bg-orange-600' :
-                                    'bg-gray-500'
-                                }`}>
-                                #{index + 1}
-                              </span>
-                              <span className="text-sm font-medium truncate max-w-[120px]">
-                                {item.menuName}
-                              </span>
+                        {/* Tab Delivery */}
+                        {topItems.delivery.length > 0 && (
+                          <>
+                            <input type="radio" name="top5_tabs_unique" className="tab" aria-label="🛵 เดลิเวอรี่" />
+                            <div className="tab-content bg-base-100 border-base-300 p-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="text-accent text-lg">🛵</span>
+                                  <span className="font-bold text-accent">รายการขายดี Top 5 เดลิเวอรี่</span>
+                                </div>
+
+                                {/* Grid สำหรับ Desktop */}
+                                <div className="hidden md:grid grid-cols-1 gap-3">
+                                  {topItems.delivery.map((item, index) => (
+                                    <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 shadow-sm border border-accent/10">
+                                      <div className="flex items-center gap-3">
+                                        <span className={`badge badge-lg font-bold text-white ${
+                                          index === 0 ? 'bg-yellow-500' :
+                                          index === 1 ? 'bg-gray-400' :
+                                          index === 2 ? 'bg-orange-600' :
+                                          'bg-gray-500'
+                                        }`}>
+                                          #{index + 1}
+                                        </span>
+                                        <span className="font-medium text-base">
+                                          {item.menuName}
+                                        </span>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="font-bold text-accent text-lg">
+                                          {item.quantitySold} ออเดอร์
+                                        </div>
+                                        <div className="text-sm text-base-content/60">
+                                          {formatNumber(item.totalSales)} บาท
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* List สำหรับ Mobile */}
+                                <div className="md:hidden space-y-2">
+                                  {topItems.delivery.map((item, index) => (
+                                    <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 border border-accent/10">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`badge badge-sm font-bold text-white ${
+                                          index === 0 ? 'bg-yellow-500' :
+                                          index === 1 ? 'bg-gray-400' :
+                                          index === 2 ? 'bg-orange-600' :
+                                          'bg-gray-500'
+                                        }`}>
+                                          #{index + 1}
+                                        </span>
+                                        <span className="text-sm font-medium truncate max-w-[120px]">
+                                          {item.menuName}
+                                        </span>
+                                      </div>
+                                      <div className="flex flex-col items-end">
+                                        <span className="text-sm font-bold text-accent">
+                                          {item.quantitySold} ออเดอร์
+                                        </span>
+                                        <span className="text-xs text-base-content/60">
+                                          {formatNumber(item.totalSales)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex flex-col items-end">
-                              <span className="text-sm font-bold text-warning">
-                                {item.quantitySold} ออเดอร์
-                              </span>
-                              <span className="text-xs text-base-content/60">
-                                {formatNumber(item.totalSales)}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
               ) : null;
+            })()}
+          </>
+        )}
+
+        {/* ✅ เพิ่มหลังส่วน quickStats และก่อน </> ของ filterMode === 'month' */}
+        {filterMode === 'year' && !salesLoading && (
+          <>
+            {/* Divider */}
+            <div className="divider">
+              <span className="text-sm font-medium text-base-content/70">⚡ สถิติรายปี</span>
+            </div>
+
+            {/* สรุปสถิติรายปี */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+              <div className="bg-gradient-to-r from-success/10 to-success/5 border border-success/20 rounded-lg p-3 text-center">
+                <div className="text-success font-bold text-lg">
+                  {monthlyData.filter(month => month.profit > 0).length}
+                </div>
+                <div className="text-xs text-success/70">เดือนที่มีกำไร</div>
+              </div>
+
+              <div className="bg-gradient-to-r from-error/10 to-error/5 border border-error/20 rounded-lg p-3 text-center">
+                <div className="text-error font-bold text-lg">
+                  {monthlyData.filter(month => month.profit < 0).length}
+                </div>
+                <div className="text-xs text-error/70">เดือนที่ขาดทุน</div>
+              </div>
+
+              <div className="bg-gradient-to-r from-info/10 to-info/5 border border-info/20 rounded-lg p-3 text-center">
+                <div className="text-info font-bold text-lg">
+                  {formatNumber(monthlyData.length > 0 ? totals.totalSales / monthlyData.length : 0)}
+                </div>
+                <div className="text-xs text-info/70">ยอดขายเฉลี่ย/เดือน</div>
+              </div>
+
+              <div className="bg-gradient-to-r from-error/10 to-error/5 border border-error/20 rounded-lg p-3 text-center">
+                <div className="text-error font-bold text-lg">
+                  {formatNumber(monthlyData.length > 0 ? totals.costTotal / monthlyData.length : 0)}
+                </div>
+                <div className="text-xs text-error/70">ต้นทุนเฉลี่ย/เดือน</div>
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-100/80 to-purple-50 border border-purple-300 rounded-lg p-3 text-center">
+                <div className="text-purple-600 font-bold text-lg">
+                  {monthlyData.length}
+                </div>
+                <div className="text-xs text-purple-600/70">เดือนที่มีข้อมูล</div>
+              </div>
+
+              <div className="bg-gradient-to-r from-success/10 to-success/5 border border-success/20 rounded-lg p-3 text-center">
+                <div className="text-success font-bold text-lg">
+                  {formatNumber(monthlyData.length > 0 ? totals.netProfit / monthlyData.length : 0)}
+                </div>
+                <div className="text-xs text-success/70">กำไรเฉลี่ย/เดือน</div>
+              </div>
+            </div>
+
+            {/* Top 5 Selling Items ของปี - แยก Tab */}
+            {(() => {
+              // รวบรวม TopItems จากทุกเดือนในปี (Dine-in)
+              const yearlyTopItems = dineInSalesData
+                .filter(item => {
+                  const date = new Date(item.saleDate);
+                  return date.getFullYear() === selectedYear;
+                })
+                .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
+                .reduce((acc, item) => {
+                  const key = item.menuName || item.MenuName;
+                  if (!acc[key]) {
+                    acc[key] = {
+                      menuName: key,
+                      quantitySold: 0,
+                      totalSales: 0
+                    };
+                  }
+                  acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
+                  acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
+                  return acc;
+                }, {});
+
+              // รวบรวม TopItems จาก Delivery
+              const yearlyDeliveryTopItems = deliverySalesData
+                .filter(item => {
+                  const date = new Date(item.saleDate);
+                  return date.getFullYear() === selectedYear;
+                })
+                .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
+                .reduce((acc, item) => {
+                  const key = item.menuName || item.MenuName;
+                  if (!acc[key]) {
+                    acc[key] = {
+                      menuName: key,
+                      quantitySold: 0,
+                      totalSales: 0
+                    };
+                  }
+                  acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
+                  acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
+                  return acc;
+                }, {});
+
+              const sortedDineInItems = Object.values(yearlyTopItems)
+                .sort((a, b) => b.quantitySold - a.quantitySold)
+                .slice(0, 5);
+
+              const sortedDeliveryItems = Object.values(yearlyDeliveryTopItems)
+                .sort((a, b) => b.quantitySold - a.quantitySold)
+                .slice(0, 5);
+
+              return (sortedDineInItems.length > 0 || sortedDeliveryItems.length > 0) ? (
+                <div className="collapse bg-base-100 border border-primary/20 rounded-lg">
+                  <input type="checkbox" />
+                  <div className="collapse-title font-semibold min-h-0 p-0">
+                    <div className="flex justify-between items-center p-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-primary text-xl">🏆</span>
+                        <span className="text-lg font-bold text-primary">
+                          รายการขายดี Top 5 - ปี {selectedYear}
+                        </span>
+                      </div>
+                      <div className="text-xs text-primary/70 bg-primary/10 px-2 py-1 rounded-full">
+                        คลิกเพื่อดูรายละเอียด
+                      </div>
+                    </div>
+                  </div>
+                  <div className="collapse-content px-4 pb-4">
+                    <div className="pt-0">
+                      <div className="tabs tabs-lifted">
+                        {/* Tab หน้าร้าน */}
+                        {sortedDineInItems.length > 0 && (
+                          <>
+                            <input type="radio" name="yearly_top5_tabs" className="tab" aria-label="🏪 หน้าร้าน" defaultChecked />
+                            <div className="tab-content bg-base-100 border-base-300 p-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="text-info text-lg">🏪</span>
+                                  <span className="font-bold text-info">รายการขายดี Top 5 หน้าร้าน</span>
+                                  <div className="badge badge-info badge-sm">
+                                    {sortedDineInItems.length} รายการ
+                                  </div>
+                                </div>
+
+                                {/* Grid สำหรับ Desktop */}
+                                <div className="hidden md:grid grid-cols-1 gap-3">
+                                  {sortedDineInItems.map((item, index) => (
+                                    <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-4 shadow-sm border border-info/10">
+                                      <div className="flex items-center gap-3">
+                                        <span className={`badge badge-lg font-bold text-white ${
+                                          index === 0 ? 'bg-yellow-500' :
+                                          index === 1 ? 'bg-gray-400' :
+                                          index === 2 ? 'bg-orange-600' :
+                                          'bg-gray-500'
+                                        }`}>
+                                          #{index + 1}
+                                        </span>
+                                        <span className="font-medium text-base">
+                                          {item.menuName}
+                                        </span>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="font-bold text-info text-lg">
+                                          {item.quantitySold} ออเดอร์
+                                        </div>
+                                        <div className="text-sm text-base-content/60">
+                                          {formatNumber(item.totalSales)} บาท
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* List สำหรับ Mobile */}
+                                <div className="md:hidden space-y-2">
+                                  {sortedDineInItems.map((item, index) => (
+                                    <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 border border-info/10">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`badge badge-sm font-bold text-white ${
+                                          index === 0 ? 'bg-yellow-500' :
+                                          index === 1 ? 'bg-gray-400' :
+                                          index === 2 ? 'bg-orange-600' :
+                                          'bg-gray-500'
+                                        }`}>
+                                          #{index + 1}
+                                        </span>
+                                        <span className="text-sm font-medium truncate max-w-[120px]">
+                                          {item.menuName}
+                                        </span>
+                                      </div>
+                                      <div className="flex flex-col items-end">
+                                        <span className="text-sm font-bold text-info">
+                                          {item.quantitySold} ออเดอร์
+                                        </span>
+                                        <span className="text-xs text-base-content/60">
+                                          {formatNumber(item.totalSales)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Tab Delivery */}
+                        {sortedDeliveryItems.length > 0 && (
+                          <>
+                            <input type="radio" name="yearly_top5_tabs" className="tab" aria-label="🛵 เดลิเวอรี่" />
+                            <div className="tab-content bg-base-100 border-base-300 p-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="text-accent text-lg">🛵</span>
+                                  <span className="font-bold text-accent">รายการขายดี Top 5 เดลิเวอรี่</span>
+                                  <div className="badge badge-accent badge-sm">
+                                    {sortedDeliveryItems.length} รายการ
+                                  </div>
+                                </div>
+
+                                {/* Grid สำหรับ Desktop */}
+                                <div className="hidden md:grid grid-cols-1 gap-3">
+                                  {sortedDeliveryItems.map((item, index) => (
+                                    <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-4 shadow-sm border border-accent/10">
+                                      <div className="flex items-center gap-3">
+                                        <span className={`badge badge-lg font-bold text-white ${
+                                          index === 0 ? 'bg-yellow-500' :
+                                          index === 1 ? 'bg-gray-400' :
+                                          index === 2 ? 'bg-orange-600' :
+                                          'bg-gray-500'
+                                        }`}>
+                                          #{index + 1}
+                                        </span>
+                                        <span className="font-medium text-base">
+                                          {item.menuName}
+                                        </span>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="font-bold text-accent text-lg">
+                                          {item.quantitySold} ออเดอร์
+                                        </div>
+                                        <div className="text-sm text-base-content/60">
+                                          {formatNumber(item.totalSales)} บาท
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* List สำหรับ Mobile */}
+                                <div className="md:hidden space-y-2">
+                                  {sortedDeliveryItems.map((item, index) => (
+                                    <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 border border-accent/10">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`badge badge-sm font-bold text-white ${
+                                          index === 0 ? 'bg-yellow-500' :
+                                          index === 1 ? 'bg-gray-400' :
+                                          index === 2 ? 'bg-orange-600' :
+                                          'bg-gray-500'
+                                        }`}>
+                                          #{index + 1}
+                                        </span>
+                                        <span className="text-sm font-medium truncate max-w-[120px]">
+                                          {item.menuName}
+                                        </span>
+                                      </div>
+                                      <div className="flex flex-col items-end">
+                                        <span className="text-sm font-bold text-accent">
+                                          {item.quantitySold} ออเดอร์
+                                        </span>
+                                        <span className="text-xs text-base-content/60">
+                                          {formatNumber(item.totalSales)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* แสดง Message ถ้าไม่มีข้อมูล */}
+                        {sortedDineInItems.length === 0 && sortedDeliveryItems.length === 0 && (
+                          <div className="text-center py-8">
+                            <div className="text-4xl mb-2">📊</div>
+                            <div className="text-base-content/60">ไม่มีข้อมูลรายการขายดี</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-base-100 rounded-xl shadow p-6 text-center">
+                  <div className="text-4xl mb-2">📊</div>
+                  <div className="text-lg font-semibold text-base-content/70 mb-2">
+                    ไม่มีข้อมูลรายการขายดี
+                  </div>
+                  <div className="text-base-content/60">
+                    ในปี {selectedYear}
+                  </div>
+                </div>
+              );
             })()}
           </>
         )}
@@ -945,9 +1211,9 @@ function Dashboard() {
       {/* ✅ ใช้ SummaryGraphCarousel แทนโค้ดเดิม */}
       <SummaryGraphCarousel
         salesLoading={salesLoading}
-        data={dineInData}
-        deliveryData={deliveryData}
-        costChartData={costChartData}
+        data={chartData.dineInData}
+        deliveryData={chartData.deliveryData}
+        costChartData={chartData.costChartData}
         options={options}
         dineInSalesData={dineInSalesData}
         deliverySalesData={deliverySalesData}
@@ -965,7 +1231,7 @@ function Dashboard() {
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
           months={months}
-          getDailyData={getDailyData}
+          dailyData={dailyData} // ✅ ส่งโดยตรง ไม่ต้องเป็น function
           formatDate={formatDate}
           formatNumber={formatNumber}
           costData={costData}
@@ -976,10 +1242,10 @@ function Dashboard() {
       {filterMode === 'year' && !salesLoading && (
         <MonthlySummary
           selectedYear={selectedYear}
-          getMonthlyData={getMonthlyData}
+          monthlyData={monthlyData} // ✅ ส่งโดยตรง ไม่ต้องเป็น function
           formatNumber={formatNumber}
           costData={costData}
-          costTotal={costTotal}
+          costTotal={totals.costTotal}
         />
       )}
 
