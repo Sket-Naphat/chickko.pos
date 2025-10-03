@@ -4,7 +4,8 @@ function MonthlySummary({
   selectedYear,
   monthlyData, // รับเป็น array โดยตรง
   formatNumber,
-  costData
+  costData,
+  dailyData // ✅ รับ dailyData เป็น props ใหม่
 }) {
   return (
     <div className="bg-base-100 rounded-xl shadow p-4 mb-6">
@@ -33,10 +34,13 @@ function MonthlySummary({
                   <th className="text-right">🏪 หน้าร้าน</th>
                   <th className="text-right">🛵 เดลิเวอรี่</th>
                   <th className="text-right">💰 ยอดรวม</th>
+                  <th className="text-right">📦 ออเดอร์</th>
                   <th className="text-right">💸 ต้นทุน</th>
                   <th className="text-right">💚 กำไร</th>
                   <th className="text-center">📊 %กำไร</th>
-                  <th className="text-center">🏆 ขายดี</th> {/* ✅ เพิ่มคอลัมน์ */}
+                  <th className="text-right">🎯 เฉลี่ย/ออเดอร์</th>
+                  <th className="text-center">🏆 ขายดี</th>
+                  <th className="text-center">⏰ ช่วงเวลาขายดี</th>
                 </tr>
               </thead>
               <tbody>
@@ -73,6 +77,11 @@ function MonthlySummary({
                       <td className="text-right">
                         <span className="font-bold text-primary">
                           {formatNumber(monthData.total)}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <span className="font-bold text-warning">
+                          {monthData.totalOrders}
                         </span>
                       </td>
                       <td className="text-right">
@@ -122,6 +131,95 @@ function MonthlySummary({
                           <span className="text-base-content/40">-</span>
                         )}
                       </td>
+                      {/* ✅ เพิ่ม td ใน Desktop Table Body */}
+                      <td className="text-center">
+                        {(() => {
+                          // ✅ เช็คว่า dailyData มีค่าหรือไม่
+                          if (!dailyData || !Array.isArray(dailyData) || dailyData.length === 0) {
+                            return <span className="text-base-content/40">-</span>;
+                          }
+
+                          // รวม Peak Hours จากทุกวันในเดือน
+                          const monthPeakHours = dailyData
+                            .filter(day => {
+                              try {
+                                return new Date(day.date).getMonth() === monthData.month;
+                              } catch {
+                                return false;
+                              }
+                            })
+                            .flatMap(day => day.peakHours || [])
+                            .reduce((acc, hour) => {
+                              const key = hour.hourRange;
+                              if (!acc[key]) {
+                                acc[key] = {
+                                  hourRange: key,
+                                  orderCount: 0,
+                                  totalSales: 0
+                                };
+                              }
+                              acc[key].orderCount += (hour.orderCount || 0);
+                              acc[key].totalSales += (hour.totalSales || 0);
+                              return acc;
+                            }, {});
+
+                          const sortedPeakHours = Object.values(monthPeakHours)
+                            .map(hour => ({
+                              ...hour,
+                              avgPerOrder: hour.orderCount > 0 ? hour.totalSales / hour.orderCount : 0
+                            }))
+                            .sort((a, b) => b.orderCount - a.orderCount)
+                            .slice(0, 5);
+
+                          return sortedPeakHours.length > 0 ? (
+                            <div className="dropdown dropdown-hover">
+                              <div tabIndex={0} role="button" className="btn btn-ghost btn-xs text-warning hover:bg-warning/10">
+                                <span className="text-xs">⏰</span>
+                                <span className="font-medium">Top {sortedPeakHours.length}</span>
+                              </div>
+                              <div tabIndex={0} className="dropdown-content z-[1] card card-compact w-80 p-4 shadow-lg bg-base-100 border border-warning/20">
+                                <div className="card-body p-0">
+                                  <h4 className="font-bold text-sm text-warning mb-2 flex items-center gap-1">
+                                    <span>⏰</span>
+                                    ช่วงเวลาที่ขายดี - {monthData.monthName}
+                                  </h4>
+                                  <div className="space-y-2">
+                                    {sortedPeakHours.map((hour, index) => (
+                                      <div key={index} className="flex justify-between items-center p-2 bg-warning/5 rounded border border-warning/10">
+                                        <div className="flex items-center gap-2">
+                                          <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                              index === 1 ? 'bg-gray-400' :
+                                                index === 2 ? 'bg-orange-600' :
+                                                  'bg-gray-500'
+                                            }`}>
+                                            #{index + 1}
+                                          </span>
+                                          <span className="font-medium text-sm">
+                                            {hour.hourRange}
+                                          </span>
+                                        </div>
+                                        <div className="text-right">
+                                          <div className="font-bold text-warning text-sm">
+                                            {hour.orderCount} ออเดอร์
+                                          </div>
+                                          <div className="text-xs text-base-content/60">
+                                            {formatNumber(hour.totalSales)} บาท
+                                          </div>
+                                          <div className="text-xs text-base-content/50">
+                                            เฉลี่ย {formatNumber(hour.avgPerOrder)}/ออเดอร์
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-base-content/40">-</span>
+                          );
+                        })()}
+                      </td>
                     </tr>
                   );
                 })}
@@ -136,7 +234,7 @@ function MonthlySummary({
 
               return (
                 <details key={monthData.month} className="collapse bg-base-100 border border-base-300 rounded-lg shadow-sm">
-                  {/* ✅ Summary - รูปแบบเหมือน DailySummary */}
+                  {/* Summary */}
                   <summary className="collapse-title font-medium p-4 cursor-pointer">
                     <div className="flex justify-between items-center">
                       <div>
@@ -158,10 +256,10 @@ function MonthlySummary({
                     </div>
                   </summary>
 
-                  {/* ✅ Content - เหมือน DailySummary */}
+                  {/* Content */}
                   <div className="collapse-content">
                     <div className="pt-0 pb-4">
-                      {/* ✅ Sales Data Grid - เหมือน DailySummary */}
+                      {/* Sales Data Grid */}
                       <div className="grid grid-cols-2 gap-3 mb-3">
                         <div className="bg-info/10 rounded-lg p-3 border border-info/20">
                           <div className="flex items-center justify-between">
@@ -186,7 +284,7 @@ function MonthlySummary({
                         </div>
                       </div>
 
-                      {/* ✅ Financial Summary - เหมือน DailySummary */}
+                      {/* Financial Summary */}
                       <div className="space-y-2 mb-4">
                         <div className="flex justify-between items-center bg-primary/10 rounded-lg p-2 border border-primary/20">
                           <span className="text-sm font-medium text-primary">💰 ยอดขายรวม</span>
@@ -195,7 +293,54 @@ function MonthlySummary({
                           </span>
                         </div>
 
-                        {/* ✅ Cost breakdown - เหมือน DailySummary */}
+                        {/* จำนวนออเดอร์ */}
+                        {monthData.totalOrders > 0 && (
+                          <div className="flex justify-between items-center bg-warning/10 rounded-lg p-2 border border-warning/20">
+                            <span className="text-sm font-medium text-warning">📦 จำนวนออเดอร์</span>
+                            <span className="font-bold text-lg text-warning">
+                              {monthData.totalOrders}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* รายได้เฉลี่ยต่อออเดอร์ */}
+                        {monthData.totalOrders > 0 && (
+                          <div className="flex justify-between items-center bg-secondary/10 rounded-lg p-2 border border-secondary/20">
+                            <span className="text-sm font-medium text-secondary">🎯 รายได้เฉลี่ย/ออเดอร์</span>
+                            <span className="font-bold text-lg text-secondary">
+                              {formatNumber(monthData.totalAvgPerOrder)}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* รายละเอียดแยกตามประเภท */}
+                        {(monthData.dineInOrders > 0 || monthData.deliveryOrders > 0) && (
+                          <div className="bg-base-200/50 rounded-lg p-2 border border-base-300">
+                            <div className="text-xs font-medium text-base-content/70 mb-2">📊 รายละเอียดตามประเภท</div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {monthData.dineInOrders > 0 && (
+                                <div className="text-center bg-info/10 rounded p-2">
+                                  <div className="text-xs text-info/70">🏪 หน้าร้าน</div>
+                                  <div className="font-bold text-info text-sm">
+                                    {formatNumber(monthData.dineInAvgPerOrder)}
+                                  </div>
+                                  <div className="text-xs text-info/60">ต่อออเดอร์</div>
+                                </div>
+                              )}
+                              {monthData.deliveryOrders > 0 && (
+                                <div className="text-center bg-accent/10 rounded p-2">
+                                  <div className="text-xs text-accent/70">🛵 เดลิเวอรี่</div>
+                                  <div className="font-bold text-accent text-sm">
+                                    {formatNumber(monthData.deliveryAvgPerOrder)}
+                                  </div>
+                                  <div className="text-xs text-accent/60">ต่อออเดอร์</div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Cost breakdown - เหมือน DailySummary */}
                         {monthData.cost > 0 && (() => {
                           const monthCosts = costData.filter(item => {
                             const date = new Date(item.costDate);
@@ -278,7 +423,7 @@ function MonthlySummary({
                         </div>
                       </div>
 
-                      {/* ✅ Top 5 Selling Items - Tab แยกประเภทเหมือน DailySummary */}
+                      {/* Top 5 Selling Items - Tab แยกประเภทเหมือน DailySummary */}
                       {(monthData.topItems?.length > 0 || monthData.topDeliveryItems?.length > 0) && (
                         <div className="collapse bg-base-100 border-base-300 border">
                           <input type="checkbox" />
@@ -299,12 +444,12 @@ function MonthlySummary({
                                 {/* Tab Dine-in */}
                                 {monthData.topItems?.length > 0 && (
                                   <>
-                                    <input 
-                                      type="radio" 
-                                      name={`monthly_top5_${monthData.month}`} 
-                                      className="tab" 
-                                      aria-label="🏪 หน้าร้าน" 
-                                      defaultChecked 
+                                    <input
+                                      type="radio"
+                                      name={`monthly_top5_${monthData.month}`}
+                                      className="tab"
+                                      aria-label="🏪 หน้าร้าน"
+                                      defaultChecked
                                     />
                                     <div className="tab-content bg-base-100 border-base-300 p-4">
                                       <div className="space-y-2">
@@ -319,12 +464,11 @@ function MonthlySummary({
                                         {monthData.topItems.slice(0, 5).map((item, index) => (
                                           <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 border border-info/10">
                                             <div className="flex items-center gap-2">
-                                              <span className={`badge badge-sm font-bold text-white ${
-                                                index === 0 ? 'bg-yellow-500' :
-                                                index === 1 ? 'bg-gray-400' :
-                                                index === 2 ? 'bg-orange-600' :
-                                                'bg-gray-500'
-                                              }`}>
+                                              <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                                  index === 1 ? 'bg-gray-400' :
+                                                    index === 2 ? 'bg-orange-600' :
+                                                      'bg-gray-500'
+                                                }`}>
                                                 #{index + 1}
                                               </span>
                                               <span className="text-sm font-medium truncate max-w-[120px]">
@@ -349,11 +493,11 @@ function MonthlySummary({
                                 {/* Tab Delivery */}
                                 {monthData.topDeliveryItems?.length > 0 && (
                                   <>
-                                    <input 
-                                      type="radio" 
-                                      name={`monthly_top5_${monthData.month}`} 
-                                      className="tab" 
-                                      aria-label="🛵 เดลิเวอรี่" 
+                                    <input
+                                      type="radio"
+                                      name={`monthly_top5_${monthData.month}`}
+                                      className="tab"
+                                      aria-label="🛵 เดลิเวอรี่"
                                     />
                                     <div className="tab-content bg-base-100 border-base-300 p-4">
                                       <div className="space-y-2">
@@ -368,12 +512,11 @@ function MonthlySummary({
                                         {monthData.topDeliveryItems.slice(0, 5).map((item, index) => (
                                           <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 border border-accent/10">
                                             <div className="flex items-center gap-2">
-                                              <span className={`badge badge-sm font-bold text-white ${
-                                                index === 0 ? 'bg-yellow-500' :
-                                                index === 1 ? 'bg-gray-400' :
-                                                index === 2 ? 'bg-orange-600' :
-                                                'bg-gray-500'
-                                              }`}>
+                                              <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                                  index === 1 ? 'bg-gray-400' :
+                                                    index === 2 ? 'bg-orange-600' :
+                                                      'bg-gray-500'
+                                                }`}>
                                                 #{index + 1}
                                               </span>
                                               <span className="text-sm font-medium truncate max-w-[120px]">
@@ -396,13 +539,13 @@ function MonthlySummary({
                                 )}
 
                                 {/* แสดง Message ถ้าไม่มีข้อมูล */}
-                                {(!monthData.topItems || monthData.topItems.length === 0) && 
-                                 (!monthData.topDeliveryItems || monthData.topDeliveryItems.length === 0) && (
-                                  <div className="text-center py-4">
-                                    <div className="text-2xl mb-2">📊</div>
-                                    <div className="text-sm text-base-content/60">ไม่มีข้อมูลรายการขายดี</div>
-                                  </div>
-                                )}
+                                {(!monthData.topItems || monthData.topItems.length === 0) &&
+                                  (!monthData.topDeliveryItems || monthData.topDeliveryItems.length === 0) && (
+                                    <div className="text-center py-4">
+                                      <div className="text-2xl mb-2">📊</div>
+                                      <div className="text-sm text-base-content/60">ไม่มีข้อมูลรายการขายดี</div>
+                                    </div>
+                                  )}
                               </div>
                             </div>
                           </div>
