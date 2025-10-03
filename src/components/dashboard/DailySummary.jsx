@@ -30,6 +30,7 @@ const DailySummary = ({
           {/* Desktop Table */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="table table-zebra w-full">
+
               <thead>
                 <tr className="bg-base-200">
                   <th className="text-center">📅 วันที่</th>
@@ -40,6 +41,8 @@ const DailySummary = ({
                   <th className="text-right">💸 ต้นทุน</th>
                   <th className="text-right">💚 กำไร</th>
                   <th className="text-center">📊 %กำไร</th>
+                  <th className="text-right">🎯 เฉลี่ย/ออเดอร์</th>
+                  <th className="text-center">⏰ ช่วงเวลาขายดี</th>
                 </tr>
               </thead>
               <tbody>
@@ -116,6 +119,70 @@ const DailySummary = ({
                         <div className={`badge ${profitPercent >= 20 ? 'badge-success' : profitPercent >= 10 ? 'badge-warning' : 'badge-error'} badge-sm`}>
                           {profitPercent.toFixed(1)}%
                         </div>
+                      </td>
+                      <td className="text-right">
+                        {dayData.totalOrders > 0 ? (
+                          <div className="flex flex-col items-end">
+                            <span className="font-medium text-secondary">
+                              {formatNumber(dayData.totalAvgPerOrder)}
+                            </span>
+                            <div className="text-xs text-secondary/60">
+                              ต่อออเดอร์
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-base-content/40">-</span>
+                        )}
+                      </td>
+                      {/* ✅ เพิ่ม td สำหรับ Peak Hours ใน Desktop Table Body */}
+                      <td className="text-center">
+                        {dayData.peakHours && dayData.peakHours.length > 0 ? (
+                          <div className="dropdown dropdown-hover">
+                            <div tabIndex={0} role="button" className="btn btn-ghost btn-xs text-primary hover:bg-primary/10">
+                              <span className="text-xs">⏰</span>
+                              <span className="font-medium">Top {dayData.peakHours.length}</span>
+                            </div>
+                            <div tabIndex={0} className="dropdown-content z-[1] card card-compact w-80 p-4 shadow-lg bg-base-100 border border-primary/20">
+                              <div className="card-body p-0">
+                                <h4 className="font-bold text-sm text-primary mb-2 flex items-center gap-1">
+                                  <span>⏰</span>
+                                  ช่วงเวลาที่ขายดี - {formatDate(dayData.date)}
+                                </h4>
+                                <div className="space-y-2">
+                                  {dayData.peakHours.map((hour, index) => (
+                                    <div key={index} className="flex justify-between items-center p-2 bg-primary/5 rounded border border-primary/10">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                            index === 1 ? 'bg-gray-400' :
+                                              index === 2 ? 'bg-orange-600' :
+                                                'bg-gray-500'
+                                          }`}>
+                                          #{index + 1}
+                                        </span>
+                                        <span className="font-medium text-sm">
+                                          {hour.hourRange}
+                                        </span>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="font-bold text-primary text-sm">
+                                          {hour.orderCount} ออเดอร์
+                                        </div>
+                                        <div className="text-xs text-base-content/60">
+                                          {formatNumber(hour.totalSales)} บาท
+                                        </div>
+                                        <div className="text-xs text-base-content/50">
+                                          เฉลี่ย {formatNumber(hour.avgPerOrder)}/ออเดอร์
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-base-content/40">-</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -210,6 +277,43 @@ const DailySummary = ({
                           </div>
                         )}
 
+                        {/* ✅ เพิ่มรายได้เฉลี่ยต่อออเดอร์ */}
+                        {dayData.totalOrders > 0 && (
+                          <div className="flex justify-between items-center bg-secondary/10 rounded-lg p-2 border border-secondary/20">
+                            <span className="text-sm font-medium text-secondary">🎯 รายได้เฉลี่ย/ออเดอร์</span>
+                            <span className="font-bold text-lg text-secondary">
+                              {formatNumber(dayData.totalAvgPerOrder)}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* ✅ เพิ่มรายละเอียดแยกตามประเภท */}
+                        {(dayData.dineInOrders > 0 || dayData.deliveryOrders > 0) && (
+                          <div className="bg-base-200/50 rounded-lg p-2 border border-base-300">
+                            <div className="text-xs font-medium text-base-content/70 mb-2">📊 รายละเอียดตามประเภท</div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {dayData.dineInOrders > 0 && (
+                                <div className="text-center bg-info/10 rounded p-2">
+                                  <div className="text-xs text-info/70">🏪 หน้าร้าน</div>
+                                  <div className="font-bold text-info text-sm">
+                                    {formatNumber(dayData.dineInAvgPerOrder)}
+                                  </div>
+                                  <div className="text-xs text-info/60">ต่อออเดอร์</div>
+                                </div>
+                              )}
+                              {dayData.deliveryOrders > 0 && (
+                                <div className="text-center bg-accent/10 rounded p-2">
+                                  <div className="text-xs text-accent/70">🛵 เดลิเวอรี่</div>
+                                  <div className="font-bold text-accent text-sm">
+                                    {formatNumber(dayData.deliveryAvgPerOrder)}
+                                  </div>
+                                  <div className="text-xs text-accent/60">ต่อออเดอร์</div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {/* สรุปต้นทุนของวัน - แบบ Collapse */}
                         {dayData.cost > 0 && (() => {
                           const dayCosts = costData.filter(item => item.costDate === dayData.date);
@@ -253,33 +357,33 @@ const DailySummary = ({
 
                                       // สร้างรายการประเภทต้นทุนที่มีค่า
                                       const costCategories = [
-                                        { 
-                                          name: 'วัตถุดิบ', 
-                                          icon: '🥗', 
+                                        {
+                                          name: 'วัตถุดิบ',
+                                          icon: '🥗',
                                           amount: dayTotalRawMaterial,
                                           textColor: 'text-orange-700'
                                         },
-                                        { 
-                                          name: 'ค่าแรงพนักงาน', 
-                                          icon: '👥', 
+                                        {
+                                          name: 'ค่าแรงพนักงาน',
+                                          icon: '👥',
                                           amount: dayTotalStaff,
                                           textColor: 'text-blue-700'
                                         },
-                                        { 
-                                          name: 'เงินเดือนทีมบริหาร', 
-                                          icon: '👑', 
+                                        {
+                                          name: 'เงินเดือนทีมบริหาร',
+                                          icon: '👑',
                                           amount: dayTotalOwner,
                                           textColor: 'text-purple-700'
                                         },
-                                        { 
-                                          name: 'ค่าสาธารณูปโภค', 
-                                          icon: '⚡', 
+                                        {
+                                          name: 'ค่าสาธารณูปโภค',
+                                          icon: '⚡',
                                           amount: dayTotalUtility,
                                           textColor: 'text-yellow-700'
                                         },
-                                        { 
-                                          name: 'ค่าใช้จ่ายอื่นๆ', 
-                                          icon: '📦', 
+                                        {
+                                          name: 'ค่าใช้จ่ายอื่นๆ',
+                                          icon: '📦',
                                           amount: dayTotalOther,
                                           textColor: 'text-gray-700'
                                         }
@@ -302,7 +406,7 @@ const DailySummary = ({
                                           <div className="space-y-2">
                                             {costCategories.map((category, index) => {
                                               const percentage = dayData.total > 0 ? ((category.amount / dayData.total) * 100) : 0;
-                                              
+
                                               return (
                                                 <div key={index} className="flex items-center justify-between py-2 px-3 bg-base-50 rounded-lg">
                                                   <div className="flex items-center gap-2">
@@ -374,12 +478,12 @@ const DailySummary = ({
                                 {/* Tab Dine-in */}
                                 {dayData.topItems?.length > 0 && (
                                   <>
-                                    <input 
-                                      type="radio" 
-                                      name={`daily_top5_${dayData.date}`} 
-                                      className="tab" 
-                                      aria-label="🏪 หน้าร้าน" 
-                                      defaultChecked 
+                                    <input
+                                      type="radio"
+                                      name={`daily_top5_${dayData.date}`}
+                                      className="tab"
+                                      aria-label="🏪 หน้าร้าน"
+                                      defaultChecked
                                     />
                                     <div className="tab-content bg-base-100 border-base-300 p-4">
                                       <div className="space-y-2">
@@ -394,12 +498,11 @@ const DailySummary = ({
                                         {dayData.topItems.slice(0, 5).map((item, index) => (
                                           <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 border border-info/10">
                                             <div className="flex items-center gap-2">
-                                              <span className={`badge badge-sm font-bold text-white ${
-                                                index === 0 ? 'bg-yellow-500' :
-                                                index === 1 ? 'bg-gray-400' :
-                                                index === 2 ? 'bg-orange-600' :
-                                                'bg-gray-500'
-                                              }`}>
+                                              <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                                  index === 1 ? 'bg-gray-400' :
+                                                    index === 2 ? 'bg-orange-600' :
+                                                      'bg-gray-500'
+                                                }`}>
                                                 #{index + 1}
                                               </span>
                                               <span className="text-sm font-medium truncate max-w-[120px]">
@@ -424,11 +527,11 @@ const DailySummary = ({
                                 {/* Tab Delivery */}
                                 {dayData.topDeliveryItems?.length > 0 && (
                                   <>
-                                    <input 
-                                      type="radio" 
-                                      name={`daily_top5_${dayData.date}`} 
-                                      className="tab" 
-                                      aria-label="🛵 เดลิเวอรี่" 
+                                    <input
+                                      type="radio"
+                                      name={`daily_top5_${dayData.date}`}
+                                      className="tab"
+                                      aria-label="🛵 เดลิเวอรี่"
                                     />
                                     <div className="tab-content bg-base-100 border-base-300 p-4">
                                       <div className="space-y-2">
@@ -443,12 +546,11 @@ const DailySummary = ({
                                         {dayData.topDeliveryItems.slice(0, 5).map((item, index) => (
                                           <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 border border-accent/10">
                                             <div className="flex items-center gap-2">
-                                              <span className={`badge badge-sm font-bold text-white ${
-                                                index === 0 ? 'bg-yellow-500' :
-                                                index === 1 ? 'bg-gray-400' :
-                                                index === 2 ? 'bg-orange-600' :
-                                                'bg-gray-500'
-                                              }`}>
+                                              <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                                  index === 1 ? 'bg-gray-400' :
+                                                    index === 2 ? 'bg-orange-600' :
+                                                      'bg-gray-500'
+                                                }`}>
                                                 #{index + 1}
                                               </span>
                                               <span className="text-sm font-medium truncate max-w-[120px]">
@@ -471,12 +573,168 @@ const DailySummary = ({
                                 )}
 
                                 {/* แสดง Message ถ้าไม่มีข้อมูล */}
-                                {(!dayData.topItems || dayData.topItems.length === 0) && 
-                                 (!dayData.topDeliveryItems || dayData.topDeliveryItems.length === 0) && (
-                                  <div className="text-center py-4">
-                                    <div className="text-2xl mb-2">📊</div>
-                                    <div className="text-sm text-base-content/60">ไม่มีข้อมูลรายการขายดี</div>
+                                {(!dayData.topItems || dayData.topItems.length === 0) &&
+                                  (!dayData.topDeliveryItems || dayData.topDeliveryItems.length === 0) && (
+                                    <div className="text-center py-4">
+                                      <div className="text-2xl mb-2">📊</div>
+                                      <div className="text-sm text-base-content/60">ไม่มีข้อมูลรายการขายดี</div>
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ✅ Peak Hours Section */}
+                      {dayData.peakHours && dayData.peakHours.length > 0 && (
+                        <div className="collapse bg-base-100 border border-warning/20 rounded-lg mt-4">
+                          <input type="checkbox" />
+                          <div className="collapse-title font-semibold min-h-0 p-0">
+                            <div className="flex justify-between items-center p-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-warning text-lg">⏰</span>
+                                <span className="text-sm font-bold text-warning">
+                                  ช่วงเวลาที่ขายดี Top {dayData.peakHours.length}
+                                </span>
+                              </div>
+                              <div className="text-xs text-warning/70 bg-warning/10 px-2 py-1 rounded-full">
+                                คลิกเพื่อดู
+                              </div>
+                            </div>
+                          </div>
+                          <div className="collapse-content px-3 pb-3">
+                            <div className="pt-0">
+                              <div className="tabs tabs-lifted">
+                                {/* Tab รวม */}
+                                <input type="radio" name={`peak_tabs_${dayData.date}`} className="tab" aria-label="📊 รวม" defaultChecked />
+                                <div className="tab-content bg-base-100 border-base-300 p-4">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <span className="text-warning text-sm">📊</span>
+                                      <span className="font-bold text-warning text-sm">ช่วงเวลารวม</span>
+                                      <div className="badge badge-warning badge-sm">
+                                        {dayData.peakHours.length} ช่วง
+                                      </div>
+                                    </div>
+                                    {dayData.peakHours.map((hour, index) => (
+                                      <div key={index} className="flex justify-between items-center bg-warning/5 rounded-lg p-2 border border-warning/10">
+                                        <div className="flex items-center gap-2">
+                                          <span className={`badge badge-xs font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                              index === 1 ? 'bg-gray-400' :
+                                                index === 2 ? 'bg-orange-600' :
+                                                  'bg-gray-500'
+                                            }`}>
+                                            #{index + 1}
+                                          </span>
+                                          <span className="text-xs font-medium">
+                                            {hour.hourRange}
+                                          </span>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                          <span className="text-xs font-bold text-warning">
+                                            {hour.orderCount} ออเดอร์
+                                          </span>
+                                          <span className="text-xs text-base-content/60">
+                                            {formatNumber(hour.totalSales)}
+                                          </span>
+                                          <span className="text-xs text-base-content/50">
+                                            เฉลี่ย {formatNumber(hour.avgPerOrder)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
+                                </div>
+
+                                {/* Tab หน้าร้าน */}
+                                {dayData.dineInPeakHours && dayData.dineInPeakHours.length > 0 && (
+                                  <>
+                                    <input type="radio" name={`peak_tabs_${dayData.date}`} className="tab" aria-label="🏪 หน้าร้าน" />
+                                    <div className="tab-content bg-base-100 border-base-300 p-4">
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <span className="text-info text-sm">🏪</span>
+                                          <span className="font-bold text-info text-sm">ช่วงเวลาหน้าร้าน</span>
+                                          <div className="badge badge-info badge-sm">
+                                            {dayData.dineInPeakHours.length} ช่วง
+                                          </div>
+                                        </div>
+                                        {dayData.dineInPeakHours.map((hour, index) => (
+                                          <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-2 border border-info/10">
+                                            <div className="flex items-center gap-2">
+                                              <span className={`badge badge-xs font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                                  index === 1 ? 'bg-gray-400' :
+                                                    index === 2 ? 'bg-orange-600' :
+                                                      'bg-gray-500'
+                                                }`}>
+                                                #{index + 1}
+                                              </span>
+                                              <span className="text-xs font-medium">
+                                                {hour.hourRange}
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                              <span className="text-xs font-bold text-info">
+                                                {hour.orderCount} ออเดอร์
+                                              </span>
+                                              <span className="text-xs text-base-content/60">
+                                                {formatNumber(hour.totalSales)}
+                                              </span>
+                                              <span className="text-xs text-base-content/50">
+                                                เฉลี่ย {formatNumber(hour.avgPerOrder)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+
+                                {/* Tab เดลิเวอรี่ */}
+                                {dayData.deliveryPeakHours && dayData.deliveryPeakHours.length > 0 && (
+                                  <>
+                                    <input type="radio" name={`peak_tabs_${dayData.date}`} className="tab" aria-label="🛵 เดลิเวอรี่" />
+                                    <div className="tab-content bg-base-100 border-base-300 p-4">
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <span className="text-accent text-sm">🛵</span>
+                                          <span className="font-bold text-accent text-sm">ช่วงเวลาเดลิเวอรี่</span>
+                                          <div className="badge badge-accent badge-sm">
+                                            {dayData.deliveryPeakHours.length} ช่วง
+                                          </div>
+                                        </div>
+                                        {dayData.deliveryPeakHours.map((hour, index) => (
+                                          <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-2 border border-accent/10">
+                                            <div className="flex items-center gap-2">
+                                              <span className={`badge badge-xs font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                                  index === 1 ? 'bg-gray-400' :
+                                                    index === 2 ? 'bg-orange-600' :
+                                                      'bg-gray-500'
+                                                }`}>
+                                                #{index + 1}
+                                              </span>
+                                              <span className="text-xs font-medium">
+                                                {hour.hourRange}
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                              <span className="text-xs font-bold text-accent">
+                                                {hour.orderCount} ออเดอร์
+                                              </span>
+                                              <span className="text-xs text-base-content/60">
+                                                {formatNumber(hour.totalSales)}
+                                              </span>
+                                              <span className="text-xs text-base-content/50">
+                                                เฉลี่ย {formatNumber(hour.avgPerOrder)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </>
                                 )}
                               </div>
                             </div>
