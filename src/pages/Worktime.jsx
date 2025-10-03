@@ -1362,7 +1362,23 @@ function ManagementWorktime() {
                   {filterType === "period"
                     ? `${new Date(dateFrom).toLocaleDateString('th-TH')} - ${new Date(dateTo).toLocaleDateString('th-TH')}`
                     : new Date(selectedDate).toLocaleDateString('th-TH')
-                  }
+                  }      {(() => {
+                    // คำนวณจำนวนวันระหว่าง dateFrom และ dateTo
+                    if (filterType === "daily") {
+                      return " | 1 วัน";
+                    } else {
+                      const startDate = new Date(dateFrom);
+                      const endDate = new Date(dateTo);
+                      
+                      // คำนวณความต่างเป็นมิลลิวินาที
+                      const timeDifference = endDate.getTime() - startDate.getTime();
+                      
+                      // แปลงเป็นจำนวนวัน (+1 เพื่อนับวันเริ่มต้นด้วย)
+                      const daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)) + 1;
+                      
+                      return ` | ${daysDifference} วัน`;
+                    }
+                  })()}
                 </div>
                 <div className="text-2xl font-bold text-primary">
                   {(() => {
