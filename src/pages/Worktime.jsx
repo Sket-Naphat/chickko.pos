@@ -14,7 +14,7 @@ function formatCurrency(val) {
 import React, { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import { api } from '../lib/api';
-import StaffWorktime from '../components/Worktime/StaffWorktime';
+import StaffWorktime from '../components/workTime/StaffWorktime';
 
 // ✅  EmployeeDetailWorktime
 function EmployeeDetailWorktime({ employee, onBack }) {
