@@ -1,0 +1,156 @@
+// ✅ 1. Utility สำหรับการกรองข้อมูลตามวันที่
+export const filterDataByDate = (data, dateField) => ({
+  filterByMonth: (month, year) => data.filter(item => {
+    const date = new Date(item[dateField]);
+    return date.getMonth() === month && date.getFullYear() === year;
+  }),
+  
+  filterByYear: (year) => data.filter(item => 
+    new Date(item[dateField]).getFullYear() === year
+  ),
+  
+  filterByDateString: (dateString) => data.filter(item => 
+    item[dateField] === dateString
+  )
+});
+
+// ✅ 2. Utility สำหรับการคำนวณยอดรวม
+export const calculateTotals = (data, amountField = 'totalAmount') => {
+  return data.reduce((sum, item) => sum + (item[amountField] || 0), 0);
+};
+
+// ✅ 3. Utility สำหรับการจัดการ TopSellingItems
+export const processTopSellingItems = (salesData, limit = 5) => {
+  const aggregatedItems = salesData
+    .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
+    .reduce((acc, item) => {
+      const key = item.menuName || item.MenuName;
+      if (!acc[key]) {
+        acc[key] = {
+          menuName: key,
+          quantitySold: 0,
+          totalSales: 0
+        };
+      }
+      acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
+      acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
+      return acc;
+    }, {});
+
+  return Object.values(aggregatedItems)
+    .sort((a, b) => b.quantitySold - a.quantitySold)
+    .slice(0, limit);
+};
+
+// ✅ 4. Utility สำหรับการคำนวณต้นทุนแยกประเภท
+export const calculateCostBreakdown = (costData) => ({
+  totalRawMaterial: calculateTotals(costData, 'totalRawMaterialCost'),
+  totalStaff: calculateTotals(costData, 'totalStaffCost'),
+  totalOwner: calculateTotals(costData, 'totalOwnerCost'),
+  totalUtility: calculateTotals(costData, 'totalUtilityCost'),
+  totalOther: calculateTotals(costData, 'totalOtherCost')
+});
+
+// ✅ 5. Utility สำหรับสร้างข้อมูลรายวัน
+export const generateDailyData = (dineInData, deliveryData, costData, month, year) => {
+  const data = [];
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  // สร้าง filter functions
+  const dineInFilter = filterDataByDate(dineInData, 'saleDate');
+  const deliveryFilter = filterDataByDate(deliveryData, 'saleDate');
+  const costFilter = filterDataByDate(costData, 'costDate');
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    // ใช้ utility functions
+    const dayDineInData = dineInFilter.filterByDateString(dateStr);
+    const dayDeliveryData = deliveryFilter.filterByDateString(dateStr);
+    const dayCostData = costFilter.filterByDateString(dateStr);
+
+    const dineInAmount = calculateTotals(dayDineInData);
+    const deliveryAmount = calculateTotals(dayDeliveryData);
+    const costAmount = calculateTotals(dayCostData);
+
+    // ✅ แยก Top Items ของ Dine-in และ Delivery
+    const topDineInItems = dayDineInData
+      .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
+      .sort((a, b) => (b.quantitySold || b.QuantitySold || 0) - (a.quantitySold || a.QuantitySold || 0))
+      .slice(0, 5); // ✅ เอา Top 5
+
+    const topDeliveryItems = dayDeliveryData
+      .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
+      .sort((a, b) => (b.quantitySold || b.QuantitySold || 0) - (a.quantitySold || a.QuantitySold || 0))
+      .slice(0, 5); // ✅ เอา Top 5
+
+    const dineInOrders = calculateTotals(dayDineInData, 'orders');
+    const deliveryOrders = calculateTotals(dayDeliveryData, 'orders');
+    const totalOrders = dineInOrders + deliveryOrders;
+    const totalAmount = dineInAmount + deliveryAmount;
+    const profit = totalAmount - costAmount;
+
+    if (totalAmount > 0 || costAmount > 0) {
+      data.push({
+        date: dateStr,
+        day: day,
+        dineIn: dineInAmount,
+        delivery: deliveryAmount,
+        total: totalAmount,
+        cost: costAmount,
+        profit: profit,
+        topItems: topDineInItems, // ✅ Top Items หน้าร้าน
+        topDeliveryItems: topDeliveryItems, // ✅ Top Items เดลิเวอรี่ - เพิ่มใหม่
+        dineInOrders: dineInOrders,
+        deliveryOrders: deliveryOrders,
+        totalOrders: totalOrders
+      });
+    }
+  }
+
+  return data.sort((a, b) => b.day - a.day);
+};
+
+// ✅ 6. Utility สำหรับสร้างข้อมูลรายเดือน
+export const generateMonthlyData = (dineInData, deliveryData, costData, year, months) => {
+  const data = [];
+  
+  // สร้าง filter functions
+  const dineInFilter = filterDataByDate(dineInData, 'saleDate');
+  const deliveryFilter = filterDataByDate(deliveryData, 'saleDate');
+  const costFilter = filterDataByDate(costData, 'costDate');
+
+  for (let monthIdx = 0; monthIdx < 12; monthIdx++) {
+    // ใช้ utility functions
+    const monthDineInData = dineInFilter.filterByMonth(monthIdx, year);
+    const monthDeliveryData = deliveryFilter.filterByMonth(monthIdx, year);
+    const monthCostData = costFilter.filterByMonth(monthIdx, year);
+
+    const dineInAmount = calculateTotals(monthDineInData);
+    const deliveryAmount = calculateTotals(monthDeliveryData);
+    const costAmount = calculateTotals(monthCostData);
+
+    // ✅ แยก Top Items ของ Dine-in และ Delivery
+    const topDineInItems = processTopSellingItems(monthDineInData, 5);
+    const topDeliveryItems = processTopSellingItems(monthDeliveryData, 5);
+
+    const totalAmount = dineInAmount + deliveryAmount;
+    const profit = totalAmount - costAmount;
+
+    if (totalAmount > 0 || costAmount > 0) {
+      data.push({
+        month: monthIdx,
+        monthName: months[monthIdx],
+        dineIn: dineInAmount,
+        delivery: deliveryAmount,
+        total: totalAmount,
+        cost: costAmount,
+        profit: profit,
+        topItems: topDineInItems, // ✅ Top Items Dine-in
+        topDeliveryItems: topDeliveryItems // ✅ Top Items Delivery - เพิ่มใหม่
+      });
+    }
+  }
+
+  return data.sort((a, b) => b.month - a.month);
+};
