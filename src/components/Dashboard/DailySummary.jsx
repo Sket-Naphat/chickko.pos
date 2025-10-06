@@ -290,7 +290,7 @@ const DailySummary = ({
                         {/* ✅ เพิ่มรายละเอียดแยกตามประเภท */}
                         {(dayData.dineInOrders > 0 || dayData.deliveryOrders > 0) && (
                           <div className="bg-base-200/50 rounded-lg p-2 border border-base-300">
-                            <div className="text-xs font-medium text-base-content/70 mb-2">📊 รายละเอียดตามประเภท</div>
+                            <div className="text-xs font-medium text-base-content/70 mb-2">📊 ยอดขายเฉลี่ยต่อออเดอร์</div>
                             <div className="grid grid-cols-2 gap-2">
                               {dayData.dineInOrders > 0 && (
                                 <div className="text-center bg-info/10 rounded p-2">
@@ -467,8 +467,8 @@ const DailySummary = ({
                                 <span className="text-warning text-lg">🏆</span>
                                 <span className="text-sm font-medium text-warning">รายการที่ขายดี Top 5</span>
                               </div>
-                              <div className="text-xs text-warning/70">
-                                {formatDate(dayData.date)}
+                              <div className="text-xs text-warning/70 bg-warning/10 px-2 py-1 rounded-full">
+                                คลิกเพื่อดู
                               </div>
                             </div>
                           </div>
@@ -593,7 +593,7 @@ const DailySummary = ({
                           <div className="collapse-title font-semibold min-h-0 p-0">
                             <div className="flex justify-between items-center p-3">
                               <div className="flex items-center gap-2">
-                                <span className="text-warning text-lg">⏰</span>
+                                <span className="text-warning text-lg">⏱️</span>
                                 <span className="text-sm font-bold text-warning">
                                   ช่วงเวลาที่ขายดี Top {dayData.peakHours.length}
                                 </span>

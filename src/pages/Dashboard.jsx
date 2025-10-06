@@ -13,13 +13,15 @@ import {
 import SummaryGraphCarousel from '../components/dashboard/3SummaryGraph';
 import DailySummary from '../components/dashboard/DailySummary';
 import MonthlySummary from '../components/dashboard/MonthlySummary';
+import TopSalesItems from '../components/dashboard/TopSalesItems';
+import PeakHoursAnalysis from '../components/dashboard/PeakHoursAnalysis';
 import { 
   filterDataByDate, 
   calculateTotals, 
-  processTopSellingItems,
   calculateCostBreakdown,
   generateDailyData,
-  generateMonthlyData
+  generateMonthlyData,
+  formatDisplayDate as formatDate
 } from '../services/dashboardService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -184,16 +186,6 @@ function Dashboard() {
     return calculateCostBreakdown(currentCosts);
   }, [filteredData, filterMode]);
 
-  // ✅ 6. ใช้ utility สำหรับ Top Items (เอาออกจาก comment)
-  const topItems = useMemo(() => {
-    return {
-      dineIn: processTopSellingItems(
-        dailyData.map(day => ({ topSellingItems: day.topItems }))
-      ),
-      delivery: processTopSellingItems(filteredData.deliveryMonth)
-    };
-  }, [dailyData, filteredData.deliveryMonth]);
-
   // ✅ 1. Memoize ข้อมูลกราฟ - แก้ไข syntax
   const chartData = useMemo(() => {
     const dineInData = {
@@ -319,16 +311,6 @@ function Dashboard() {
       avgDeliveryPerOrder    // รายได้เฉลี่ยต่อออเดอร์เดลิเวอรี่
     };
   }, [dailyData]);
-
-  // ✅ เพิ่มฟังก์ชัน formatDate ที่หาย
-  const formatDate = useCallback((dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }, []);
 
   // ✅ เพิ่มหลัง formatDate callback
   const scrollToTop = useCallback(() => {
@@ -644,7 +626,6 @@ function Dashboard() {
         {filterMode === 'month' && !salesLoading && dailyData.length > 0 && (
           <>
 
-
             {/* Divider */}
             <div className="divider">
               <span className="text-sm font-medium text-base-content/70">⚡ สถิติรายเดือน</span>
@@ -740,225 +721,35 @@ function Dashboard() {
               )}
             </div>
 
-            {/* Top 5 Selling Items ของเดือน - รวมทั้งหน้าร้านและ Delivery ใน Collapse เดียว */}
-            {(() => {
-              // รวบรวม TopItems จากทุกวันในเดือน (Dine-in)
-              const monthlyTopItems = dailyData
-                .flatMap(day => day.topItems || [])
-                .reduce((acc, item) => {
-                  const key = item.menuName || item.MenuName;
-                  if (!acc[key]) {
-                    acc[key] = {
-                      menuName: key,
-                      quantitySold: 0,
-                      totalSales: 0
-                    };
-                  }
-                  acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
-                  acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
-                  return acc;
-                }, {});
+            {/* Top 5 Selling Items Component */}
+            <TopSalesItems
+              filterMode={filterMode}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              months={months}
+              dailyData={dailyData}
+              dineInSalesData={dineInSalesData}
+              deliverySalesData={deliverySalesData}
+              formatNumber={formatNumber}
+            />
 
-              // รวบรวม TopItems จาก Delivery
-              const monthlyDeliveryTopItems = deliverySalesData
-                .filter(item => {
-                  const date = new Date(item.saleDate);
-                  return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
-                })
-                .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
-                .reduce((acc, item) => {
-                  const key = item.menuName || item.MenuName;
-                  if (!acc[key]) {
-                    acc[key] = {
-                      menuName: key,
-                      quantitySold: 0,
-                      totalSales: 0
-                    };
-                  }
-                  acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
-                  acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
-                  return acc;
-                }, {});
-
-              const sortedDineInItems = Object.values(monthlyTopItems)
-                .sort((a, b) => b.quantitySold - a.quantitySold)
-                .slice(0, 5);
-
-              const sortedDeliveryItems = Object.values(monthlyDeliveryTopItems)
-                .sort((a, b) => b.quantitySold - a.quantitySold)
-                .slice(0, 5);
-
-              return (sortedDineInItems.length > 0 || sortedDeliveryItems.length > 0) ? (
-                <div className="collapse bg-base-100 border border-primary/20 rounded-lg">
-                  <input type="checkbox" />
-                  <div className="collapse-title font-semibold min-h-0 p-0">
-                    <div className="flex justify-between items-center p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-primary text-xl">🏆</span>
-                        <span className="text-lg font-bold text-primary">
-                          รายการขายดี Top 5 - {months[selectedMonth]}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="collapse-content px-4 pb-4">
-                    <div className="pt-0">
-                      <div className="tabs tabs-lift">
-                        {/* Tab หน้าร้าน */}
-                        {topItems.dineIn.length > 0 && (
-                          <>
-                            <input type="radio" name="top5_tabs_unique" className="tab" aria-label="🏪 หน้าร้าน" defaultChecked />
-                            <div className="tab-content bg-base-100 border-base-300 p-6">
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <span className="text-info text-lg">🏪</span>
-                                  <span className="font-bold text-info">รายการขายดี Top 5 หน้าร้าน</span>
-                                </div>
-
-                                {/* Grid สำหรับ Desktop */}
-                                <div className="hidden md:grid grid-cols-1 gap-3">
-                                  {topItems.dineIn.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 shadow-sm border border-info/10">
-                                      <div className="flex items-center gap-3">
-                                        <span className={`badge badge-lg font-bold text-white ${
-                                          index === 0 ? 'bg-yellow-500' :
-                                          index === 1 ? 'bg-gray-400' :
-                                          index === 2 ? 'bg-orange-600' :
-                                          'bg-gray-500'
-                                        }`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="font-medium text-base">
-                                          {item.menuName}
-                                        </span>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="font-bold text-info text-lg">
-                                          {item.quantitySold} ออเดอร์
-                                        </div>
-                                        <div className="text-sm text-base-content/60">
-                                          {formatNumber(item.totalSales)} บาท
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                {/* List สำหรับ Mobile */}
-                                <div className="md:hidden space-y-2">
-                                  {topItems.dineIn.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 border border-info/10">
-                                      <div className="flex items-center gap-2">
-                                        <span className={`badge badge-sm font-bold text-white ${
-                                          index === 0 ? 'bg-yellow-500' :
-                                          index === 1 ? 'bg-gray-400' :
-                                          index === 2 ? 'bg-orange-600' :
-                                          'bg-gray-500'
-                                        }`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="text-sm font-medium truncate max-w-[120px]">
-                                          {item.menuName}
-                                        </span>
-                                      </div>
-                                      <div className="flex flex-col items-end">
-                                        <span className="text-sm font-bold text-info">
-                                          {item.quantitySold} ออเดอร์
-                                        </span>
-                                        <span className="text-xs text-base-content/60">
-                                          {formatNumber(item.totalSales)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        )}
-
-                        {/* Tab Delivery */}
-                        {topItems.delivery.length > 0 && (
-                          <>
-                            <input type="radio" name="top5_tabs_unique" className="tab" aria-label="🛵 เดลิเวอรี่" />
-                            <div className="tab-content bg-base-100 border-base-300 p-6">
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <span className="text-accent text-lg">🛵</span>
-                                  <span className="font-bold text-accent">รายการขายดี Top 5 เดลิเวอรี่</span>
-                                </div>
-
-                                {/* Grid สำหรับ Desktop */}
-                                <div className="hidden md:grid grid-cols-1 gap-3">
-                                  {topItems.delivery.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 shadow-sm border border-accent/10">
-                                      <div className="flex items-center gap-3">
-                                        <span className={`badge badge-lg font-bold text-white ${
-                                          index === 0 ? 'bg-yellow-500' :
-                                          index === 1 ? 'bg-gray-400' :
-                                          index === 2 ? 'bg-orange-600' :
-                                          'bg-gray-500'
-                                        }`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="font-medium text-base">
-                                          {item.menuName}
-                                        </span>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="font-bold text-accent text-lg">
-                                          {item.quantitySold} ออเดอร์
-                                        </div>
-                                        <div className="text-sm text-base-content/60">
-                                          {formatNumber(item.totalSales)} บาท
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                {/* List สำหรับ Mobile */}
-                                <div className="md:hidden space-y-2">
-                                  {topItems.delivery.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 border border-accent/10">
-                                      <div className="flex items-center gap-2">
-                                        <span className={`badge badge-sm font-bold text-white ${
-                                          index === 0 ? 'bg-yellow-500' :
-                                          index === 1 ? 'bg-gray-400' :
-                                          index === 2 ? 'bg-orange-600' :
-                                          'bg-gray-500'
-                                        }`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="text-sm font-medium truncate max-w-[120px]">
-                                          {item.menuName}
-                                        </span>
-                                      </div>
-                                      <div className="flex flex-col items-end">
-                                        <span className="text-sm font-bold text-accent">
-                                          {item.quantitySold} ออเดอร์
-                                        </span>
-                                        <span className="text-xs text-base-content/60">
-                                          {formatNumber(item.totalSales)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : null;
-            })()}
+            {/* ✅ เพิ่ม Peak Hours Analysis Component */}
+            <div className="mt-6">
+              <PeakHoursAnalysis
+                filterMode={filterMode}
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                months={months}
+                dailyData={dailyData}
+                dineInSalesData={dineInSalesData}
+                deliverySalesData={deliverySalesData}
+                formatNumber={formatNumber}
+              />
+            </div>
           </>
         )}
 
-        {/* ✅ เพิ่มหลังส่วน quickStats และก่อน </> ของ filterMode === 'month' */}
+        {/* ✅ สำหรับโหมดรายปี */}
         {filterMode === 'year' && !salesLoading && (
           <>
             {/* Divider */}

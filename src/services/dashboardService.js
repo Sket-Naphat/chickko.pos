@@ -1,4 +1,35 @@
 // ✅ 1. แก้ไข Utility สำหรับการกรองข้อมูลตามวันที่
+// ✅ 7. Utility สำหรับ format วันที่เป็นภาษาไทย
+export const formatDisplayDate = (dateString) => {
+  // สร้าง Date object จาก string
+  const date = new Date(dateString);
+  
+  // ตรวจสอบว่าเป็น valid date หรือไม่
+  if (isNaN(date.getTime())) {
+    return dateString; // return กลับไปถ้าไม่ใช่วันที่ที่ถูกต้อง
+  }
+  
+  // Array ชื่อวันภาษาไทย
+  const dayNames = [
+    'อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'
+  ];
+  
+  // Array ชื่อเดือนภาษาไทย
+  const monthNames = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+  ];
+  
+  // ดึงข้อมูลวัน เดือน ปี
+  const dayName = dayNames[date.getDay()];
+  const day = date.getDate().toString().padStart(2, '0');
+  const monthName = monthNames[date.getMonth()];
+  const year = date.getFullYear(); // ✅ แปลงเป็นปีพุทธศักราช
+  
+  // สร้าง format: วัน เสาร์ ที่ 01 ตุลาคม 2568
+  return `วัน${dayName} ที่ ${day} ${monthName} ${year}`;
+};
+
 export const filterDataByDate = (data, dateField) => ({
   filterByMonth: (month, year) => data.filter(item => {
     const date = new Date(item[dateField]);
@@ -68,7 +99,6 @@ export const generateDailyData = (dineInData, deliveryData, costData, selectedMo
   for (let day = 1; day <= daysInMonth; day++) {
     const date = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
-    // ✅ แก้ไขจาก filterByDate เป็น filterByDateString
     const dayDineInData = dineInFilter.filterByDateString(date);
     const dayDeliveryData = deliveryFilter.filterByDateString(date);
     const dayCost = costFilter.filterByDateString(date);
@@ -77,7 +107,7 @@ export const generateDailyData = (dineInData, deliveryData, costData, selectedMo
     const deliveryAmount = calculateTotals(dayDeliveryData);
     const costAmount = calculateTotals(dayCost);
 
-    // ✅ คำนวณ avgPerOrder
+    // คำนวณ avgPerOrder
     const dineInOrders = dayDineInData.reduce((sum, item) => sum + (item.orders || 0), 0);
     const deliveryOrders = dayDeliveryData.reduce((sum, item) => sum + (item.orders || 0), 0);
     const totalOrders = dineInOrders + deliveryOrders;
@@ -86,11 +116,13 @@ export const generateDailyData = (dineInData, deliveryData, costData, selectedMo
     const deliveryAvgPerOrder = deliveryOrders > 0 ? deliveryAmount / deliveryOrders : 0;
     const totalAvgPerOrder = totalOrders > 0 ? (dineInAmount + deliveryAmount) / totalOrders : 0;
 
-    // ✅ Process Peak Hours รวมทั้งหน้าร้านและเดลิเวอรี่
-    const allDayData = [...dayDineInData, ...dayDeliveryData];
-    const dayPeakHours = processPeakHours(allDayData);
-    const dineInPeakHours = processPeakHours(dayDineInData);
-    const deliveryPeakHours = processPeakHours(dayDeliveryData);
+    // ✅ ใช้ peakHours ที่มีอยู่แล้วในข้อมูล
+    const dineInPeakHours = dayDineInData.length > 0 ? dayDineInData[0].peakHours || [] : [];
+    const deliveryPeakHours = dayDeliveryData.length > 0 ? dayDeliveryData[0].peakHours || [] : [];
+    
+    // รวม peakHours จากทั้งหน้าร้านและเดลิเวอรี่
+    const combinedPeakHours = [...dineInPeakHours, ...deliveryPeakHours];
+    const peakHours = processPeakHours(combinedPeakHours);
 
     // รวม Top Items
     const topItems = processTopSellingItems(dayDineInData, 5);
@@ -116,9 +148,9 @@ export const generateDailyData = (dineInData, deliveryData, costData, selectedMo
         totalAvgPerOrder,       
         topItems,
         topDeliveryItems,
-        peakHours: dayPeakHours,           // ✅ ช่วงเวลารวม
-        dineInPeakHours: dineInPeakHours,  // ✅ ช่วงเวลาหน้าร้าน
-        deliveryPeakHours: deliveryPeakHours // ✅ ช่วงเวลาเดลิเวอรี่
+        peakHours: peakHours,           // ✅ ใช้ข้อมูลที่รวมแล้ว
+        dineInPeakHours: dineInPeakHours,  // ✅ ข้อมูลหน้าร้านโดยตรง
+        deliveryPeakHours: deliveryPeakHours // ✅ ข้อมูลเดลิเวอรี่โดยตรง
       });
     }
   }
@@ -185,31 +217,62 @@ export const generateMonthlyData = (dineInData, deliveryData, costData, year, mo
   return data.sort((a, b) => b.month - a.month);
 };
 
-// ✅ เพิ่ม function สำหรับ process Peak Hours
-export const processPeakHours = (salesData) => {
-  const allPeakHours = salesData
-    .flatMap(item => item.peakHours || item.PeakHours || [])
-    .reduce((acc, hour) => {
-      const key = hour.hourRange || hour.HourRange;
-      if (!acc[key]) {
-        acc[key] = {
-          hourRange: key,
-          orderCount: 0,
-          totalSales: 0,
-          avgPerOrder: 0
-        };
-      }
-      acc[key].orderCount += (hour.orderCount || hour.OrderCount || 0);
-      acc[key].totalSales += (hour.totalSales || hour.TotalSales || 0);
-      return acc;
-    }, {});
+// ✅ ลบ processPeakHours แรกออก และเก็บเฉพาะตัวที่สมบูรณ์
+// export const processPeakHours = (salesData) => {
+//   const allPeakHours = salesData
+//     .flatMap(item => item.peakHours || item.PeakHours || [])
+//     .reduce((acc, hour) => {
+//       const key = hour.hourRange || hour.HourRange;
+//       if (!acc[key]) {
+//         acc[key] = {
+//           hourRange: key,
+//           orderCount: 0,
+//           totalSales: 0,
+//           avgPerOrder: 0
+//         };
+//       }
+//       acc[key].orderCount += (hour.orderCount || hour.OrderCount || 0);
+//       acc[key].totalSales += (hour.totalSales || hour.TotalSales || 0);
+//       return acc;
+//     }, {});
+
+//   // คำนวณค่าเฉลี่ยต่อออเดอร์และเรียงลำดับ
+//   return Object.values(allPeakHours)
+//     .map(hour => ({
+//       ...hour,
+//       avgPerOrder: hour.orderCount > 0 ? hour.totalSales / hour.orderCount : 0
+//     }))
+//     .sort((a, b) => b.orderCount - a.orderCount) // เรียงตามจำนวนออเดอร์มากสุดก่อน
+//     .slice(0, 5); // เอาแค่ Top 5
+// };
+
+// ✅ เก็บเฉพาะ processPeakHours ที่รับ peakHoursArray
+export const processPeakHours = (peakHoursArray) => {
+  if (!peakHoursArray || peakHoursArray.length === 0) return [];
+
+  const aggregatedHours = peakHoursArray.reduce((acc, hour) => {
+    const key = hour.hourRange || hour.HourRange;
+    if (!key) return acc; // ✅ เพิ่มการตรวจสอบ key
+    
+    if (!acc[key]) {
+      acc[key] = {
+        hourRange: key,
+        orderCount: 0,
+        totalSales: 0,
+        avgPerOrder: 0
+      };
+    }
+    acc[key].orderCount += (hour.orderCount || hour.OrderCount || 0);
+    acc[key].totalSales += (hour.totalSales || hour.TotalSales || 0);
+    return acc;
+  }, {});
 
   // คำนวณค่าเฉลี่ยต่อออเดอร์และเรียงลำดับ
-  return Object.values(allPeakHours)
+  return Object.values(aggregatedHours)
     .map(hour => ({
       ...hour,
       avgPerOrder: hour.orderCount > 0 ? hour.totalSales / hour.orderCount : 0
     }))
     .sort((a, b) => b.orderCount - a.orderCount) // เรียงตามจำนวนออเดอร์มากสุดก่อน
-    .slice(0, 5); // เอาแค่ Top 5
+    //.slice(0, 5); // เอาแค่ Top 5
 };
