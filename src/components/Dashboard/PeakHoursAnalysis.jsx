@@ -117,7 +117,7 @@ const PeakHoursAnalysis = ({
     if (peakData.hours.length === 0) {
         return (
             <div className="bg-base-100 rounded-xl shadow p-6 text-center">
-                <div className="text-4xl mb-2">⏰</div>
+                <div className="text-4xl mb-2">⏱️</div>
                 <div className="text-base-content/60">
                     ไม่มีข้อมูลช่วงเวลาขายดี ใน{peakData.period}
                 </div>
@@ -133,9 +133,9 @@ const PeakHoursAnalysis = ({
             <div className="collapse-title font-semibold min-h-0 p-0">
                 <div className="flex justify-between items-center p-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-primary text-xl">⏰</span>
+                        <span className="text-primary text-xl">⏱️</span>
                         <span className="text-lg font-bold text-primary">
-                            ช่วงเวลาขายดี - {peakData.period}
+                            ช่วงเวลาขายดี <br /> {peakData.period}
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -211,10 +211,10 @@ const PeakHoursAnalysis = ({
                                         </div>
                                         <div className="text-right">
                                             <div className={`font-bold text-${popularity.color}`}>
-                                                {hour.orderCount}
+                                                {hour.orderCount} <span className="text-xs font-normal text-base-content/60">ออเดอร์</span>
                                             </div>
                                             <div className="text-xs text-base-content/60">
-                                                {formatNumber(hour.totalSales)}
+                                                ฿ {formatNumber(hour.totalSales)}
                                             </div>
                                         </div>
                                     </div>

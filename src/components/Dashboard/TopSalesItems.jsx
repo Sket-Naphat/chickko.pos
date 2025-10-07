@@ -206,7 +206,7 @@ const TopSalesItems = ({
           <div className="flex items-center gap-2">
             <span className="text-primary text-xl">🏆</span>
             <span className="text-lg font-bold text-primary">
-              รายการขายดี Top 5 - {topItems.period}
+              รายการขายดี Top 5 <br /> {topItems.period}
             </span>
           </div>
           <div className="text-xs text-primary/70 bg-primary/10 px-2 py-1 rounded-full">

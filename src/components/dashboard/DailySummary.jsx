@@ -278,14 +278,14 @@ const DailySummary = ({
                         )}
 
                         {/* ✅ เพิ่มรายได้เฉลี่ยต่อออเดอร์ */}
-                        {dayData.totalOrders > 0 && (
+                        {/* {dayData.totalOrders > 0 && (
                           <div className="flex justify-between items-center bg-secondary/10 rounded-lg p-2 border border-secondary/20">
                             <span className="text-sm font-medium text-secondary">🎯 รายได้เฉลี่ย/ออเดอร์</span>
                             <span className="font-bold text-lg text-secondary">
                               {formatNumber(dayData.totalAvgPerOrder)}
                             </span>
                           </div>
-                        )}
+                        )} */}
 
                         {/* ✅ เพิ่มรายละเอียดแยกตามประเภท */}
                         {(dayData.dineInOrders > 0 || dayData.deliveryOrders > 0) && (
@@ -633,10 +633,10 @@ const DailySummary = ({
                                         </div>
                                         <div className="flex flex-col items-end">
                                           <span className="text-xs font-bold text-warning">
-                                            {hour.orderCount} ออเดอร์
+                                            {hour.orderCount} <span className="text-xs font-normal text-base-content/60">ออเดอร์</span>
                                           </span>
                                           <span className="text-xs text-base-content/60">
-                                            {formatNumber(hour.totalSales)}
+                                            ฿ {formatNumber(hour.totalSales)}
                                           </span>
                                           <span className="text-xs text-base-content/50">
                                             เฉลี่ย {formatNumber(hour.avgPerOrder)}

@@ -463,7 +463,7 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* จำนวนวันที่เปิดขาย */}
+          {/* จำนวนวันที่เปิดขาย / เดือนที่เปิดขาย */}
           <div className="bg-gradient-to-br from-warning/15 to-warning/8 rounded-xl shadow-sm p-3 sm:p-4 border border-warning/30">
             <div className="flex items-center justify-between mb-2">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-warning/25 flex items-center justify-center">
@@ -474,8 +474,16 @@ function Dashboard() {
               <div className="text-xs text-warning/70">🗓️</div>
             </div>
             <div className="space-y-1">
-              <div className="text-xs sm:text-sm font-medium text-warning/80">วันที่เปิดขาย</div>
-              <div className="text-lg sm:text-xl font-bold text-warning">{dailyData.filter(day => day.total > 0).length} วัน</div>
+              {/* ✅ เปลี่ยนตามโหมดการแสดงผล */}
+              <div className="text-xs sm:text-sm font-medium text-warning/80">
+                {filterMode === 'month' ? 'วันที่เปิดขาย' : 'เดือนที่เปิดขาย'}
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-warning">
+                {filterMode === 'month' 
+                  ? `${dailyData.filter(day => day.total > 0).length} วัน`
+                  : `${monthlyData.filter(month => month.total > 0).length} เดือน`
+                }
+              </div>
             </div>
           </div>
 
@@ -651,14 +659,14 @@ function Dashboard() {
                 <div className="text-gray-600 font-bold text-lg">
                   {quickStats.avgOrders}
                 </div>
-                <div className="text-xs text-gray-600/70">💼 ออเดอร์รวมเฉลี่ย/วัน</div>
+                <div className="text-xs text-gray-600/70">จำนวนออเดอร์เฉลี่ยต่อวัน</div>
               </div>
               {/* ✅ แทนที่ออเดอร์เฉลี่ยรวมด้วยหน้าร้าน */}
               <div className="bg-gradient-to-r from-blue-100/80 to-blue-50 border border-blue-300 rounded-lg p-3 text-center">
                 <div className="text-blue-600 font-bold text-lg">
                   {quickStats.avgDineInOrders}
                 </div>
-                <div className="text-xs text-blue-600/70">🏪 ออเดอร์เฉลี่ยหน้าร้าน/วัน</div>
+                <div className="text-xs text-blue-600/70">🏪 จำนวนออเดอร์หน้าร้าน เฉลี่ยต่อวัน</div>
               </div>
 
               {/* ✅ เพิ่มออเดอร์เฉลี่ยเดลิเวอรี่ */}
@@ -666,21 +674,21 @@ function Dashboard() {
                 <div className="text-teal-600 font-bold text-lg">
                   {quickStats.avgDeliveryOrders}
                 </div>
-                <div className="text-xs text-teal-600/70">🛵 ออเดอร์เฉลี่ยเดลิเวอรี่/วัน</div>
+                <div className="text-xs text-teal-600/70">🛵 จำนวนออเดอร์เดลิเวอรี่ เฉลี่ยต่อวัน</div>
               </div>
 
               <div className="bg-gradient-to-r from-info/10 to-info/5 border border-info/20 rounded-lg p-3 text-center">
                 <div className="text-info font-bold text-lg">
                   {formatNumber(quickStats.avgSales)}
                 </div>
-                <div className="text-xs text-info/70">ยอดขายเฉลี่ย/วัน</div>
+                <div className="text-xs text-info/70">ยอดขายเฉลี่ยต่อวัน</div>
               </div>
 
               <div className="bg-gradient-to-r from-error/10 to-error/5 border border-error/20 rounded-lg p-3 text-center">
                 <div className="text-error font-bold text-lg">
                   {formatNumber(quickStats.avgCost)}
                 </div>
-                <div className="text-xs text-error/70">ต้นทุนเฉลี่ย/วัน</div>
+                <div className="text-xs text-error/70">ต้นทุนเฉลี่ยต่อวัน</div>
               </div>
 
               {/* ✅ รายได้เฉลี่ยต่อออเดอร์หน้าร้าน */}
@@ -688,7 +696,7 @@ function Dashboard() {
                 <div className="text-indigo-600 font-bold text-lg">
                   {formatNumber(quickStats.avgDineInPerOrder)}
                 </div>
-                <div className="text-xs text-indigo-600/70">🏪 รายได้เฉลี่ยหน้าร้าน/ออเดอร์</div>
+                <div className="text-xs text-indigo-600/70">🏪 ยอดขายเฉลี่ยต่อออเดอร์ หน้าร้าน</div>
               </div>
 
               {/* ✅ รายได้เฉลี่ยต่อออเดอร์เดลิเวอรี่ */}
@@ -696,7 +704,7 @@ function Dashboard() {
                 <div className="text-purple-600 font-bold text-lg">
                   {formatNumber(quickStats.avgDeliveryPerOrder)}
                 </div>
-                <div className="text-xs text-purple-600/70">🛵 รายได้เฉลี่ยเดลิเวอรี่/ออเดอร์</div>
+                <div className="text-xs text-purple-600/70">🛵 ยอดขายเฉลี่ยต่อออเดอร์ เดลิเวอรี่</div>
               </div>
 
               
@@ -777,14 +785,14 @@ function Dashboard() {
                 <div className="text-info font-bold text-lg">
                   {formatNumber(monthlyData.length > 0 ? totals.totalSales / monthlyData.length : 0)}
                 </div>
-                <div className="text-xs text-info/70">ยอดขายเฉลี่ย/เดือน</div>
+                <div className="text-xs text-info/70">ยอดขายเฉลี่ยต่อเดือน</div>
               </div>
 
               <div className="bg-gradient-to-r from-error/10 to-error/5 border border-error/20 rounded-lg p-3 text-center">
                 <div className="text-error font-bold text-lg">
                   {formatNumber(monthlyData.length > 0 ? totals.costTotal / monthlyData.length : 0)}
                 </div>
-                <div className="text-xs text-error/70">ต้นทุนเฉลี่ย/เดือน</div>
+                <div className="text-xs text-error/70">ต้นทุนเฉลี่ยต่อเดือน</div>
               </div>
 
               <div className="bg-gradient-to-r from-purple-100/80 to-purple-50 border border-purple-300 rounded-lg p-3 text-center">
@@ -798,7 +806,7 @@ function Dashboard() {
                 <div className="text-success font-bold text-lg">
                   {formatNumber(monthlyData.length > 0 ? totals.netProfit / monthlyData.length : 0)}
                 </div>
-                <div className="text-xs text-success/70">กำไรเฉลี่ย/เดือน</div>
+                <div className="text-xs text-success/70">กำไรเฉลี่ยต่อเดือน</div>
               </div>
 
               {/* ✅ เพิ่มรายได้เฉลี่ยต่อออเดอร์หน้าร้านรายปี */}
@@ -811,7 +819,7 @@ function Dashboard() {
                     return formatNumber(avgDineInPerOrder);
                   })()}
                 </div>
-                <div className="text-xs text-blue-600/70">🏪 เฉลี่ย/ออเดอร์</div>
+                <div className="text-xs text-blue-600/70">🏪 ยอดขายเฉลี่ยต่อออเดอร์ หน้าร้าน</div>
               </div>
 
               {/* ✅ เพิ่มรายได้เฉลี่ยต่อออเดอร์เดลิเวอรี่รายปี */}
@@ -824,7 +832,7 @@ function Dashboard() {
                     return formatNumber(avgDeliveryPerOrder);
                   })()}
                 </div>
-                <div className="text-xs text-teal-600/70">🛵 เฉลี่ย/ออเดอร์</div>
+                <div className="text-xs text-teal-600/70">🛵 ยอดขายเฉลี่ยต่อออเดอร์ เดลิเวอรี่</div>
               </div>
 
               {/* ✅ เพิ่มจำนวนออเดอร์เฉลี่ยต่อเดือน */}
@@ -836,20 +844,7 @@ function Dashboard() {
                     return avgOrdersPerMonth;
                   })()}
                 </div>
-                <div className="text-xs text-indigo-600/70">ออเดอร์เฉลี่ย/เดือน</div>
-              </div>
-
-              {/* ✅ เพิ่มรายได้เฉลี่ยต่อออเดอร์รวม */}
-              <div className="bg-gradient-to-r from-violet-100/80 to-violet-50 border border-violet-300 rounded-lg p-3 text-center">
-                <div className="text-violet-600 font-bold text-lg">
-                  {(() => {
-                    const totalAmount = monthlyData.reduce((sum, month) => sum + month.total, 0);
-                    const totalOrders = monthlyData.reduce((sum, month) => sum + (month.totalOrders || 0), 0);
-                    const avgTotalPerOrder = totalOrders > 0 ? totalAmount / totalOrders : 0;
-                    return formatNumber(avgTotalPerOrder);
-                  })()}
-                </div>
-                <div className="text-xs text-violet-600/70">💰 เฉลี่ย/ออเดอร์รวม</div>
+                <div className="text-xs text-indigo-600/70">จำนวนออเดอร์เฉลี่ยต่อเดือน</div>
               </div>
 
               {/* เพิ่ม Cost Categories ถ้ามี */}
@@ -858,7 +853,7 @@ function Dashboard() {
                   <div className="text-orange-600 font-bold text-lg">
                     {formatNumber(costBreakdown.totalOwner)}
                   </div>
-                  <div className="text-xs text-orange-600/70">เงินเดือนทีมบริหาร</div>
+                  <div className="text-xs text-orange-600/70">เงินเดือนทีมบริหารทั้งหมด</div>
                 </div>
               )}
 
@@ -867,7 +862,7 @@ function Dashboard() {
                   <div className="text-cyan-600 font-bold text-lg">
                     {formatNumber(costBreakdown.totalUtility)}
                   </div>
-                  <div className="text-xs text-cyan-600/70">ต้นทุนค่าน้ำค่าไฟ</div>
+                  <div className="text-xs text-cyan-600/70">ต้นทุนค่าน้ำค่าไฟทั้งหมด</div>
                 </div>
               )}
             </div>
@@ -932,7 +927,7 @@ function Dashboard() {
                       <div className="flex items-center gap-2">
                         <span className="text-primary text-xl">🏆</span>
                         <span className="text-lg font-bold text-primary">
-                          รายการขายดี Top 5 - ปี {selectedYear}
+                          รายการขายดี Top 5 <br /> ปี {selectedYear}
                         </span>
                       </div>
                       <div className="text-xs text-primary/70 bg-primary/10 px-2 py-1 rounded-full">
