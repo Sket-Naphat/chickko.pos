@@ -316,7 +316,7 @@ function MonthlySummary({
                         {/* รายละเอียดแยกตามประเภท */}
                         {(monthData.dineInOrders > 0 || monthData.deliveryOrders > 0) && (
                           <div className="bg-base-200/50 rounded-lg p-2 border border-base-300">
-                            <div className="text-xs font-medium text-base-content/70 mb-2">📊 รายละเอียดตามประเภท</div>
+                            <div className="text-xs font-medium text-base-content/70 mb-2">📊 ยอดขายเฉลี่ยต่อออเดอร์</div>
                             <div className="grid grid-cols-2 gap-2">
                               {monthData.dineInOrders > 0 && (
                                 <div className="text-center bg-info/10 rounded p-2">
