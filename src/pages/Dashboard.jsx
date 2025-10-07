@@ -10,11 +10,11 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import SummaryGraphCarousel from '../components/dashboard/3SummaryGraph';
-import DailySummary from '../components/dashboard/DailySummary';
-import MonthlySummary from '../components/dashboard/MonthlySummary';
-import TopSalesItems from '../components/dashboard/TopSalesItems';
-import PeakHoursAnalysis from '../components/dashboard/PeakHoursAnalysis';
+import SummaryGraphCarousel from '../components/Dashboard/3SummaryGraph';
+import DailySummary from '../components/Dashboard/DailySummary';
+import MonthlySummary from '../components/Dashboard/MonthlySummary';
+import TopSalesItems from '../components/Dashboard/TopSalesItems';
+import PeakHoursAnalysis from '../components/Dashboard/PeakHoursAnalysis';
 import { 
   filterDataByDate, 
   calculateTotals, 
