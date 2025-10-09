@@ -1369,48 +1369,14 @@ function ManagementWorktime() {
 
           {/* ✅ ต้นทุนรวม - แสดงเฉพาะ Admin */}
           {authData?.userPermissionId === 1 && (
-            <div className="mb-6 bg-info/10 rounded-lg border border-info/20 p-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-2xl">💸</span>
-                  <h3 className="text-lg font-bold text-primary">ต้นทุนค่าแรงพนักงาน</h3>
-                </div>
-                <div className="text-xs text-primary/70 bg-info/80 px-3 py-1 rounded-full inline-block mb-3">
-                  {filterType === "period"
-                    ? `${new Date(dateFrom).toLocaleDateString('th-TH')} - ${new Date(dateTo).toLocaleDateString('th-TH')}`
-                    : new Date(selectedDate).toLocaleDateString('th-TH')
-                  }      {(() => {
-                    // คำนวณจำนวนวันระหว่าง dateFrom และ dateTo
-                    if (filterType === "daily") {
-                      return " | 1 วัน";
-                    } else {
-                      const startDate = new Date(dateFrom);
-                      const endDate = new Date(dateTo);
-
-                      // คำนวณความต่างเป็นมิลลิวินาที
-                      const timeDifference = endDate.getTime() - startDate.getTime();
-
-                      // แปลงเป็นจำนวนวัน (+1 เพื่อนับวันเริ่มต้นด้วย)
-                      const daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)) + 1;
-
-                      return ` | ${daysDifference} วัน`;
-                    }
-                  })()}
-                </div>
-                <div className="text-2xl font-bold text-primary">
-                  {(() => {
-                    const totalCost = data.reduce((sum, item) => sum + (item.wageCost || 0), 0);
-                    return formatCurrency(totalCost);
-                  })()}
-                </div>
-                <div className="text-sm text-primary/70 mt-1">
-                  {data.filter(item => item.totalWorktime > 0).length} คน | {(() => {
-                    const totalHours = data.reduce((sum, item) => sum + (item.totalWorktime || 0), 0);
-                    return formatWorktime(totalHours);
-                  })()}
-                </div>
-              </div>
-            </div>
+            <WageCostSummary
+              filterType={filterType}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              selectedDate={selectedDate}
+              data={data}
+              formatCurrency={formatCurrency}
+            />
           )}
 
           {loading ? (
@@ -1462,13 +1428,17 @@ function ManagementWorktime() {
                           <div className="bg-base-100 p-3 rounded-lg shadow-sm">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-lg">💰</span>
-                              <span className="font-semibold text-base-content/80">ค่าตอบแทน</span>
+                              <span className="font-semibold text-base-content/80">ค่าตอบแทน / ค่าตอบแทนคงค้าง</span>
                             </div>
 
                             {/* ✅ ปุ่มจ่ายเงิน - แสดงเฉพาะ Admin ชิดขวา */}
                             <div className="flex items-center justify-between">
                               <div className="text-lg font-bold text-success">
                                 {item.wageCost ? formatCurrency(item.wageCost) : '-'}
+                              </div>
+                              /
+                              <div className="text-lg font-bold text-warning">
+                                {item.wageCost ? formatCurrency(item.wageCostNoPurchase) : '-'}
                               </div>
 
                               {/* ✅ ปุ่มจ่ายเงิน - แสดงเฉพาะ Admin ชิดขวา */}
@@ -1713,6 +1683,66 @@ function ManagementWorktime() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ✅ WageCostSummary Component แบบ Minimal
+function WageCostSummary({ filterType, dateFrom, dateTo,  data, formatCurrency }) {
+  // ✅ คำนวณข้อมูลล่วงหน้า
+  const totalCost = data.reduce((sum, item) => sum + (item.wageCost || 0), 0);
+  const totalUnpaidCost = data.reduce((sum, item) => sum + (item.wageCostNoPurchase || 0), 0);
+  const totalPaidCost = totalCost - totalUnpaidCost;
+  const totalEmployees = data.filter(item => item.totalWorktime > 0).length;
+
+  return (
+    <div className="mb-4 bg-info/5 rounded-lg border border-info/10 p-3">
+      {/* ✅ Header แบบกระชับ */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">💸</span>
+          <span className="font-bold text-primary text-sm">ต้นทุนค่าแรง</span>
+        </div>
+        <div className="text-xs text-primary/60 bg-primary/10 px-2 py-1 rounded-full">
+          {filterType === "period"
+            ? `${(() => {
+                const start = new Date(dateFrom);
+                const end = new Date(dateTo);
+                const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                return `${days} วัน`;
+              })()} | ${totalEmployees} คน`
+            : `1 วัน | ${totalEmployees} คน`
+          }
+        </div>
+      </div>
+
+      {/* ✅ สถิติแบบ Horizontal */}
+      <div className="flex items-center justify-between text-sm">
+        {/* ยอดรวม */}
+        <div className="text-center">
+          <div className="text-xs text-primary/70">รวม</div>
+          <div className="font-bold text-primary">
+            {totalCost > 0 ? formatCurrency(totalCost).replace('฿', '฿') : '฿0'}
+          </div>
+        </div>
+
+        {/* ยังไม่จ่าย */}
+        <div className="text-center">
+          <div className="text-xs text-warning/70">ยังไม่จ่าย</div>
+          <div className="font-bold text-warning">
+            {totalUnpaidCost > 0 ? formatCurrency(totalUnpaidCost).replace('฿', '฿') : '฿0'}
+          </div>
+        </div>
+
+        {/* จ่ายแล้ว */}
+        <div className="text-center">
+          <div className="text-xs text-success/70">จ่ายแล้ว</div>
+          <div className="font-bold text-success">
+            {totalPaidCost > 0 ? formatCurrency(totalPaidCost).replace('฿', '฿') : '฿0'}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

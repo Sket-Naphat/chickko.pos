@@ -330,6 +330,27 @@ function Dashboard() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // ✅ สร้าง dailyData สำหรับทั้งปี
+  const yearlyDailyData = useMemo(() => {
+    if (filterMode !== 'year') return [];
+    
+    // สร้าง dailyData สำหรับทุกเดือนในปี
+    const allYearData = [];
+    
+    for (let month = 0; month < 12; month++) {
+      const monthDailyData = generateDailyData(
+        dineInSalesData, 
+        deliverySalesData, 
+        costData, 
+        month, 
+        selectedYear
+      );
+      allYearData.push(...monthDailyData);
+    }
+    
+    return allYearData;
+  }, [dineInSalesData, deliverySalesData, costData, selectedYear, filterMode]);
+
   return (
     <div className="p-2 md:p-4 space-y-4 md:space-y-6">
       {/* ✅ ลบส่วน header ที่มีปุ่ม "ดึงข้อมูลจาก Firestore" */}
@@ -1163,6 +1184,7 @@ function Dashboard() {
           formatNumber={formatNumber}
           costData={costData}
           costTotal={totals.costTotal}
+          dailyData={yearlyDailyData} // ✅ เพิ่ม dailyData
         />
       )}
 

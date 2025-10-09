@@ -188,9 +188,9 @@ function MonthlySummary({
                                       <div key={index} className="flex justify-between items-center p-2 bg-warning/5 rounded border border-warning/10">
                                         <div className="flex items-center gap-2">
                                           <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
-                                              index === 1 ? 'bg-gray-400' :
-                                                index === 2 ? 'bg-orange-600' :
-                                                  'bg-gray-500'
+                                            index === 1 ? 'bg-gray-400' :
+                                              index === 2 ? 'bg-orange-600' :
+                                                'bg-gray-500'
                                             }`}>
                                             #{index + 1}
                                           </span>
@@ -465,9 +465,9 @@ function MonthlySummary({
                                           <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 border border-info/10">
                                             <div className="flex items-center gap-2">
                                               <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
-                                                  index === 1 ? 'bg-gray-400' :
-                                                    index === 2 ? 'bg-orange-600' :
-                                                      'bg-gray-500'
+                                                index === 1 ? 'bg-gray-400' :
+                                                  index === 2 ? 'bg-orange-600' :
+                                                    'bg-gray-500'
                                                 }`}>
                                                 #{index + 1}
                                               </span>
@@ -513,9 +513,9 @@ function MonthlySummary({
                                           <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 border border-accent/10">
                                             <div className="flex items-center gap-2">
                                               <span className={`badge badge-sm font-bold text-white ${index === 0 ? 'bg-yellow-500' :
-                                                  index === 1 ? 'bg-gray-400' :
-                                                    index === 2 ? 'bg-orange-600' :
-                                                      'bg-gray-500'
+                                                index === 1 ? 'bg-gray-400' :
+                                                  index === 2 ? 'bg-orange-600' :
+                                                    'bg-gray-500'
                                                 }`}>
                                                 #{index + 1}
                                               </span>
@@ -546,6 +546,160 @@ function MonthlySummary({
                                       <div className="text-sm text-base-content/60">ไม่มีข้อมูลรายการขายดี</div>
                                     </div>
                                   )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {monthData.peakHours && monthData.peakHours.length > 0 && (
+                        <div className="collapse bg-base-100 border border-warning/20 rounded-lg mt-4">
+                          <input type="checkbox" />
+                          <div className="collapse-title font-semibold min-h-0 p-0">
+                            <div className="flex justify-between items-center p-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-warning text-lg">⏱️</span>
+                                <span className="text-sm font-bold text-warning">
+                                  ช่วงเวลาที่ขายดี Top {monthData.peakHours.length}
+                                </span>
+                              </div>
+                              <div className="text-xs text-warning/70 bg-warning/10 px-2 py-1 rounded-full">
+                                คลิกเพื่อดู
+                              </div>
+                            </div>
+                          </div>
+                          <div className="collapse-content px-3 pb-3">
+                            <div className="pt-0">
+                              <div className="tabs tabs-lifted">
+                                {/* Tab รวม */}
+                                <input type="radio" name={`peak_tabs_${monthData.month}`} className="tab" aria-label="📊 รวม" defaultChecked />
+                                <div className="tab-content bg-base-100 border-base-300 p-4">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <span className="text-warning text-sm">📊</span>
+                                      <span className="font-bold text-warning text-sm">ช่วงเวลารวม</span>
+                                      <div className="badge badge-warning badge-sm">
+                                        {monthData.peakHours.length} ช่วง
+                                      </div>
+                                    </div>
+                                    {monthData.peakHours.map((hour, index) => (
+                                      <div key={index} className="flex justify-between items-center bg-warning/5 rounded-lg p-2 border border-warning/10">
+                                        <div className="flex items-center gap-2">
+                                          <span className={`badge badge-xs font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                            index === 1 ? 'bg-gray-400' :
+                                              index === 2 ? 'bg-orange-600' :
+                                                'bg-gray-500'
+                                            }`}>
+                                            #{index + 1}
+                                          </span>
+                                          <span className="text-xs font-medium">
+                                            {hour.hourRange}
+                                          </span>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                          <span className="text-xs font-bold text-warning">
+                                            {hour.orderCount} <span className="text-xs font-normal text-base-content/60">ออเดอร์</span>
+                                          </span>
+                                          <span className="text-xs text-base-content/60">
+                                            ฿ {formatNumber(hour.totalSales)}
+                                          </span>
+                                          <span className="text-xs text-base-content/50">
+                                            เฉลี่ย {formatNumber(hour.avgPerOrder)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Tab หน้าร้าน */}
+                                {monthData.dineInPeakHours && monthData.dineInPeakHours.length > 0 && (
+                                  <>
+                                    <input type="radio" name={`peak_tabs_${monthData.month}`} className="tab" aria-label="🏪 หน้าร้าน" />
+                                    <div className="tab-content bg-base-100 border-base-300 p-4">
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <span className="text-info text-sm">🏪</span>
+                                          <span className="font-bold text-info text-sm">ช่วงเวลาหน้าร้าน</span>
+                                          <div className="badge badge-info badge-sm">
+                                            {monthData.dineInPeakHours.length} ช่วง
+                                          </div>
+                                        </div>
+                                        {monthData.dineInPeakHours.map((hour, index) => (
+                                          <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-2 border border-info/10">
+                                            <div className="flex items-center gap-2">
+                                              <span className={`badge badge-xs font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                                index === 1 ? 'bg-gray-400' :
+                                                  index === 2 ? 'bg-orange-600' :
+                                                    'bg-gray-500'
+                                                }`}>
+                                                #{index + 1}
+                                              </span>
+                                              <span className="text-xs font-medium">
+                                                {hour.hourRange}
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                              <span className="text-xs font-bold text-info">
+                                                {hour.orderCount} ออเดอร์
+                                              </span>
+                                              <span className="text-xs text-base-content/60">
+                                                {formatNumber(hour.totalSales)}
+                                              </span>
+                                              <span className="text-xs text-base-content/50">
+                                                เฉลี่ย {formatNumber(hour.avgPerOrder)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+
+                                {/* Tab เดลิเวอรี่ */}
+                                {monthData.deliveryPeakHours && monthData.deliveryPeakHours.length > 0 && (
+                                  <>
+                                    <input type="radio" name={`peak_tabs_${monthData.month}`} className="tab" aria-label="🛵 เดลิเวอรี่" />
+                                    <div className="tab-content bg-base-100 border-base-300 p-4">
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <span className="text-accent text-sm">🛵</span>
+                                          <span className="font-bold text-accent text-sm">ช่วงเวลาเดลิเวอรี่</span>
+                                          <div className="badge badge-accent badge-sm">
+                                            {monthData.deliveryPeakHours.length} ช่วง
+                                          </div>
+                                        </div>
+                                        {monthData.deliveryPeakHours.map((hour, index) => (
+                                          <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-2 border border-accent/10">
+                                            <div className="flex items-center gap-2">
+                                              <span className={`badge badge-xs font-bold text-white ${index === 0 ? 'bg-yellow-500' :
+                                                index === 1 ? 'bg-gray-400' :
+                                                  index === 2 ? 'bg-orange-600' :
+                                                    'bg-gray-500'
+                                                }`}>
+                                                #{index + 1}
+                                              </span>
+                                              <span className="text-xs font-medium">
+                                                {hour.hourRange}
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                              <span className="text-xs font-bold text-accent">
+                                                {hour.orderCount} ออเดอร์
+                                              </span>
+                                              <span className="text-xs text-base-content/60">
+                                                {formatNumber(hour.totalSales)}
+                                              </span>
+                                              <span className="text-xs text-base-content/50">
+                                                เฉลี่ย {formatNumber(hour.avgPerOrder)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
