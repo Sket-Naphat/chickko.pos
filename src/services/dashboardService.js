@@ -186,20 +186,24 @@ export const generateMonthlyData = (dineInData, deliveryData, costData, year, mo
     const deliveryAvgPerOrder = deliveryOrders > 0 ? deliveryAmount / deliveryOrders : 0;
     const totalAvgPerOrder = totalOrders > 0 ? (dineInAmount + deliveryAmount) / totalOrders : 0;
 
-    // ✅ รวบรวม Peak Hours จากข้อมูลทั้งหน้าร้านและเดลิเวอรี่
+    // ✅ คำนวณจำนวนวันที่มีออเดอร์ในเดือนนี้
+    const dineInDaysCount = monthDineInData.filter(item => (item.orders || 0) > 0).length;
+    const deliveryDaysCount = monthDeliveryData.filter(item => (item.orders || 0) > 0).length;
+    
+    // ✅ เพิ่มค่าเฉลี่ยออเดอร์ต่อวัน
+    const avgDineInOrdersPerDay = dineInDaysCount > 0 ? dineInOrders / dineInDaysCount : 0;
+    const avgDeliveryOrdersPerDay = deliveryDaysCount > 0 ? deliveryOrders / deliveryDaysCount : 0;
+
+    // รวบรวม Peak Hours จากข้อมูลทั้งหน้าร้านและเดลิเวอรี่
     const dineInPeakHours = monthDineInData
       .flatMap(item => item.peakHours || item.PeakHours || []);
     
     const deliveryPeakHours = monthDeliveryData
       .flatMap(item => item.peakHours || item.PeakHours || []);
     
-    // ✅ รวม Peak Hours จากทั้งสองประเภท
     const combinedPeakHours = [...dineInPeakHours, ...deliveryPeakHours];
     
-    // ✅ ประมวลผล Peak Hours รวม
     const peakHours = processPeakHours(combinedPeakHours);
-    
-    // ✅ ประมวลผล Peak Hours แยกประเภท
     const processedDineInPeakHours = processPeakHours(dineInPeakHours);
     const processedDeliveryPeakHours = processPeakHours(deliveryPeakHours);
 
@@ -225,12 +229,17 @@ export const generateMonthlyData = (dineInData, deliveryData, costData, year, mo
         dineInAvgPerOrder,      
         deliveryAvgPerOrder,    
         totalAvgPerOrder,       
+        // ✅ เพิ่มค่าเฉลี่ยออเดอร์ต่อวัน
+        avgDineInOrdersPerDay: Math.round(avgDineInOrdersPerDay),
+        avgDeliveryOrdersPerDay: Math.round(avgDeliveryOrdersPerDay),
+        // ✅ เพิ่มจำนวนวันที่มีการขาย
+        dineInDaysCount,
+        deliveryDaysCount,
         topItems: topDineInItems,
         topDeliveryItems: topDeliveryItems,
-        // ✅ เพิ่ม Peak Hours Arrays
-        peakHours: peakHours,                           // รวมทั้งหน้าร้านและเดลิเวอรี่
-        dineInPeakHours: processedDineInPeakHours,      // เฉพาะหน้าร้าน
-        deliveryPeakHours: processedDeliveryPeakHours   // เฉพาะเดลิเวอรี่
+        peakHours: peakHours,
+        dineInPeakHours: processedDineInPeakHours,
+        deliveryPeakHours: processedDeliveryPeakHours
       });
     }
   }

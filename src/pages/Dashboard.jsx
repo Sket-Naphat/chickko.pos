@@ -857,6 +857,33 @@ function Dashboard() {
                 <div className="text-xs text-teal-600/70">🛵 ยอดขายเฉลี่ยต่อออเดอร์ เดลิเวอรี่</div>
               </div>
 
+
+              {/* ✅ จำนวนออเดอร์เฉลี่ยต่อเดือนหน้าร้าน */}
+              <div className="bg-gradient-to-r from-blue-100/80 to-blue-50 border border-blue-300 rounded-lg p-3 text-center">
+                <div className="text-blue-600 font-bold text-lg">
+                  {(() => {
+                    const monthsWithDineInData = monthlyData.filter(month => (month.avgDineInOrdersPerDay || 0) > 0);
+                    const totalAvgDineInOrders = monthsWithDineInData.reduce((sum, month) => sum + (month.avgDineInOrdersPerDay || 0), 0);
+                    const overallAvgDineInPerDay = monthsWithDineInData.length > 0 ? Math.round(totalAvgDineInOrders / monthsWithDineInData.length) : 0;
+                    return formatNumber(overallAvgDineInPerDay);
+                  })()}
+                </div>
+                <div className="text-xs text-blue-600/70">🏪 จำนวนออเดอร์เฉลี่ยต่อวันหน้าร้าน</div>
+              </div>
+
+              {/* ✅ จำนวนออเดอร์เฉลี่ยต่อเดือนเดลิเวอรี่ */}
+              <div className="bg-gradient-to-r from-teal-100/80 to-teal-50 border border-teal-300 rounded-lg p-3 text-center">
+                <div className="text-teal-600 font-bold text-lg">
+                  {(() => {
+                    const monthsWithDeliveryData = monthlyData.filter(month => (month.avgDeliveryOrdersPerDay || 0) > 0);
+                    const totalAvgDeliveryOrders = monthsWithDeliveryData.reduce((sum, month) => sum + (month.avgDeliveryOrdersPerDay || 0), 0);
+                    const overallAvgDeliveryPerDay = monthsWithDeliveryData.length > 0 ? Math.round(totalAvgDeliveryOrders / monthsWithDeliveryData.length) : 0;
+                    return formatNumber(overallAvgDeliveryPerDay);
+                  })()}
+                </div>
+                <div className="text-xs text-teal-600/70">🛵 จำนวนออเดอร์เฉลี่ยต่อวันเดลิเวอรี่</div>
+              </div>
+
               {/* ✅ เพิ่มจำนวนออเดอร์เฉลี่ยต่อเดือน */}
               <div className="bg-gradient-to-r from-indigo-100/80 to-indigo-50 border border-indigo-300 rounded-lg p-3 text-center">
                 <div className="text-indigo-600 font-bold text-lg">
@@ -870,23 +897,23 @@ function Dashboard() {
               </div>
 
               {/* เพิ่ม Cost Categories ถ้ามี */}
-              {costBreakdown.totalOwner > 0 && (
+              {/* {costBreakdown.totalOwner > 0 && (
                 <div className="bg-gradient-to-r from-orange-100/80 to-orange-50 border border-orange-300 rounded-lg p-3 text-center">
                   <div className="text-orange-600 font-bold text-lg">
                     {formatNumber(costBreakdown.totalOwner)}
                   </div>
                   <div className="text-xs text-orange-600/70">เงินเดือนทีมบริหารทั้งหมด</div>
                 </div>
-              )}
+              )} */}
 
-              {costBreakdown.totalUtility > 0 && (
+              {/* {costBreakdown.totalUtility > 0 && (
                 <div className="bg-gradient-to-r from-cyan-100/80 to-cyan-50 border border-cyan-300 rounded-lg p-3 text-center">
                   <div className="text-cyan-600 font-bold text-lg">
                     {formatNumber(costBreakdown.totalUtility)}
                   </div>
                   <div className="text-xs text-cyan-600/70">ต้นทุนค่าน้ำค่าไฟทั้งหมด</div>
                 </div>
-              )}
+              )} */}
             </div>
 
             {/* Top 5 Selling Items ของปี - แยก Tab */}
