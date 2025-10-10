@@ -15,9 +15,9 @@ import DailySummary from '../components/Dashboard/DailySummary';
 import MonthlySummary from '../components/Dashboard/MonthlySummary';
 import TopSalesItems from '../components/Dashboard/TopSalesItems';
 import PeakHoursAnalysis from '../components/Dashboard/PeakHoursAnalysis';
-import { 
-  filterDataByDate, 
-  calculateTotals, 
+import {
+  filterDataByDate,
+  calculateTotals,
   calculateCostBreakdown,
   generateDailyData,
   generateMonthlyData,
@@ -275,13 +275,13 @@ function Dashboard() {
     // ✅ เพิ่มออเดอร์เฉลี่ยแยกตามประเภท
     const totalDineInOrders = dailyData.reduce((sum, day) => sum + (day.dineInOrders || 0), 0);
     const totalDeliveryOrders = dailyData.reduce((sum, day) => sum + (day.deliveryOrders || 0), 0);
-    
-    const avgDineInOrders = salesDays.length > 0 
-      ? Math.round(totalDineInOrders / salesDays.length) 
+
+    const avgDineInOrders = salesDays.length > 0
+      ? Math.round(totalDineInOrders / salesDays.length)
       : 0;
-    
-    const avgDeliveryOrders = salesDays.length > 0 
-      ? Math.round(totalDeliveryOrders / salesDays.length) 
+
+    const avgDeliveryOrders = salesDays.length > 0
+      ? Math.round(totalDeliveryOrders / salesDays.length)
       : 0;
 
     const avgSales = salesDays.length > 0
@@ -299,13 +299,13 @@ function Dashboard() {
     const avgDineInPerOrder = totalDineInOrders > 0 ? totalDineInAmount / totalDineInOrders : 0;
     const avgDeliveryPerOrder = totalDeliveryOrders > 0 ? totalDeliveryAmount / totalDeliveryOrders : 0;
 
-    return { 
-      profitDays, 
-      lossDays, 
+    return {
+      profitDays,
+      lossDays,
       avgOrders,             // ออเดอร์เฉลี่ยรวม
       avgDineInOrders,       // ✅ ออเดอร์เฉลี่ยหน้าร้าน (ใหม่)
       avgDeliveryOrders,     // ✅ ออเดอร์เฉลี่ยเดลิเวอรี่ (ใหม่)
-      avgSales, 
+      avgSales,
       avgCost,
       avgDineInPerOrder,     // รายได้เฉลี่ยต่อออเดอร์หน้าร้าน
       avgDeliveryPerOrder    // รายได้เฉลี่ยต่อออเดอร์เดลิเวอรี่
@@ -329,6 +329,27 @@ function Dashboard() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // ✅ สร้าง dailyData สำหรับทั้งปี
+  const yearlyDailyData = useMemo(() => {
+    if (filterMode !== 'year') return [];
+
+    // สร้าง dailyData สำหรับทุกเดือนในปี
+    const allYearData = [];
+
+    for (let month = 0; month < 12; month++) {
+      const monthDailyData = generateDailyData(
+        dineInSalesData,
+        deliverySalesData,
+        costData,
+        month,
+        selectedYear
+      );
+      allYearData.push(...monthDailyData);
+    }
+
+    return allYearData;
+  }, [dineInSalesData, deliverySalesData, costData, selectedYear, filterMode]);
 
   return (
     <div className="p-2 md:p-4 space-y-4 md:space-y-6">
@@ -479,7 +500,7 @@ function Dashboard() {
                 {filterMode === 'month' ? 'วันที่เปิดขาย' : 'เดือนที่เปิดขาย'}
               </div>
               <div className="text-lg sm:text-xl font-bold text-warning">
-                {filterMode === 'month' 
+                {filterMode === 'month'
                   ? `${dailyData.filter(day => day.total > 0).length} วัน`
                   : `${monthlyData.filter(month => month.total > 0).length} เดือน`
                 }
@@ -639,7 +660,7 @@ function Dashboard() {
               <span className="text-sm font-medium text-base-content/70">⚡ สถิติรายเดือน</span>
             </div>
 
-            {/* สรุปสถิติด่วน - เพิ่มข้อมูลใหม่ */}
+            {/* สรุปสถิติด่วน */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
               <div className="bg-gradient-to-r from-success/10 to-success/5 border border-success/20 rounded-lg p-3 text-center">
                 <div className="text-success font-bold text-lg">
@@ -707,7 +728,7 @@ function Dashboard() {
                 <div className="text-xs text-purple-600/70">🛵 ยอดขายเฉลี่ยต่อออเดอร์ เดลิเวอรี่</div>
               </div>
 
-              
+
 
               {/* เพิ่ม Cost Categories ถ้ามี */}
               {costBreakdown.totalOwner > 0 && (
@@ -741,7 +762,7 @@ function Dashboard() {
               formatNumber={formatNumber}
             />
 
-            {/* ✅ เพิ่ม Peak Hours Analysis Component */}
+            {/* ✅ Peak Hours Analysis สำหรับโหมดรายเดือน */}
             <div className="mt-6">
               <PeakHoursAnalysis
                 filterMode={filterMode}
@@ -749,6 +770,7 @@ function Dashboard() {
                 selectedYear={selectedYear}
                 months={months}
                 dailyData={dailyData}
+                monthlyData={monthlyData}
                 dineInSalesData={dineInSalesData}
                 deliverySalesData={deliverySalesData}
                 formatNumber={formatNumber}
@@ -835,6 +857,33 @@ function Dashboard() {
                 <div className="text-xs text-teal-600/70">🛵 ยอดขายเฉลี่ยต่อออเดอร์ เดลิเวอรี่</div>
               </div>
 
+
+              {/* ✅ จำนวนออเดอร์เฉลี่ยต่อเดือนหน้าร้าน */}
+              <div className="bg-gradient-to-r from-blue-100/80 to-blue-50 border border-blue-300 rounded-lg p-3 text-center">
+                <div className="text-blue-600 font-bold text-lg">
+                  {(() => {
+                    const monthsWithDineInData = monthlyData.filter(month => (month.avgDineInOrdersPerDay || 0) > 0);
+                    const totalAvgDineInOrders = monthsWithDineInData.reduce((sum, month) => sum + (month.avgDineInOrdersPerDay || 0), 0);
+                    const overallAvgDineInPerDay = monthsWithDineInData.length > 0 ? Math.round(totalAvgDineInOrders / monthsWithDineInData.length) : 0;
+                    return formatNumber(overallAvgDineInPerDay);
+                  })()}
+                </div>
+                <div className="text-xs text-blue-600/70">🏪 จำนวนออเดอร์เฉลี่ยต่อวันหน้าร้าน</div>
+              </div>
+
+              {/* ✅ จำนวนออเดอร์เฉลี่ยต่อเดือนเดลิเวอรี่ */}
+              <div className="bg-gradient-to-r from-teal-100/80 to-teal-50 border border-teal-300 rounded-lg p-3 text-center">
+                <div className="text-teal-600 font-bold text-lg">
+                  {(() => {
+                    const monthsWithDeliveryData = monthlyData.filter(month => (month.avgDeliveryOrdersPerDay || 0) > 0);
+                    const totalAvgDeliveryOrders = monthsWithDeliveryData.reduce((sum, month) => sum + (month.avgDeliveryOrdersPerDay || 0), 0);
+                    const overallAvgDeliveryPerDay = monthsWithDeliveryData.length > 0 ? Math.round(totalAvgDeliveryOrders / monthsWithDeliveryData.length) : 0;
+                    return formatNumber(overallAvgDeliveryPerDay);
+                  })()}
+                </div>
+                <div className="text-xs text-teal-600/70">🛵 จำนวนออเดอร์เฉลี่ยต่อวันเดลิเวอรี่</div>
+              </div>
+
               {/* ✅ เพิ่มจำนวนออเดอร์เฉลี่ยต่อเดือน */}
               <div className="bg-gradient-to-r from-indigo-100/80 to-indigo-50 border border-indigo-300 rounded-lg p-3 text-center">
                 <div className="text-indigo-600 font-bold text-lg">
@@ -848,271 +897,50 @@ function Dashboard() {
               </div>
 
               {/* เพิ่ม Cost Categories ถ้ามี */}
-              {costBreakdown.totalOwner > 0 && (
+              {/* {costBreakdown.totalOwner > 0 && (
                 <div className="bg-gradient-to-r from-orange-100/80 to-orange-50 border border-orange-300 rounded-lg p-3 text-center">
                   <div className="text-orange-600 font-bold text-lg">
                     {formatNumber(costBreakdown.totalOwner)}
                   </div>
                   <div className="text-xs text-orange-600/70">เงินเดือนทีมบริหารทั้งหมด</div>
                 </div>
-              )}
+              )} */}
 
-              {costBreakdown.totalUtility > 0 && (
+              {/* {costBreakdown.totalUtility > 0 && (
                 <div className="bg-gradient-to-r from-cyan-100/80 to-cyan-50 border border-cyan-300 rounded-lg p-3 text-center">
                   <div className="text-cyan-600 font-bold text-lg">
                     {formatNumber(costBreakdown.totalUtility)}
                   </div>
                   <div className="text-xs text-cyan-600/70">ต้นทุนค่าน้ำค่าไฟทั้งหมด</div>
                 </div>
-              )}
+              )} */}
             </div>
 
             {/* Top 5 Selling Items ของปี - แยก Tab */}
-            {(() => {
-              // รวบรวม TopItems จากทุกเดือนในปี (Dine-in)
-              const yearlyTopItems = dineInSalesData
-                .filter(item => {
-                  const date = new Date(item.saleDate);
-                  return date.getFullYear() === selectedYear;
-                })
-                .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
-                .reduce((acc, item) => {
-                  const key = item.menuName || item.MenuName;
-                  if (!acc[key]) {
-                    acc[key] = {
-                      menuName: key,
-                      quantitySold: 0,
-                      totalSales: 0
-                    };
-                  }
-                  acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
-                  acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
-                  return acc;
-                }, {});
+            <TopSalesItems
+              filterMode={filterMode}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              months={months}
+              dailyData={yearlyDailyData} // ✅ ใช้ข้อมูลรายวันของทั้งปี
+              dineInSalesData={dineInSalesData}
+              deliverySalesData={deliverySalesData}
+              formatNumber={formatNumber}
+            />
 
-              // รวบรวม TopItems จาก Delivery
-              const yearlyDeliveryTopItems = deliverySalesData
-                .filter(item => {
-                  const date = new Date(item.saleDate);
-                  return date.getFullYear() === selectedYear;
-                })
-                .flatMap(item => item.topSellingItems || item.TopSellingItems || [])
-                .reduce((acc, item) => {
-                  const key = item.menuName || item.MenuName;
-                  if (!acc[key]) {
-                    acc[key] = {
-                      menuName: key,
-                      quantitySold: 0,
-                      totalSales: 0
-                    };
-                  }
-                  acc[key].quantitySold += (item.quantitySold || item.QuantitySold || 0);
-                  acc[key].totalSales += (item.totalSales || item.TotalSales || 0);
-                  return acc;
-                }, {});
-
-              const sortedDineInItems = Object.values(yearlyTopItems)
-                .sort((a, b) => b.quantitySold - a.quantitySold)
-                .slice(0, 5);
-
-              const sortedDeliveryItems = Object.values(yearlyDeliveryTopItems)
-                .sort((a, b) => b.quantitySold - a.quantitySold)
-                .slice(0, 5);
-
-              return (sortedDineInItems.length > 0 || sortedDeliveryItems.length > 0) ? (
-                <div className="collapse bg-base-100 border border-primary/20 rounded-lg">
-                  <input type="checkbox" />
-                  <div className="collapse-title font-semibold min-h-0 p-0">
-                    <div className="flex justify-between items-center p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-primary text-xl">🏆</span>
-                        <span className="text-lg font-bold text-primary">
-                          รายการขายดี Top 5 <br /> ปี {selectedYear}
-                        </span>
-                      </div>
-                      <div className="text-xs text-primary/70 bg-primary/10 px-2 py-1 rounded-full">
-                        คลิกเพื่อดูรายละเอียด
-                      </div>
-                    </div>
-                  </div>
-                  <div className="collapse-content px-4 pb-4">
-                    <div className="pt-0">
-                      <div className="tabs tabs-lifted">
-                        {/* Tab หน้าร้าน */}
-                        {sortedDineInItems.length > 0 && (
-                          <>
-                            <input type="radio" name="yearly_top5_tabs" className="tab" aria-label="🏪 หน้าร้าน" defaultChecked />
-                            <div className="tab-content bg-base-100 border-base-300 p-6">
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <span className="text-info text-lg">🏪</span>
-                                  <span className="font-bold text-info">รายการขายดี Top 5 หน้าร้าน</span>
-                                  <div className="badge badge-info badge-sm">
-                                    {sortedDineInItems.length} รายการ
-                                  </div>
-                                </div>
-
-                                {/* Grid สำหรับ Desktop */}
-                                <div className="hidden md:grid grid-cols-1 gap-3">
-                                  {sortedDineInItems.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-4 shadow-sm border border-info/10">
-                                      <div className="flex items-center gap-3">
-                                        <span className={`badge badge-lg font-bold text-white ${
-                                          index === 0 ? 'bg-yellow-500' :
-                                          index === 1 ? 'bg-gray-400' :
-                                          index === 2 ? 'bg-orange-600' :
-                                          'bg-gray-500'
-                                        }`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="font-medium text-base">
-                                          {item.menuName}
-                                        </span>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="font-bold text-info text-lg">
-                                          {item.quantitySold} ออเดอร์
-                                        </div>
-                                        <div className="text-sm text-base-content/60">
-                                          {formatNumber(item.totalSales)} บาท
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                {/* List สำหรับ Mobile */}
-                                <div className="md:hidden space-y-2">
-                                  {sortedDineInItems.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-info/5 rounded-lg p-3 border border-info/10">
-                                      <div className="flex items-center gap-2">
-                                        <span className={`badge badge-sm font-bold text-white ${
-                                          index === 0 ? 'bg-yellow-500' :
-                                          index === 1 ? 'bg-gray-400' :
-                                          index === 2 ? 'bg-orange-600' :
-                                          'bg-gray-500'
-                                        }`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="text-sm font-medium truncate max-w-[120px]">
-                                          {item.menuName}
-                                        </span>
-                                      </div>
-                                      <div className="flex flex-col items-end">
-                                        <span className="text-sm font-bold text-info">
-                                          {item.quantitySold} ออเดอร์
-                                        </span>
-                                        <span className="text-xs text-base-content/60">
-                                          {formatNumber(item.totalSales)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        )}
-
-                        {/* Tab Delivery */}
-                        {sortedDeliveryItems.length > 0 && (
-                          <>
-                            <input type="radio" name="yearly_top5_tabs" className="tab" aria-label="🛵 เดลิเวอรี่" />
-                            <div className="tab-content bg-base-100 border-base-300 p-6">
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <span className="text-accent text-lg">🛵</span>
-                                  <span className="font-bold text-accent">รายการขายดี Top 5 เดลิเวอรี่</span>
-                                  <div className="badge badge-accent badge-sm">
-                                    {sortedDeliveryItems.length} รายการ
-                                  </div>
-                                </div>
-
-                                {/* Grid สำหรับ Desktop */}
-                                <div className="hidden md:grid grid-cols-1 gap-3">
-                                  {sortedDeliveryItems.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-4 shadow-sm border border-accent/10">
-                                      <div className="flex items-center gap-3">
-                                        <span className={`badge badge-lg font-bold text-white ${
-                                          index === 0 ? 'bg-yellow-500' :
-                                          index === 1 ? 'bg-gray-400' :
-                                          index === 2 ? 'bg-orange-600' :
-                                          'bg-gray-500'
-                                        }`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="font-medium text-base">
-                                          {item.menuName}
-                                        </span>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="font-bold text-accent text-lg">
-                                          {item.quantitySold} ออเดอร์
-                                        </div>
-                                        <div className="text-sm text-base-content/60">
-                                          {formatNumber(item.totalSales)} บาท
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                {/* List สำหรับ Mobile */}
-                                <div className="md:hidden space-y-2">
-                                  {sortedDeliveryItems.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-accent/5 rounded-lg p-3 border border-accent/10">
-                                      <div className="flex items-center gap-2">
-                                        <span className={`badge badge-sm font-bold text-white ${
-                                          index === 0 ? 'bg-yellow-500' :
-                                          index === 1 ? 'bg-gray-400' :
-                                          index === 2 ? 'bg-orange-600' :
-                                          'bg-gray-500'
-                                        }`}>
-                                          #{index + 1}
-                                        </span>
-                                        <span className="text-sm font-medium truncate max-w-[120px]">
-                                          {item.menuName}
-                                        </span>
-                                      </div>
-                                      <div className="flex flex-col items-end">
-                                        <span className="text-sm font-bold text-accent">
-                                          {item.quantitySold} ออเดอร์
-                                        </span>
-                                        <span className="text-xs text-base-content/60">
-                                          {formatNumber(item.totalSales)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        )}
-
-                        {/* แสดง Message ถ้าไม่มีข้อมูล */}
-                        {sortedDineInItems.length === 0 && sortedDeliveryItems.length === 0 && (
-                          <div className="text-center py-8">
-                            <div className="text-4xl mb-2">📊</div>
-                            <div className="text-base-content/60">ไม่มีข้อมูลรายการขายดี</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-base-100 rounded-xl shadow p-6 text-center">
-                  <div className="text-4xl mb-2">📊</div>
-                  <div className="text-lg font-semibold text-base-content/70 mb-2">
-                    ไม่มีข้อมูลรายการขายดี
-                  </div>
-                  <div className="text-base-content/60">
-                    ในปี {selectedYear}
-                  </div>
-                </div>
-              );
-            })()}
+            <div className="mt-6">
+              <PeakHoursAnalysis
+                filterMode={filterMode}
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                months={months}
+                dailyData={dailyData}
+                monthlyData={monthlyData}
+                dineInSalesData={dineInSalesData}
+                deliverySalesData={deliverySalesData}
+                formatNumber={formatNumber}
+              />
+            </div>
           </>
         )}
       </div>
@@ -1163,6 +991,7 @@ function Dashboard() {
           formatNumber={formatNumber}
           costData={costData}
           costTotal={totals.costTotal}
+          dailyData={yearlyDailyData} // ✅ เพิ่ม dailyData
         />
       )}
 

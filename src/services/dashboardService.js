@@ -186,6 +186,27 @@ export const generateMonthlyData = (dineInData, deliveryData, costData, year, mo
     const deliveryAvgPerOrder = deliveryOrders > 0 ? deliveryAmount / deliveryOrders : 0;
     const totalAvgPerOrder = totalOrders > 0 ? (dineInAmount + deliveryAmount) / totalOrders : 0;
 
+    // ✅ คำนวณจำนวนวันที่มีออเดอร์ในเดือนนี้
+    const dineInDaysCount = monthDineInData.filter(item => (item.orders || 0) > 0).length;
+    const deliveryDaysCount = monthDeliveryData.filter(item => (item.orders || 0) > 0).length;
+    
+    // ✅ เพิ่มค่าเฉลี่ยออเดอร์ต่อวัน
+    const avgDineInOrdersPerDay = dineInDaysCount > 0 ? dineInOrders / dineInDaysCount : 0;
+    const avgDeliveryOrdersPerDay = deliveryDaysCount > 0 ? deliveryOrders / deliveryDaysCount : 0;
+
+    // รวบรวม Peak Hours จากข้อมูลทั้งหน้าร้านและเดลิเวอรี่
+    const dineInPeakHours = monthDineInData
+      .flatMap(item => item.peakHours || item.PeakHours || []);
+    
+    const deliveryPeakHours = monthDeliveryData
+      .flatMap(item => item.peakHours || item.PeakHours || []);
+    
+    const combinedPeakHours = [...dineInPeakHours, ...deliveryPeakHours];
+    
+    const peakHours = processPeakHours(combinedPeakHours);
+    const processedDineInPeakHours = processPeakHours(dineInPeakHours);
+    const processedDeliveryPeakHours = processPeakHours(deliveryPeakHours);
+
     // แยก Top Items ของ Dine-in และ Delivery
     const topDineInItems = processTopSellingItems(monthDineInData, 5);
     const topDeliveryItems = processTopSellingItems(monthDeliveryData, 5);
@@ -202,14 +223,23 @@ export const generateMonthlyData = (dineInData, deliveryData, costData, year, mo
         total: totalAmount,
         cost: costAmount,
         profit: profit,
-        dineInOrders,           // ✅ เพิ่มใหม่
-        deliveryOrders,         // ✅ เพิ่มใหม่
-        totalOrders,            // ✅ เพิ่มใหม่
-        dineInAvgPerOrder,      // ✅ เพิ่มใหม่
-        deliveryAvgPerOrder,    // ✅ เพิ่มใหม่
-        totalAvgPerOrder,       // ✅ เพิ่มใหม่
+        dineInOrders,           
+        deliveryOrders,         
+        totalOrders,            
+        dineInAvgPerOrder,      
+        deliveryAvgPerOrder,    
+        totalAvgPerOrder,       
+        // ✅ เพิ่มค่าเฉลี่ยออเดอร์ต่อวัน
+        avgDineInOrdersPerDay: Math.round(avgDineInOrdersPerDay),
+        avgDeliveryOrdersPerDay: Math.round(avgDeliveryOrdersPerDay),
+        // ✅ เพิ่มจำนวนวันที่มีการขาย
+        dineInDaysCount,
+        deliveryDaysCount,
         topItems: topDineInItems,
-        topDeliveryItems: topDeliveryItems
+        topDeliveryItems: topDeliveryItems,
+        peakHours: peakHours,
+        dineInPeakHours: processedDineInPeakHours,
+        deliveryPeakHours: processedDeliveryPeakHours
       });
     }
   }
