@@ -6,8 +6,7 @@ const PeakHoursAnalysis = ({
     selectedYear,
     months,
     dailyData,
-    dineInSalesData,
-    deliverySalesData,
+    monthlyData,
     formatNumber
 }) => {
 
@@ -57,14 +56,14 @@ const PeakHoursAnalysis = ({
                     processedHours.reduce((max, hour) => hour.orderCount > max.orderCount ? hour : max) : null
             };
         } else {
-            // รวบรวม peakHours จากทุกเดือนในปี
-            const yearlyHours = dineInSalesData
-                .concat(deliverySalesData)
-                .filter(item => {
-                    const date = new Date(item.saleDate);
-                    return date.getFullYear() === selectedYear;
-                })
-                .flatMap(item => item.peakHours || item.PeakHours || [])
+            // ✅ ใช้ monthlyData สำหรับโหมดรายปี
+            const yearlyHours = monthlyData
+                .filter(month => month.total > 0) // กรองเฉพาะเดือนที่มีข้อมูล
+                .flatMap(month => [
+                    ...(month.peakHours || []),
+                    ...(month.dineInPeakHours || []),
+                    ...(month.deliveryPeakHours || [])
+                ])
                 .reduce((acc, hour) => {
                     const key = hour.hourRange || hour.HourRange;
                     if (!key) return acc;
