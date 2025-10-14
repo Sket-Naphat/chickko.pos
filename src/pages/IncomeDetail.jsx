@@ -76,7 +76,10 @@ export default function IncomeDetail() {
                         orderTime: order.orderTime,
                         customerName: order.customerName,
                         totalPrice: order.totalPrice, // ✅ ใช้ totalPrice จาก API
-                        orderTypeId : order.orderTypeId,
+                        orderDiscount: order.discountPrice || 0,
+                        orderTypeId: order.orderTypeId,
+                        orderRemark: order.orderRemark || '',
+                        discountName: order.discountName || '',
                         items: order.orderDetails?.map(detail => ({
                             name: detail.menuName,
                             qty: detail.quantity,
@@ -168,7 +171,7 @@ export default function IncomeDetail() {
                     <div>
                         <h1 className="text-2xl font-bold text-primary">🏪 รายละเอียดยอดขายหน้าร้าน</h1>
                         <p className="text-base-content/70">
-                             {formatDate(incomeData.saleDate)}
+                            {formatDate(incomeData.saleDate)}
                         </p>
                     </div>
                 </div>
@@ -199,11 +202,11 @@ export default function IncomeDetail() {
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="space-y-4">                                        
+                                    <div className="space-y-4">
                                         <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
                                             <span className="font-semibold">ยอดเฉลี่ยต่อบิล</span>
                                             <span className="text-error font-bold text-xl">
-                                                ฿{detailData?.avgPerOrder ?.toLocaleString() || 0}
+                                                ฿{detailData?.avgPerOrder?.toLocaleString() || 0}
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
@@ -214,7 +217,7 @@ export default function IncomeDetail() {
                                         </div>
 
                                     </div>
-                                    
+
                                 </div>
                             </div>
                         </div>
@@ -275,7 +278,7 @@ export default function IncomeDetail() {
                                                                 <div className="badge badge-primary badge-sm">#{arr.length - index}</div>
                                                                 <div>
                                                                     <div className="font-semibold text-base">
-                                                                        {order.customerName || `ออเดอร์ ${order.orderId}`}  {order.orderTypeId === 1 ?  <span className="badge badge-info badge-xs">🏪 หน้าร้าน</span> : order.orderTypeId === 2 ? <span className="badge badge-accent badge-xs">🛵 กลับบ้าน</span> : ''}
+                                                                        {order.customerName || `ออเดอร์ ${order.orderId}`}  {order.orderTypeId === 1 ? <span className="badge badge-info badge-xs">🏪 หน้าร้าน</span> : order.orderTypeId === 2 ? <span className="badge badge-accent badge-xs">🛵 กลับบ้าน</span> : ''}
                                                                     </div>
                                                                     <div className="text-sm text-base-content/70">
                                                                         🕐 {formatTime(order.orderTime)}
@@ -343,6 +346,28 @@ export default function IncomeDetail() {
                                                             <div className="mt-4 pt-3 border-t border-base-300/50">
                                                                 <div className="grid grid-cols-2 gap-4 text-xs">
                                                                     <div>
+                                                                        <span className="text-base-content/70">หมายเหตุ:</span>
+                                                                        <span className="ml-2 font-semibold">{order.orderRemark}</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="text-base-content/70">ราคารวม:</span>
+                                                                        <span className="ml-2 font-semibold text-success">฿ {order.totalPrice + order.orderDiscount}</span>
+                                                                    </div>
+
+                                                                    {order.orderDiscount > 0 && (
+                                                                        <>
+                                                                            <div>
+                                                                                <span className="text-base-content/70">ชื่อส่วนลด:</span>
+                                                                                <span className="ml-2 font-semibold text-error">{order.discountName}</span>
+                                                                            </div>
+
+                                                                            <div>
+                                                                                <span className="text-base-content/70">ส่วนลด:</span>
+                                                                                <span className="ml-2 font-semibold text-error">฿ {order.orderDiscount}</span>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                    <div>
                                                                         <span className="text-base-content/70">รหัสออเดอร์:</span>
                                                                         <span className="ml-2 font-semibold">{order.orderId}</span>
                                                                     </div>
@@ -350,18 +375,11 @@ export default function IncomeDetail() {
                                                                         <span className="text-base-content/70">เวลาสั่ง:</span>
                                                                         <span className="ml-2 font-semibold">{formatTime(order.orderTime)}</span>
                                                                     </div>
-                                                                    <div>
-                                                                        <span className="text-base-content/70">สถานะ:</span>
-                                                                        <span className="ml-2">
-                                                                            <span className="badge badge-success badge-xs">
-                                                                                เสร็จสิ้น
-                                                                            </span>
-                                                                        </span>
-                                                                    </div>
+
                                                                     <div>
                                                                         <span className="text-base-content/70">แพลตฟอร์ม:</span>
                                                                         <span className="ml-2">
-                                                                            {order.orderTypeId === 1 ?  <span className="badge badge-info badge-xs">🏪 หน้าร้าน</span> : order.orderTypeId === 2 ? <span className="badge badge-accent badge-xs">🛵 กลับบ้าน</span> : ''}
+                                                                            {order.orderTypeId === 1 ? <span className="badge badge-info badge-xs">🏪 หน้าร้าน</span> : order.orderTypeId === 2 ? <span className="badge badge-accent badge-xs">🛵 กลับบ้าน</span> : ''}
                                                                         </span>
                                                                     </div>
                                                                 </div>
