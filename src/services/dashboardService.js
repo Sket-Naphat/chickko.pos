@@ -106,12 +106,13 @@ export const generateDailyData = (dineInData, deliveryData, costData, selectedMo
     const dineInAmount = calculateTotals(dayDineInData);
     const deliveryAmount = calculateTotals(dayDeliveryData);
     const costAmount = calculateTotals(dayCost);
+    const dineInDiscount = calculateTotals(dayDineInData, 'totalDiscount');
 
     // คำนวณ avgPerOrder
     const dineInOrders = dayDineInData.reduce((sum, item) => sum + (item.orders || 0), 0);
     const deliveryOrders = dayDeliveryData.reduce((sum, item) => sum + (item.orders || 0), 0);
     const totalOrders = dineInOrders + deliveryOrders;
-
+    
     const dineInAvgPerOrder = dineInOrders > 0 ? dineInAmount / dineInOrders : 0;
     const deliveryAvgPerOrder = deliveryOrders > 0 ? deliveryAmount / deliveryOrders : 0;
     const totalAvgPerOrder = totalOrders > 0 ? (dineInAmount + deliveryAmount) / totalOrders : 0;
@@ -150,7 +151,8 @@ export const generateDailyData = (dineInData, deliveryData, costData, selectedMo
         topDeliveryItems,
         peakHours: peakHours,           // ✅ ใช้ข้อมูลที่รวมแล้ว
         dineInPeakHours: dineInPeakHours,  // ✅ ข้อมูลหน้าร้านโดยตรง
-        deliveryPeakHours: deliveryPeakHours // ✅ ข้อมูลเดลิเวอรี่โดยตรง
+        deliveryPeakHours: deliveryPeakHours, // ✅ ข้อมูลเดลิเวอรี่โดยตรง
+        dineInDiscount: dineInDiscount
       });
     }
   }
@@ -176,6 +178,7 @@ export const generateMonthlyData = (dineInData, deliveryData, costData, year, mo
     const dineInAmount = calculateTotals(monthDineInData);
     const deliveryAmount = calculateTotals(monthDeliveryData);
     const costAmount = calculateTotals(monthCostData);
+    const dineInDiscount = calculateTotals(monthDineInData, 'TotalDiscount');
 
     // ✅ คำนวณ avgPerOrder รายเดือน
     const dineInOrders = monthDineInData.reduce((sum, item) => sum + (item.orders || 0), 0);
@@ -239,7 +242,8 @@ export const generateMonthlyData = (dineInData, deliveryData, costData, year, mo
         topDeliveryItems: topDeliveryItems,
         peakHours: peakHours,
         dineInPeakHours: processedDineInPeakHours,
-        deliveryPeakHours: processedDeliveryPeakHours
+        deliveryPeakHours: processedDeliveryPeakHours,
+        dineInDiscount: dineInDiscount
       });
     }
   }
@@ -247,36 +251,7 @@ export const generateMonthlyData = (dineInData, deliveryData, costData, year, mo
   return data.sort((a, b) => b.month - a.month);
 };
 
-// ✅ ลบ processPeakHours แรกออก และเก็บเฉพาะตัวที่สมบูรณ์
-// export const processPeakHours = (salesData) => {
-//   const allPeakHours = salesData
-//     .flatMap(item => item.peakHours || item.PeakHours || [])
-//     .reduce((acc, hour) => {
-//       const key = hour.hourRange || hour.HourRange;
-//       if (!acc[key]) {
-//         acc[key] = {
-//           hourRange: key,
-//           orderCount: 0,
-//           totalSales: 0,
-//           avgPerOrder: 0
-//         };
-//       }
-//       acc[key].orderCount += (hour.orderCount || hour.OrderCount || 0);
-//       acc[key].totalSales += (hour.totalSales || hour.TotalSales || 0);
-//       return acc;
-//     }, {});
 
-//   // คำนวณค่าเฉลี่ยต่อออเดอร์และเรียงลำดับ
-//   return Object.values(allPeakHours)
-//     .map(hour => ({
-//       ...hour,
-//       avgPerOrder: hour.orderCount > 0 ? hour.totalSales / hour.orderCount : 0
-//     }))
-//     .sort((a, b) => b.orderCount - a.orderCount) // เรียงตามจำนวนออเดอร์มากสุดก่อน
-//     .slice(0, 5); // เอาแค่ Top 5
-// };
-
-// ✅ เก็บเฉพาะ processPeakHours ที่รับ peakHoursArray
 export const processPeakHours = (peakHoursArray) => {
   if (!peakHoursArray || peakHoursArray.length === 0) return [];
 

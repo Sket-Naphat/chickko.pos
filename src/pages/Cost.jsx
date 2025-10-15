@@ -5,6 +5,8 @@ import { api } from "../lib/api";
 import ModalConfirmPayment from "../components/cost/ModalConfirmPayment";
 import Toast from "../components/ui/Toast";
 import { useNavigate } from "react-router-dom";
+import { formatDisplayDate } from "../services/costService";
+
 /**
  * ฟังก์ชัน React Component สำหรับดึงและแสดงรายการค่าใช้จ่ายคงค้างจาก API เส้นทาง /api/GetCostList
  * - หากกำลังโหลดข้อมูลจะแสดงข้อความ "กำลังโหลดข้อมูล..."
@@ -15,18 +17,18 @@ import { useNavigate } from "react-router-dom";
  */
 
 // ฟังก์ชัน Component สำหรับแสดงรายการค่าใช้จ่ายคงค้าง
-
 function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
   // สร้าง state สำหรับข้อมูลและสถานะการโหลด
-
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteModal, setDeleteModal] = useState({ show: false, item: null });
   const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
+
   const openStockIn = (orderId) => {
     navigate(`/stockin/${orderId}`, { state: { from: '/cost' } });
   };
+
   const handleConfirm = () => {
     onConfirm?.();
   };
@@ -57,6 +59,7 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
   const handleDeleteCancel = () => {
     setDeleteModal({ show: false, item: null });
   };
+
   // ดึงข้อมูลจาก API เมื่อ component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -90,7 +93,6 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
     return (
       <div className="text-center py-1 bg-gradient-to-br from-base-100 to-base-200 rounded-xl border border-base-300">
         <div className="flex flex-col items-center gap-3">
-
           <div>
             <div className="text-base font-semibold text-base-content">ไม่มีค่าใช้จ่ายคงค้าง</div>
             <div className="text-sm text-base-content/60">ขณะนี้ไม่มีรายการที่รอชำระเงิน</div>
@@ -128,18 +130,17 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
                   </td>
                   <td className="text-sm lg:text-base">{item.costDate}</td>
                   <td className="text-sm lg:text-base">
-                  <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
-                    item.costCategoryID === 1 ? 'badge-primary' :      // ค่าวัตถุดิบรายวัน
-                    item.costCategoryID === 2 ? 'badge-secondary' :    // ค่าน้ำค่าไฟ
-                    item.costCategoryID === 3 ? 'badge-accent' :       // ค่าน้ำค่าไฟ
-                    item.costCategoryID === 4 ? 'badge-warning' :         // ค่าวัตถุดิบเก็บตุน
-                    item.costCategoryID === 5 ? 'badge-info' :      // ค่าแรงทีมบริหาร
-                    item.costCategoryID === 6 ? 'badge-error' :        // แกรปหักเพิ่มเติม
-                    'badge-neutral'                                     // default
-                  }`}>
-                    {item.costCategory.description}
-                  </span>
-                </td>
+                    <span className={`badge badge-sm shadow-sm whitespace-nowrap ${item.costCategoryID === 1 ? 'badge-primary' :      // ค่าวัตถุดิบรายวัน
+                      item.costCategoryID === 2 ? 'badge-secondary' :    // ค่าน้ำค่าไฟ
+                        item.costCategoryID === 3 ? 'badge-accent' :       // ค่าน้ำค่าไฟ
+                          item.costCategoryID === 4 ? 'badge-warning' :         // ค่าวัตถุดิบเก็บตุน
+                            item.costCategoryID === 5 ? 'badge-info' :      // ค่าแรงทีมบริหาร
+                              item.costCategoryID === 6 ? 'badge-error' :        // แกรปหักเพิ่มเติม
+                                'badge-neutral'                                     // default
+                      }`}>
+                      {item.costCategory.description}
+                    </span>
+                  </td>
                   <td className="text-right font-medium text-sm lg:text-base">{item.costPrice.toLocaleString()} บาท</td>
                   <td className="text-sm lg:text-base max-w-xs truncate" title={item.costDescription}>{item.costDescription}</td>
                   <td>
@@ -161,7 +162,6 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
       {/* Mobile Card View (<768px) */}
       <div className="md:hidden space-y-2">
         {data.map((item, idx) => {
-
           return (
             <div key={item.id || idx} className="bg-gradient-to-r from-base-100 to-base-50 border-2 border-base-300 hover:border-primary/30 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300">
               {/* Compact Header Row */}
@@ -171,15 +171,14 @@ function GetCostNoPurchase({ refreshKey, onConfirm, showToast }) {
                     <span className="text-xs text-base-content/60">📅</span>
                     <span className="text-sm font-medium">{item.costDate}</span>
                   </div>
-                  <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
-                    item.costCategoryID === 1 ? 'badge-primary' :      // วัตถุดิบ - สีน้ำเงิน
+                  <span className={`badge badge-sm shadow-sm whitespace-nowrap ${item.costCategoryID === 1 ? 'badge-primary' :      // วัตถุดิบ - สีน้ำเงิน
                     item.costCategoryID === 2 ? 'badge-secondary' :    // ค่าแรงงาน - สีเทา
-                    item.costCategoryID === 3 ? 'badge-accent' :       // ค่าสาธารณูปโภค - สีม่วง
-                    item.costCategoryID === 4 ? 'badge-info' :         // วัสดุสิ้นเปลือง - สีฟ้า
-                    item.costCategoryID === 5 ? 'badge-warning' :      // ค่าเช่าร้าน - สีเหลือง
-                    item.costCategoryID === 6 ? 'badge-error' :        // อื่นๆ (grab) - สีแดง
-                    'badge-neutral'                                     // default
-                  }`}>
+                      item.costCategoryID === 3 ? 'badge-accent' :       // ค่าสาธารณูปโภค - สีม่วง
+                        item.costCategoryID === 4 ? 'badge-info' :         // วัสดุสิ้นเปลือง - สีฟ้า
+                          item.costCategoryID === 5 ? 'badge-warning' :      // ค่าเช่าร้าน - สีเหลือง
+                            item.costCategoryID === 6 ? 'badge-error' :        // อื่นๆ (grab) - สีแดง
+                              'badge-neutral'                                     // default
+                    }`}>
                     {item.costCategory.description}
                   </span>
                 </div>
@@ -298,6 +297,9 @@ function GetCostIsPurchaseList({ refreshKey }) {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
   const [filterMode, setFilterMode] = useState('month'); // 'month' หรือ 'year'
+  // ✅ เพิ่ม state สำหรับ sorting
+  const [sortBy, setSortBy] = useState('costDate'); // 'costDate' หรือ 'lastModified'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' หรือ 'desc'
 
   // Handler functions
   const handleMonthChange = (e) => {
@@ -308,22 +310,74 @@ function GetCostIsPurchaseList({ refreshKey }) {
     setSelectedYear(Number(e.target.value));
   };
 
-  // ดึงข้อมูลจาก API เมื่อ component mount หรือเมื่อ filter เปลี่ยน
-  useEffect(() => {
+  // ✅ เพิ่มฟังก์ชัน toggle sort
+  const toggleSort = (newSortBy) => {
+    if (sortBy === newSortBy) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(newSortBy);
+      setSortOrder('desc');
+    }
+  };
+
+  // ✅ ฟังก์ชันสำหรับ sort ข้อมูล
+  const getSortedData = (data) => {
+    return [...data].sort((a, b) => {
+      let aValue, bValue;
+
+      if (sortBy === 'costDate') {
+        aValue = new Date(a.costDate);
+        bValue = new Date(b.costDate);
+      } else { // lastModified
+        const aUpdateDate = a.updateDate || a.createDate;
+        const bUpdateDate = b.updateDate || b.createDate;
+        aValue = aUpdateDate ? new Date(aUpdateDate) : new Date(0);
+        bValue = bUpdateDate ? new Date(bUpdateDate) : new Date(0);
+      }
+
+      if (sortOrder === 'desc') {
+        return bValue - aValue;
+      } else {
+        return aValue - bValue;
+      }
+    });
+  };
+
+  // ✅ ฟังก์ชันแก้ไข - ใช้ formatDisplayDate แทน formatDateTime
+  const getFormattedUpdateInfo = (item) => {
+    const updateDate = item.updateDate || item.createDate;
+    const updateTime = item.updateTime || item.createTime;
+
+    if (!updateDate) return { date: '-', time: '', isUpdated: false };
+
+    // ✅ ใช้ formatDisplayDate จาก service
+    const formattedDate = formatDisplayDate(updateDate);
+
+    const formattedTime = updateTime ?
+      new Date(`1970-01-01T${updateTime}`).toLocaleTimeString('th-TH', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '';
+
+    const isUpdated = item.updateDate && item.updateDate !== item.createDate;
+
+    return { date: formattedDate, time: formattedTime, isUpdated };
+  };
+
+  // ✅ เพิ่มฟังก์ชัน handleConfirm สำหรับ refresh ข้อมูล
+  const handleConfirm = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
         let res;
 
         if (filterMode === 'month') {
-          // ✅ เรียก API GetCostListByMonth สำหรับรายเดือน
           res = await api.post("/cost/GetAllCostList", {
             IsPurchase: true,
-            Month: selectedMonth + 1, // API ใช้ 1-12, JavaScript ใช้ 0-11
+            Month: selectedMonth + 1,
             Year: selectedYear
           });
         } else {
-          // ✅ เรียก API GetAllCostList สำหรับรายปี
           res = await api.post("/cost/GetAllCostList", {
             IsPurchase: true,
             Year: selectedYear
@@ -340,10 +394,47 @@ function GetCostIsPurchaseList({ refreshKey }) {
       }
     };
     fetchData();
-  }, [refreshKey, selectedMonth, selectedYear, filterMode]); // ✅ เพิ่ม dependencies
+  };
 
-  // ✅ ใช้ data โดยตรงแทนการกรอง เพราะ API ได้กรองให้แล้ว
-  const filteredData = data;
+  // ✅ เพิ่มฟังก์ชัน showToast
+  const showToast = (message, type = "success") => {
+    console.log(`${type.toUpperCase()}: ${message}`);
+  };
+
+  // ดึงข้อมูลจาก API เมื่อ component mount หรือเมื่อ filter เปลี่ยน
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        let res;
+
+        if (filterMode === 'month') {
+          res = await api.post("/cost/GetAllCostList", {
+            IsPurchase: true,
+            Month: selectedMonth + 1,
+            Year: selectedYear
+          });
+        } else {
+          res = await api.post("/cost/GetAllCostList", {
+            IsPurchase: true,
+            Year: selectedYear
+          });
+        }
+
+        const items = res.data ?? [];
+        setData(items);
+      } catch (err) {
+        setData([]);
+        console.error("โหลดรายการค่าใช้จ่ายไม่สำเร็จ:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [refreshKey, selectedMonth, selectedYear, filterMode]);
+
+  // ✅ ใช้ getSortedData แทน data โดยตรง
+  const filteredData = getSortedData(data);
 
   // แสดงข้อความขณะกำลังโหลด
   if (loading) {
@@ -354,6 +445,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
       </div>
     );
   }
+
   // กรณีกรองแล้วไม่มีข้อมูล
   if (filteredData.length === 0) {
     return (
@@ -381,7 +473,6 @@ function GetCostIsPurchaseList({ refreshKey }) {
               value={selectedYear}
               onChange={handleYearChange}
             >
-              {/* ✅ แสดงปีย้อนหลัง 5 ปีและอนาคต 1 ปี */}
               {Array.from({ length: 7 }, (_, i) => getCurrentYear() - 5 + i)
                 .sort((a, b) => b - a)
                 .map((y) => (
@@ -450,7 +541,6 @@ function GetCostIsPurchaseList({ refreshKey }) {
             value={selectedYear}
             onChange={handleYearChange}
           >
-            {/* ✅ แสดงปีย้อนหลัง 5 ปีและอนาคต 1 ปี */}
             {Array.from({ length: 7 }, (_, i) => getCurrentYear() - 5 + i)
               .sort((a, b) => b - a)
               .map((y) => (
@@ -468,11 +558,8 @@ function GetCostIsPurchaseList({ refreshKey }) {
             />
             <span className="text-xs">{filterMode === 'year' ? 'รายปี' : 'รายเดือน'}</span>
           </label>
-
-
         </div>
       </div>
-
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -544,7 +631,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
         })()}
       </div>
 
-      {/* Detailed Category Breakdown */}
+      {/* สรุปตามหมวดหมู่ */}
       {filteredData.length > 0 && (
         <div className="bg-base-100 rounded-lg border border-base-300 p-3 mb-3">
           <div className="flex items-center justify-between mb-3">
@@ -613,6 +700,49 @@ function GetCostIsPurchaseList({ refreshKey }) {
         </div>
       )}
 
+      {/* ✅ Desktop Sort Controls */}
+      <div className="hidden md:flex items-center justify-between bg-base-200/50 rounded-lg p-3 border border-base-300 mb-3">
+        <div className="flex items-center gap-2 text-sm text-base-content/60">
+          <span className="badge badge-sm badge-outline">
+            {filteredData.length} รายการ
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-base-content/60 font-medium">เรียงตาม:</span>
+          <div className="join">
+            <button
+              className={`btn btn-sm join-item ${sortBy === 'costDate'
+                  ? 'btn-primary'
+                  : 'btn-outline btn-primary'
+                }`}
+              onClick={() => toggleSort('costDate')}
+            >
+              📅 วันที่ค่าใช้จ่าย
+              {sortBy === 'costDate' && (
+                <span className="ml-1">
+                  {sortOrder === 'desc' ? '↓' : '↑'}
+                </span>
+              )}
+            </button>
+            <button
+              className={`btn btn-sm join-item ${sortBy === 'lastModified'
+                  ? 'btn-secondary'
+                  : 'btn-outline btn-secondary'
+                }`}
+              onClick={() => toggleSort('lastModified')}
+            >
+              ✏️ วันเวลาแก้ไข
+              {sortBy === 'lastModified' && (
+                <span className="ml-1">
+                  {sortOrder === 'desc' ? '↓' : '↑'}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Desktop/Tablet Table View (≥768px) */}
       <div className="hidden md:block overflow-x-auto">
         <table className="table table-zebra">
@@ -622,68 +752,184 @@ function GetCostIsPurchaseList({ refreshKey }) {
               <th className="text-sm lg:text-base">🏷️ หมวดหมู่</th>
               <th className="text-right text-sm lg:text-base">💰 ราคา</th>
               <th className="text-sm lg:text-base">📝 รายละเอียดการซื้อ</th>
+              <th className="text-sm lg:text-base">⏰ วันเวลาแก้ไข</th>
+              <th className="text-sm lg:text-base">✏️ แก้ไข</th>
             </tr>
           </thead>
           <tbody>
-            {filteredData.map((item, idx) => (
-              <tr key={item.id || idx} className="hover:bg-base-200">
-                <td className="text-sm lg:text-base">{item.costDate}</td>
-                <td className="text-sm lg:text-base">
-                  <span className="badge badge-success text-xs lg:text-sm whitespace-nowrap">
-                    {item.costCategory.description}
-                  </span>
-                </td>
-                <td className="text-right font-medium text-sm lg:text-base">{item.costPrice.toLocaleString()} บาท</td>
-                <td className="text-sm lg:text-base max-w-xs truncate" title={item.costDescription}>{item.costDescription}</td>
-              </tr>
-            ))}
+            {filteredData.map((item, idx) => {
+              // ✅ แก้ไข - เปลี่ยนจาก formatDateTime เป็น getFormattedUpdateInfo
+              const { date: lastModifiedDate, time: lastModifiedTime, isUpdated } = getFormattedUpdateInfo(item);
+
+              return (
+                <tr key={item.id || idx} className="hover:bg-base-200">
+                  <td className="text-sm lg:text-base">{formatDisplayDate(item.costDate)}</td>
+                  <td className="text-sm lg:text-base">
+                    <span className={`badge badge-sm shadow-sm whitespace-nowrap ${item.costCategoryID === 1 ? 'badge-primary' :
+                        item.costCategoryID === 2 ? 'badge-secondary' :
+                          item.costCategoryID === 3 ? 'badge-accent' :
+                            item.costCategoryID === 4 ? 'badge-info' :
+                              item.costCategoryID === 5 ? 'badge-warning' :
+                                item.costCategoryID === 6 ? 'badge-error' :
+                                  'badge-neutral'
+                      }`}>
+                      {item.costCategory.description}
+                    </span>
+                  </td>
+                  <td className="text-right font-medium text-sm lg:text-base">{item.costPrice.toLocaleString()} บาท</td>
+                  <td className="text-sm lg:text-base max-w-xs truncate" title={item.costDescription}>{item.costDescription}</td>
+                  <td className="text-sm lg:text-base">
+                    {lastModifiedDate !== '-' ? (
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1">
+                          {isUpdated && <span className="text-xs text-warning">✏️</span>}
+                          <span className="text-xs font-medium">{lastModifiedDate}</span>
+                        </div>
+                        {lastModifiedTime && (
+                          <span className="text-xs text-base-content/60">{lastModifiedTime}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-base-content/40">-</span>
+                    )}
+                  </td>
+                  {/* ✅ แก้ไข - เปลี่ยน buttonText เป็น "แก้ไข" */}
+                  <td>
+                    <ModalConfirmPayment
+                      onConfirm={handleConfirm}
+                      item={item}
+                      showToast={showToast}
+                      buttonText="แก้ไข"
+                    />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
       {/* Mobile Card View (<768px) */}
       <div className="md:hidden space-y-2">
-        <div className="ml-auto flex items-center gap-2 text-xs text-base-success/60">
-          <span className="badge badge-xs badge-outline">
-            {filteredData.length} รายการ
-          </span>
-        </div>
-        {filteredData.map((item, idx) => (
-          <div key={item.id || idx} className="bg-gradient-to-r from-base-100 to-base-50 border-2 border-base-300 hover:border-success/30 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300">
-            {/* Compact Header Row */}
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-base-200/50 rounded-lg px-2 py-1">
-                  <span className="text-xs text-base-content/60">📅</span>
-                  <span className="text-sm font-medium">{item.costDate}</span>
-                </div>
-                <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
-                  item.costCategoryID === 1 ? 'badge-primary' :      // วัตถุดิบ - สีน้ำเงิน
-                  item.costCategoryID === 2 ? 'badge-secondary' :    // ค่าแรงงาน - สีเทา
-                  item.costCategoryID === 3 ? 'badge-accent' :       // ค่าสาธารณูปโภค - สีม่วง
-                  item.costCategoryID === 4 ? 'badge-info' :         // วัสดุสิ้นเปลือง - สีฟ้า
-                  item.costCategoryID === 5 ? 'badge-warning' :      // ค่าเช่าร้าน - สีเหลือง
-                  item.costCategoryID === 6 ? 'badge-error' :        // อื่นๆ (grab) - สีแดง
-                  'badge-neutral'                                     // default
-                }`}>
-                  {item.costCategory.description}
-                </span>
-              </div>
-              <div className="bg-success/10 rounded-lg px-2 py-1">
-                <span className="font-bold text-sm text-success">{item.costPrice.toLocaleString()} บาท</span>
-              </div>
-            </div>
+        {/* Mobile Header with Sort Controls */}
+        <div className="flex items-center justify-between bg-base-200/50 rounded-lg p-2 border border-base-300">
+          <div className="flex items-center gap-2 text-xs text-base-content/60">
+            <span className="badge badge-xs badge-outline">
+              {filteredData.length} รายการ
+            </span>
+          </div>
 
-            {/* Description Row */}
-            <div className="text-xs text-base-content/80 bg-base-200/30 rounded px-2 py-1 break-words" title={item.costDescription}>
-              💬 {item.costDescription}
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-base-content/60">เรียงตาม:</span>
+            <div className="join">
+              <button
+                className={`btn btn-xs join-item ${sortBy === 'costDate'
+                    ? 'btn-primary'
+                    : 'btn-outline btn-primary'
+                  }`}
+                onClick={() => toggleSort('costDate')}
+              >
+                📅 วันที่
+                {sortBy === 'costDate' && (
+                  <span className="ml-1">
+                    {sortOrder === 'desc' ? '↓' : '↑'}
+                  </span>
+                )}
+              </button>
+              <button
+                className={`btn btn-xs join-item ${sortBy === 'lastModified'
+                    ? 'btn-secondary'
+                    : 'btn-outline btn-secondary'
+                  }`}
+                onClick={() => toggleSort('lastModified')}
+              >
+                ✏️ แก้ไข
+                {sortBy === 'lastModified' && (
+                  <span className="ml-1">
+                    {sortOrder === 'desc' ? '↓' : '↑'}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
-        ))}
+        </div>
+
+        {filteredData.map((item, idx) => {
+          // ✅ แก้ไข - เปลี่ยนจาก formatDateTime เป็น getFormattedUpdateInfo
+          const { date: lastModifiedDate, time: lastModifiedTime, isUpdated } = getFormattedUpdateInfo(item);
+
+          return (
+            <div key={item.id || idx} className="bg-gradient-to-r from-base-100 to-base-50 border-2 border-base-300 hover:border-success/30 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300">
+              {/* Sort Indicator */}
+              <div className="relative">
+
+                {/* Compact Header Row */}
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 bg-base-200/50 rounded-lg px-2 py-1">
+                      <span className="text-xs text-base-content/60">📅</span>
+                      <span className="text-sm font-medium">{formatDisplayDate(item.costDate)}</span>
+                    </div>
+                    <span className={`badge badge-sm shadow-sm whitespace-nowrap ${item.costCategoryID === 1 ? 'badge-primary' :
+                        item.costCategoryID === 2 ? 'badge-secondary' :
+                          item.costCategoryID === 3 ? 'badge-accent' :
+                            item.costCategoryID === 4 ? 'badge-info' :
+                              item.costCategoryID === 5 ? 'badge-warning' :
+                                item.costCategoryID === 6 ? 'badge-error' :
+                                  'badge-neutral'
+                      }`}>
+                      {item.costCategory.description}
+                    </span>
+                  </div>
+                  <div className="bg-success/10 rounded-lg px-2 py-1">
+                    <span className="font-bold text-sm text-success">{item.costPrice.toLocaleString()} บาท</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description Row */}
+              <div className="text-xs text-base-content/80 bg-base-200/30 rounded px-2 py-1 break-words mb-2" title={item.costDescription}>
+                💬 {item.costDescription}
+              </div>
+
+              {/* Last Modified Row */}
+              {lastModifiedDate !== '-' && (
+                <div className={`flex items-center justify-between rounded px-2 py-1 mb-2 ${sortBy === 'lastModified'
+                    ? 'bg-secondary/10 border border-secondary/20'
+                    : 'bg-base-100/50'
+                  }`}>
+                  <div className="flex items-center gap-1 text-xs text-base-content/60">
+                    {isUpdated ? (
+                      <>
+                        <span>✏️</span>
+                        <span>แก้ไขล่าสุด : </span>
+                      </>
+                    ) : (
+                      <>
+                        <span>📝</span>
+                        <span>สร้างเมื่อ : </span>
+                      </>
+                    )} <span>{lastModifiedDate} {lastModifiedTime}</span>
+                  </div>
+                  <div className="text-right">
+                    <ModalConfirmPayment
+                      onConfirm={handleConfirm}
+                      item={item}
+                      showToast={showToast}
+                      buttonText="แก้ไข"
+                    />
+                  </div>
+                </div>
+              )}
+
+            </div>
+          );
+        })}
       </div>
     </>
   );
 }
+
 export default function Cost() {
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const hideTimer = useRef(null);
