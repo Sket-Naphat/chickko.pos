@@ -195,7 +195,7 @@ const DailySummary = ({
           <div className="lg:hidden space-y-3">
             {dailyData.map((dayData) => {
               const profitPercent = dayData.total > 0 ? ((dayData.profit / dayData.total) * 100) : 0;
-              const costPercent = dayData.total > 0 ? ((dayData.cost / dayData.total) * 100) : 0;
+              const costPercent = dayData.total > 0 ? ((dayData.cost + dayData.dineInDiscount) / dayData.total) * 100 : 0;
 
               return (
                 <details key={dayData.date} className="collapse bg-base-100 border border-base-300 rounded-lg shadow-sm">
@@ -331,7 +331,7 @@ const DailySummary = ({
                                     </div>
                                     <div className="text-right">
                                       <div className="font-bold text-lg text-error">
-                                        {formatNumber(dayData.cost)}
+                                        {formatNumber(dayData.cost + dayData.dineInDiscount)}
                                       </div>
                                       <div className="text-xs text-error/70">
                                         {costPercent.toFixed(1)}% จากยอดขาย
@@ -354,6 +354,7 @@ const DailySummary = ({
                                         sum + (cost.totalUtilityCost || 0), 0);
                                       const dayTotalOther = dayCosts.reduce((sum, cost) =>
                                         sum + (cost.totalOtherCost || 0), 0);
+                                      const dineInDiscount = dayData.dineInDiscount || 0; // ส่วนลดหน้าร้าน
 
                                       // สร้างรายการประเภทต้นทุนที่มีค่า
                                       const costCategories = [
@@ -386,6 +387,12 @@ const DailySummary = ({
                                           icon: '📦',
                                           amount: dayTotalOther,
                                           textColor: 'text-gray-700'
+                                        },
+                                        {
+                                          name: 'ส่วนลดหน้าร้าน',
+                                          icon: '🏷️',
+                                          amount: dineInDiscount,
+                                          textColor: 'text-red-700'
                                         }
                                       ].filter(category => category.amount > 0); // แสดงเฉพาะประเภทที่มีค่า
 

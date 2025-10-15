@@ -160,14 +160,19 @@ function Dashboard() {
       ? calculateTotals(filteredData.deliveryMonth)
       : calculateTotals(filteredData.deliveryYear);
 
-    const costTotal = filterMode === 'month'
+    var costTotal = filterMode === 'month'
       ? calculateTotals(filteredData.costMonth)
       : calculateTotals(filteredData.costYear);
 
+    const discountTotal = filterMode === 'month'
+      ? calculateTotals(filteredData.dineInMonth, 'totalDiscount')
+      : calculateTotals(filteredData.dineInYear, 'totalDiscount');
+
+    costTotal += discountTotal; // รวมส่วนลดเข้าไปในต้นทุน
     const totalSales = dineInTotal + deliveryTotal;
     const netProfit = totalSales - costTotal;
 
-    return { dineInTotal, deliveryTotal, totalSales, costTotal, netProfit };
+    return { dineInTotal, deliveryTotal, totalSales, costTotal, netProfit, discountTotal };
   }, [filteredData, filterMode]);
 
   // ✅ 3. ใช้ utility แทน getDailyData
@@ -578,6 +583,12 @@ function Dashboard() {
                       icon: '📦',
                       amount: costBreakdown.totalOther,
                       textColor: 'text-gray-700'
+                    },
+                    {
+                      name: 'ส่วนลดหน้าร้าน',
+                      icon: '🏷️',
+                      amount: totals.discountTotal,
+                      textColor: 'text-red-700'
                     }
                   ].filter(category => category.amount > 0);
 

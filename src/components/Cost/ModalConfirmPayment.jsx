@@ -3,7 +3,7 @@ import { useRef, useState, useId, useEffect } from "react";
 import { api } from "../../lib/api";
 import Cookies from "js-cookie";
 
-export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
+export default function ModalConfirmPayment({ onConfirm, item, showToast, buttonText = "จ่าย" }) {
     const num_costPriceId = useId();
     const dt_purchaseDateId = useId();
     const ddl_costCategoryId = useId();
@@ -123,28 +123,30 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
                 ) : (
                     <>
                         <span className="text-lg">💳</span>
-                        จ่าย
+                        {/* ✅ ใช้ buttonText prop แทนการ hardcode */}
+                        {buttonText}
                     </>
                 )}
             </button>
+            
             {/* Modal Dialog */}
             <dialog ref={dialogRef} className="modal">
                 <div className="modal-box w-11/12 max-w-3xl bg-gradient-to-br from-base-100 to-base-200 border-2 border-primary/20 shadow-2xl">
                     {/* Modal Header */}
-                    <div className="flex items-center gap-4 mb-6 pb-4 border-b border-base-300">
+                    <div className="flex items-center gap-4 mb-6 pb-4 border-base-300">
                         <div className="p-3 bg-primary/20 rounded-full">
                             <span className="text-2xl">💰</span>
                         </div>
                         <div>
-                            <h3 className="font-bold text-xl text-primary">ยืนยันการจ่ายเงิน</h3>
+                            {/* ✅ เปลี่ยน title ตาม buttonText */}
+                            <h3 className="font-bold text-xl text-primary">
+                                {buttonText === "แก้ไข" ? "แก้ไขข้อมูลค่าใช้จ่าย" : "ยืนยันการจ่ายเงิน"}
+                            </h3>
                             <p className="text-sm text-base-content/70 mt-1">รายการ: {item.costDescription}</p>
                         </div>
                     </div>
 
-                    <form
-                        className="max-w-md mx-auto space-y-6"
-                        onSubmit={handleSubmit}
-                    >
+                    <form className="max-w-md mx-auto space-y-6" onSubmit={handleSubmit}>
                         {/* Payment Amount */}
                         <div className="form-control w-full">
                             <div className="mb-2 text-start">
@@ -176,7 +178,8 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
                             <div className="mb-2 text-start">
                                 <span className="label-text font-semibold flex items-center gap-2">
                                     <span className="text-lg">📅</span>
-                                    วันที่จ่ายเงิน
+                                    {/* ✅ เปลี่ยน label ตาม buttonText */}
+                                    {buttonText === "แก้ไข" ? "วันที่ค่าใช้จ่าย" : "วันที่จ่ายเงิน"}
                                 </span>
                             </div>
                             <input
@@ -258,7 +261,8 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast }) {
                                 ) : (
                                     <>
                                         <span className="text-lg">✅</span>
-                                        ยืนยันการจ่าย
+                                        {/* ✅ เปลี่ยนปุ่ม submit ตาม buttonText */}
+                                        {buttonText === "แก้ไข" ? "บันทึกการแก้ไข" : "ยืนยันการจ่าย"}
                                     </>
                                 )}
                             </button>
