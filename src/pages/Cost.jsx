@@ -300,6 +300,8 @@ function GetCostIsPurchaseList({ refreshKey }) {
   // ✅ เพิ่ม state สำหรับ sorting
   const [sortBy, setSortBy] = useState('costDate'); // 'costDate' หรือ 'lastModified'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' หรือ 'desc'
+  // ✅ เพิ่ม state สำหรับ category filter
+  const [selectedCategory, setSelectedCategory] = useState(''); // category filter
 
   // Handler functions
   const handleMonthChange = (e) => {
@@ -310,7 +312,12 @@ function GetCostIsPurchaseList({ refreshKey }) {
     setSelectedYear(Number(e.target.value));
   };
 
-  // ✅ เพิ่มฟังก์ชัน toggle sort
+  // ✅ เพิ่ม handler สำหรับ category filter
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value);
+  };
+
+  // ✅ ฟังก์ชัน toggle sort
   const toggleSort = (newSortBy) => {
     if (sortBy === newSortBy) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -320,9 +327,16 @@ function GetCostIsPurchaseList({ refreshKey }) {
     }
   };
 
-  // ✅ ฟังก์ชันสำหรับ sort ข้อมูล
-  const getSortedData = (data) => {
-    return [...data].sort((a, b) => {
+  // ✅ ฟังก์ชันสำหรับ filter และ sort ข้อมูล
+  const getFilteredAndSortedData = (data) => {
+    // Filter by category first
+    let filtered = data;
+    if (selectedCategory && selectedCategory !== '') {
+      filtered = data.filter(item => String(item.costCategoryID) === String(selectedCategory));
+    }
+
+    // Then sort the filtered data
+    return [...filtered].sort((a, b) => {
       let aValue, bValue;
 
       if (sortBy === 'costDate') {
@@ -341,6 +355,22 @@ function GetCostIsPurchaseList({ refreshKey }) {
         return aValue - bValue;
       }
     });
+  };
+
+  // ✅ ฟังก์ชันสำหรับดึง unique categories จากข้อมูล
+  const getUniqueCategories = (data) => {
+    if (!data || !Array.isArray(data)) return [];
+    
+    const categoryMap = new Map();
+    data.forEach(item => {
+      if (item?.costCategory && item?.costCategoryID) {
+        categoryMap.set(item.costCategoryID, {
+          costCategoryID: item.costCategoryID,
+          description: item.costCategory.description
+        });
+      }
+    });
+    return Array.from(categoryMap.values()).sort((a, b) => a.costCategoryID - b.costCategoryID);
   };
 
   // ✅ ฟังก์ชันแก้ไข - ใช้ formatDisplayDate แทน formatDateTime
@@ -433,8 +463,10 @@ function GetCostIsPurchaseList({ refreshKey }) {
     fetchData();
   }, [refreshKey, selectedMonth, selectedYear, filterMode]);
 
-  // ✅ ใช้ getSortedData แทน data โดยตรง
-  const filteredData = getSortedData(data);
+  // ✅ ใช้ getFilteredAndSortedData แทน getSortedData
+  const filteredData = getFilteredAndSortedData(data);
+  // ✅ ดึง unique categories จากข้อมูลต้นฉบับ
+  const availableCategories = getUniqueCategories(data);
 
   // แสดงข้อความขณะกำลังโหลด
   if (loading) {
@@ -506,8 +538,12 @@ function GetCostIsPurchaseList({ refreshKey }) {
               <span className="text-3xl">📅</span>
             </div>
             <div>
-              <div className="text-base font-semibold text-base-content">ไม่มีรายการในช่วงเวลาที่เลือก</div>
-              <div className="text-sm text-base-content/60">ลองเลือกช่วงเวลาอื่น</div>
+              <div className="text-base font-semibold text-base-content">
+                {selectedCategory ? 'ไม่มีรายการในหมวดหมู่ที่เลือก' : 'ไม่มีรายการในช่วงเวลาที่เลือก'}
+              </div>
+              <div className="text-sm text-base-content/60">
+                {selectedCategory ? 'ลองเลือกหมวดหมู่อื่นหรือช่วงเวลาอื่น' : 'ลองเลือกช่วงเวลาอื่น'}
+              </div>
             </div>
           </div>
         </div>
@@ -561,7 +597,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - ✅ แสดงข้อมูลที่กรองแล้ว */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {/* Total Amount Card */}
         <div className="stat bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-3 shadow-sm">
@@ -587,7 +623,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
           <div className="stat-desc text-xs text-info/60">รายการ</div>
         </div>
 
-        {/* Category Breakdown Cards */}
+        {/* Category Breakdown Cards - ✅ ใช้ข้อมูลที่กรองแล้ว */}
         {(() => {
           const categoryStats = filteredData.reduce((acc, item) => {
             const categoryID = item.costCategoryID;
@@ -597,8 +633,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
               acc[categoryID] = {
                 name: categoryName,
                 total: 0,
-                count: 0,
-                color: categoryID === 1 ? 'success' : categoryID === 2 ? 'error' : categoryID === 3 ? 'warning' : 'accent'
+                count: 0
               };
             }
             acc[categoryID].total += item.costPrice;
@@ -611,19 +646,19 @@ function GetCostIsPurchaseList({ refreshKey }) {
             .slice(0, 2); // Show top 2 categories
 
           return sortedCategories.map(([categoryID, stats]) => (
-            <div key={categoryID} className={`stat bg-gradient-to-br from-${stats.color}/10 to-${stats.color}/5 border border-${stats.color}/20 rounded-xl p-3 shadow-sm`}>
-              <div className={`stat-figure text-${stats.color} opacity-20`}>
+            <div key={categoryID} className="stat bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-3 shadow-sm">
+              <div className="stat-figure text-accent opacity-20">
                 <span className="text-2xl">
                   {categoryID === '1' ? '🛒' : categoryID === '2' ? '🏠' : categoryID === '3' ? '⚡' : '📦'}
                 </span>
               </div>
-              <div className={`stat-title text-xs text-${stats.color}/70 truncate`} title={stats.name}>
+              <div className="stat-title text-xs text-accent/70 truncate" title={stats.name}>
                 {stats.name}
               </div>
-              <div className={`stat-value text-base md:text-lg font-bold text-${stats.color}`}>
+              <div className="stat-value text-base md:text-lg font-bold text-accent">
                 {stats.total.toLocaleString()}
               </div>
-              <div className={`stat-desc text-xs text-${stats.color}/60`}>
+              <div className="stat-desc text-xs text-accent/60">
                 {stats.count} รายการ
               </div>
             </div>
@@ -631,13 +666,18 @@ function GetCostIsPurchaseList({ refreshKey }) {
         })()}
       </div>
 
-      {/* สรุปตามหมวดหมู่ */}
+      {/* สรุปตามหมวดหมู่ - ✅ ใช้ข้อมูลที่กรองแล้ว */}
       {filteredData.length > 0 && (
         <div className="bg-base-100 rounded-lg border border-base-300 p-3 mb-3">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-base-content flex items-center gap-2">
               <span>📈</span>
               <span>สรุปตามหมวดหมู่</span>
+              {selectedCategory && (
+                <span className="badge badge-sm badge-primary">
+                  {availableCategories.find(cat => cat.costCategoryID === parseInt(selectedCategory))?.description}
+                </span>
+              )}
             </h3>
             <div className="text-xs text-base-content/60">
               {filterMode === 'month'
@@ -657,8 +697,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
                   acc[categoryID] = {
                     name: categoryName,
                     total: 0,
-                    count: 0,
-                    color: categoryID === 1 ? 'primary' : categoryID === 2 ? 'error' : categoryID === 3 ? 'success' : 'accent'
+                    count: 0
                   };
                 }
                 acc[categoryID].total += item.costPrice;
@@ -700,7 +739,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
         </div>
       )}
 
-      {/* ✅ Desktop Sort Controls */}
+      {/* ✅ Desktop Sort Controls - เพิ่ม Category Dropdown */}
       <div className="hidden md:flex items-center justify-between bg-base-200/50 rounded-lg p-3 border border-base-300 mb-3">
         <div className="flex items-center gap-2 text-sm text-base-content/60">
           <span className="badge badge-sm badge-outline">
@@ -708,14 +747,32 @@ function GetCostIsPurchaseList({ refreshKey }) {
           </span>
         </div>
 
+        {/* ✅ เพิ่ม Category Filter Dropdown ระหว่าง รายการ และ เรียงตาม */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-base-content/60 font-medium">หมวดหมู่:</span>
+          <select
+            className="select select-sm select-bordered"
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+          >
+            <option value="">ทั้งหมด</option>
+            {availableCategories.map((category) => (
+              <option key={category.costCategoryID} value={category.costCategoryID}>
+                {category.description}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex items-center gap-2">
           <span className="text-sm text-base-content/60 font-medium">เรียงตาม:</span>
           <div className="join">
             <button
-              className={`btn btn-sm join-item ${sortBy === 'costDate'
+              className={`btn btn-sm join-item ${
+                sortBy === 'costDate'
                   ? 'btn-primary'
                   : 'btn-outline btn-primary'
-                }`}
+              }`}
               onClick={() => toggleSort('costDate')}
             >
               📅 วันที่ค่าใช้จ่าย
@@ -726,10 +783,11 @@ function GetCostIsPurchaseList({ refreshKey }) {
               )}
             </button>
             <button
-              className={`btn btn-sm join-item ${sortBy === 'lastModified'
+              className={`btn btn-sm join-item ${
+                sortBy === 'lastModified'
                   ? 'btn-secondary'
                   : 'btn-outline btn-secondary'
-                }`}
+              }`}
               onClick={() => toggleSort('lastModified')}
             >
               ✏️ วันเวลาแก้ไข
@@ -758,21 +816,21 @@ function GetCostIsPurchaseList({ refreshKey }) {
           </thead>
           <tbody>
             {filteredData.map((item, idx) => {
-              // ✅ แก้ไข - เปลี่ยนจาก formatDateTime เป็น getFormattedUpdateInfo
               const { date: lastModifiedDate, time: lastModifiedTime, isUpdated } = getFormattedUpdateInfo(item);
 
               return (
-                <tr key={item.id || idx} className="hover:bg-base-200">
+                <tr key={`desktop-${item.costID || item.id || idx}`} className="hover:bg-base-200">
                   <td className="text-sm lg:text-base">{formatDisplayDate(item.costDate)}</td>
                   <td className="text-sm lg:text-base">
-                    <span className={`badge badge-sm shadow-sm whitespace-nowrap ${item.costCategoryID === 1 ? 'badge-primary' :
-                        item.costCategoryID === 2 ? 'badge-secondary' :
-                          item.costCategoryID === 3 ? 'badge-accent' :
-                            item.costCategoryID === 4 ? 'badge-info' :
-                              item.costCategoryID === 5 ? 'badge-warning' :
-                                item.costCategoryID === 6 ? 'badge-error' :
-                                  'badge-neutral'
-                      }`}>
+                    <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
+                      item.costCategoryID === 1 ? 'badge-primary' :
+                      item.costCategoryID === 2 ? 'badge-secondary' :
+                      item.costCategoryID === 3 ? 'badge-accent' :
+                      item.costCategoryID === 4 ? 'badge-info' :
+                      item.costCategoryID === 5 ? 'badge-warning' :
+                      item.costCategoryID === 6 ? 'badge-error' :
+                      'badge-neutral'
+                    }`}>
                       {item.costCategory.description}
                     </span>
                   </td>
@@ -793,9 +851,9 @@ function GetCostIsPurchaseList({ refreshKey }) {
                       <span className="text-base-content/40">-</span>
                     )}
                   </td>
-                  {/* ✅ แก้ไข - เปลี่ยน buttonText เป็น "แก้ไข" */}
                   <td>
                     <ModalConfirmPayment
+                      key={`modal-${item.costID || item.id || idx}-${selectedCategory}-${refreshKey}`}
                       onConfirm={handleConfirm}
                       item={item}
                       showToast={showToast}
@@ -811,22 +869,43 @@ function GetCostIsPurchaseList({ refreshKey }) {
 
       {/* Mobile Card View (<768px) */}
       <div className="md:hidden space-y-2">
-        {/* Mobile Header with Sort Controls */}
-        <div className="flex items-center justify-between bg-base-200/50 rounded-lg p-2 border border-base-300">
-          <div className="flex items-center gap-2 text-xs text-base-content/60">
-            <span className="badge badge-xs badge-outline">
-              {filteredData.length} รายการ
-            </span>
+        {/* ✅ Mobile Header with Category and Sort Controls - ปรับปรุงให้ไม่ล้น */}
+        <div className="bg-base-200/50 rounded-lg p-2 border border-base-300 space-y-2">
+          {/* Row 1: จำนวนรายการ และ หมวดหมู่ */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-base-content/60">
+              <span className="badge badge-xs badge-outline">
+                {filteredData.length} รายการ
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-base-content/60 whitespace-nowrap">หมวดหมู่:</span>
+              <select
+                className="select select-xs select-bordered min-w-0 max-w-24"
+                value={selectedCategory}
+                onChange={handleCategoryChange}
+              >
+                <option value="">ทั้งหมด</option>
+                {availableCategories.map((category) => (
+                  <option key={category.costCategoryID} value={category.costCategoryID}>
+                    {category.description}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-base-content/60">เรียงตาม:</span>
+          {/* Row 2: เรียงตาม */}
+          <div className="flex items-center justify-end gap-1">
+            <span className="text-xs text-base-content/60 whitespace-nowrap">เรียงตาม:</span>
             <div className="join">
               <button
-                className={`btn btn-xs join-item ${sortBy === 'costDate'
+                className={`btn btn-xs join-item ${
+                  sortBy === 'costDate'
                     ? 'btn-primary'
                     : 'btn-outline btn-primary'
-                  }`}
+                }`}
                 onClick={() => toggleSort('costDate')}
               >
                 📅 วันที่
@@ -837,10 +916,11 @@ function GetCostIsPurchaseList({ refreshKey }) {
                 )}
               </button>
               <button
-                className={`btn btn-xs join-item ${sortBy === 'lastModified'
+                className={`btn btn-xs join-item ${
+                  sortBy === 'lastModified'
                     ? 'btn-secondary'
                     : 'btn-outline btn-secondary'
-                  }`}
+                }`}
                 onClick={() => toggleSort('lastModified')}
               >
                 ✏️ แก้ไข
@@ -855,35 +935,31 @@ function GetCostIsPurchaseList({ refreshKey }) {
         </div>
 
         {filteredData.map((item, idx) => {
-          // ✅ แก้ไข - เปลี่ยนจาก formatDateTime เป็น getFormattedUpdateInfo
           const { date: lastModifiedDate, time: lastModifiedTime, isUpdated } = getFormattedUpdateInfo(item);
 
           return (
-            <div key={item.id || idx} className="bg-gradient-to-r from-base-100 to-base-50 border-2 border-base-300 hover:border-success/30 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300">
-              {/* Sort Indicator */}
-              <div className="relative">
-
-                {/* Compact Header Row */}
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 bg-base-200/50 rounded-lg px-2 py-1">
-                      <span className="text-xs text-base-content/60">📅</span>
-                      <span className="text-sm font-medium">{formatDisplayDate(item.costDate)}</span>
-                    </div>
-                    <span className={`badge badge-sm shadow-sm whitespace-nowrap ${item.costCategoryID === 1 ? 'badge-primary' :
-                        item.costCategoryID === 2 ? 'badge-secondary' :
-                          item.costCategoryID === 3 ? 'badge-accent' :
-                            item.costCategoryID === 4 ? 'badge-info' :
-                              item.costCategoryID === 5 ? 'badge-warning' :
-                                item.costCategoryID === 6 ? 'badge-error' :
-                                  'badge-neutral'
-                      }`}>
-                      {item.costCategory.description}
-                    </span>
+            <div key={`mobile-${item.costID || item.id || idx}`} className="bg-gradient-to-r from-base-100 to-base-50 border-2 border-base-300 hover:border-success/30 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300">
+              {/* Compact Header Row */}
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-base-200/50 rounded-lg px-2 py-1">
+                    <span className="text-xs text-base-content/60">📅</span>
+                    <span className="text-sm font-medium">{formatDisplayDate(item.costDate)}</span>
                   </div>
-                  <div className="bg-success/10 rounded-lg px-2 py-1">
-                    <span className="font-bold text-sm text-success">{item.costPrice.toLocaleString()} บาท</span>
-                  </div>
+                  <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
+                    item.costCategoryID === 1 ? 'badge-primary' :
+                    item.costCategoryID === 2 ? 'badge-secondary' :
+                    item.costCategoryID === 3 ? 'badge-accent' :
+                    item.costCategoryID === 4 ? 'badge-info' :
+                    item.costCategoryID === 5 ? 'badge-warning' :
+                    item.costCategoryID === 6 ? 'badge-error' :
+                    'badge-neutral'
+                  }`}>
+                    {item.costCategory.description}
+                  </span>
+                </div>
+                <div className="bg-success/10 rounded-lg px-2 py-1">
+                  <span className="font-bold text-sm text-success">{item.costPrice.toLocaleString()} บาท</span>
                 </div>
               </div>
 
@@ -894,25 +970,28 @@ function GetCostIsPurchaseList({ refreshKey }) {
 
               {/* Last Modified Row */}
               {lastModifiedDate !== '-' && (
-                <div className={`flex items-center justify-between rounded px-2 py-1 mb-2 ${sortBy === 'lastModified'
+                <div className={`flex items-center justify-between rounded px-2 py-1 mb-2 ${
+                  sortBy === 'lastModified'
                     ? 'bg-secondary/10 border border-secondary/20'
                     : 'bg-base-100/50'
-                  }`}>
+                }`}>
                   <div className="flex items-center gap-1 text-xs text-base-content/60">
                     {isUpdated ? (
                       <>
                         <span>✏️</span>
-                        <span>แก้ไขล่าสุด : </span>
+                        <span>แก้ไขล่าสุด:</span>
                       </>
                     ) : (
                       <>
                         <span>📝</span>
-                        <span>สร้างเมื่อ : </span>
+                        <span>สร้างเมื่อ:</span>
                       </>
-                    )} <span>{lastModifiedDate} {lastModifiedTime}</span>
+                    )}
+                    <span>{lastModifiedDate} {lastModifiedTime}</span>
                   </div>
                   <div className="text-right">
                     <ModalConfirmPayment
+                      key={`mobile-modal-${item.costID || item.id || idx}-${selectedCategory}-${refreshKey}`}
                       onConfirm={handleConfirm}
                       item={item}
                       showToast={showToast}
@@ -921,7 +1000,6 @@ function GetCostIsPurchaseList({ refreshKey }) {
                   </div>
                 </div>
               )}
-
             </div>
           );
         })}
