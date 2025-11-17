@@ -173,8 +173,24 @@ function EmployeeDetailWorktime({ employee, onBack }) {
       alert('✅ แก้ไขเวลาเข้างานเรียบร้อยแล้ว');
       closeEditTimeModal();
 
-      // ✅ รีเฟรชข้อมูล
-      window.location.reload();
+      // ✅ แทนที่ window.location.reload() ด้วยการดึงข้อมูลใหม่
+      // รีเฟรชข้อมูลโดยไม่กลับหน้าหลัก
+      const res = await api.post('/worktime/GetWorkTimeHistoryByEmployeeID', {
+        employeeID: employeeID,
+        workMonth: month,
+        workYear: year
+      });
+      
+      const mapped = (res.data || []).map(item => ({
+        workDate: item.workDate,
+        timeClockIn: item.timeClockIn,
+        timeClockOut: item.timeClockOut,
+        totalWorktime: item.totalWorktime,
+        clockInLocation: item.clockInLocation,
+        clockOutLocation: item.clockOutLocation
+      }));
+      
+      setHistory(mapped.sort((a, b) => new Date(b.workDate) - new Date(a.workDate)));
 
     } catch (err) {
       alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถแก้ไขเวลาได้'));
@@ -224,8 +240,24 @@ function EmployeeDetailWorktime({ employee, onBack }) {
       alert('✅ แก้ไขเวลาออกงานเรียบร้อยแล้ว');
       closeEditTimeClockOutModal();
 
-      // ✅ รีเฟรชข้อมูล
-      window.location.reload();
+      // ✅ แทนที่ window.location.reload() ด้วยการดึงข้อมูลใหม่
+      // รีเฟรชข้อมูลโดยไม่กลับหน้าหลัก
+      const res = await api.post('/worktime/GetWorkTimeHistoryByEmployeeID', {
+        employeeID: employeeID,
+        workMonth: month,
+        workYear: year
+      });
+      
+      const mapped = (res.data || []).map(item => ({
+        workDate: item.workDate,
+        timeClockIn: item.timeClockIn,
+        timeClockOut: item.timeClockOut,
+        totalWorktime: item.totalWorktime,
+        clockInLocation: item.clockInLocation,
+        clockOutLocation: item.clockOutLocation
+      }));
+      
+      setHistory(mapped.sort((a, b) => new Date(b.workDate) - new Date(a.workDate)));
 
     } catch (err) {
       alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถแก้ไขเวลาได้'));

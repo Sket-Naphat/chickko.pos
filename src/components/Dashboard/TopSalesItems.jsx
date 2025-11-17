@@ -11,7 +11,7 @@ const TopSalesItems = ({
   formatNumber 
 }) => {
   
-  // คำนวณ Top Items ตามโหมด
+  // ✅ คำนวณ All Items ตามโหมด (ลบ .slice(0, 5))
   const getTopItems = () => {
     if (filterMode === 'month') {
       // รวบรวม TopItems จากทุกวันในเดือน (Dine-in)
@@ -53,8 +53,8 @@ const TopSalesItems = ({
         }, {});
 
       return {
-        dineIn: Object.values(monthlyTopItems).sort((a, b) => b.quantitySold - a.quantitySold).slice(0, 5),
-        delivery: Object.values(monthlyDeliveryTopItems).sort((a, b) => b.quantitySold - a.quantitySold).slice(0, 5),
+        dineIn: Object.values(monthlyTopItems).sort((a, b) => b.quantitySold - a.quantitySold), // ✅ ลบ .slice(0, 5)
+        delivery: Object.values(monthlyDeliveryTopItems).sort((a, b) => b.quantitySold - a.quantitySold), // ✅ ลบ .slice(0, 5)
         period: `${months[selectedMonth]} ${selectedYear}`
       };
     } else {
@@ -101,8 +101,8 @@ const TopSalesItems = ({
         }, {});
 
       return {
-        dineIn: Object.values(yearlyTopItems).sort((a, b) => b.quantitySold - a.quantitySold).slice(0, 5),
-        delivery: Object.values(yearlyDeliveryTopItems).sort((a, b) => b.quantitySold - a.quantitySold).slice(0, 5),
+        dineIn: Object.values(yearlyTopItems).sort((a, b) => b.quantitySold - a.quantitySold), // ✅ ลบ .slice(0, 5)
+        delivery: Object.values(yearlyDeliveryTopItems).sort((a, b) => b.quantitySold - a.quantitySold), // ✅ ลบ .slice(0, 5)
         period: `ปี ${selectedYear}`
       };
     }
@@ -110,75 +110,79 @@ const TopSalesItems = ({
 
   const topItems = getTopItems();
 
-  // Component สำหรับแสดงรายการ
+  // ✅ Component สำหรับแสดงรายการทั้งหมด
   const ItemsList = ({ items, type, color, icon }) => (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-3">
         <span className={`text-${color} text-lg`}>{icon}</span>
         <span className={`font-bold text-${color}`}>
-          รายการขายดี Top 5 {type}
+          รายการขายดี {type} {/* ✅ ลบ "Top 5" */}
         </span>
         <div className={`badge badge-${color} badge-sm`}>
           {items.length} รายการ
         </div>
       </div>
 
-      {/* Grid สำหรับ Desktop */}
-      <div className="hidden md:grid grid-cols-1 gap-3">
-        {items.map((item, index) => (
-          <div key={index} className={`flex justify-between items-center bg-${color}/5 rounded-lg p-4 shadow-sm border border-${color}/10`}>
-            <div className="flex items-center gap-3">
-              <span className={`badge badge-lg font-bold text-white ${
-                index === 0 ? 'bg-yellow-500' :
-                index === 1 ? 'bg-gray-400' :
-                index === 2 ? 'bg-orange-600' :
-                'bg-gray-500'
-              }`}>
-                #{index + 1}
-              </span>
-              <span className="font-medium text-base">
-                {item.menuName}
-              </span>
-            </div>
-            <div className="text-right">
-              <div className={`font-bold text-${color} text-lg`}>
-                {item.quantitySold} ออเดอร์
+      {/* Grid สำหรับ Desktop - ✅ เพิ่ม max-height + scroll */}
+      <div className="hidden md:block max-h-[600px] overflow-y-auto pr-2">
+        <div className="grid grid-cols-1 gap-3">
+          {items.map((item, index) => (
+            <div key={index} className={`flex justify-between items-center bg-${color}/5 rounded-lg p-4 shadow-sm border border-${color}/10`}>
+              <div className="flex items-center gap-3">
+                <span className={`badge badge-lg font-bold text-white ${
+                  index === 0 ? 'bg-yellow-500' :
+                  index === 1 ? 'bg-gray-400' :
+                  index === 2 ? 'bg-orange-600' :
+                  'bg-gray-500'
+                }`}>
+                  #{index + 1}
+                </span>
+                <span className="font-medium text-base">
+                  {item.menuName}
+                </span>
               </div>
-              <div className="text-sm text-base-content/60">
-                {formatNumber(item.totalSales)} บาท
+              <div className="text-right">
+                <div className={`font-bold text-${color} text-lg`}>
+                  {item.quantitySold} ออเดอร์
+                </div>
+                <div className="text-sm text-base-content/60">
+                  {formatNumber(item.totalSales)} บาท
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {/* List สำหรับ Mobile */}
-      <div className="md:hidden space-y-2">
-        {items.map((item, index) => (
-          <div key={index} className={`flex justify-between items-center bg-${color}/5 rounded-lg p-3 border border-${color}/10`}>
-            <div className="flex items-center gap-2">
-              <span className={`badge badge-sm font-bold text-white ${
-                index === 0 ? 'bg-yellow-500' :
-                index === 1 ? 'bg-gray-400' :
-                index === 2 ? 'bg-orange-600' :
-                'bg-gray-500'
-              }`}>
-                #{index + 1}
-              </span>
-              <span className="text-sm font-medium truncate max-w-[120px]">
-                {item.menuName}
-              </span>
+      {/* List สำหรับ Mobile - ✅ เพิ่ม max-height + scroll */}
+      <div className="md:hidden max-h-[500px] overflow-y-auto">
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div key={index} className={`flex justify-between items-center bg-${color}/5 rounded-lg p-3 border border-${color}/10`}>
+              <div className="flex items-center gap-2">
+                <span className={`badge badge-sm font-bold text-white ${
+                  index === 0 ? 'bg-yellow-500' :
+                  index === 1 ? 'bg-gray-400' :
+                  index === 2 ? 'bg-orange-600' :
+                  'bg-gray-500'
+                }`}>
+                  #{index + 1}
+                </span>
+                <span className="text-sm font-medium truncate max-w-[120px]">
+                  {item.menuName}
+                </span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className={`text-sm font-bold text-${color}`}>
+                  {item.quantitySold} ออเดอร์
+                </span>
+                <span className="text-xs text-base-content/60">
+                  {formatNumber(item.totalSales)}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col items-end">
-              <span className={`text-sm font-bold text-${color}`}>
-                {item.quantitySold} ออเดอร์
-              </span>
-              <span className="text-xs text-base-content/60">
-                {formatNumber(item.totalSales)}
-              </span>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -206,7 +210,8 @@ const TopSalesItems = ({
           <div className="flex items-center gap-2">
             <span className="text-primary text-xl">🏆</span>
             <span className="text-lg font-bold text-primary">
-              รายการขายดี Top 5 <br /> {topItems.period}
+              รายการขายดี {/* ✅ ลบ "Top 5" */}
+              <br /> {topItems.period}
             </span>
           </div>
           <div className="text-xs text-primary/70 bg-primary/10 px-2 py-1 rounded-full">
