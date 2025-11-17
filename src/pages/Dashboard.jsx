@@ -42,32 +42,38 @@ function Dashboard() {
   const [salesLoading, setSalesLoading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
-  const [filterMode, setFilterMode] = useState('month'); // 'month' หรือ 'year'
+  const [filterMode, setFilterMode] = useState('month');
   const [showBackToTop, setShowBackToTop] = useState(false);
+  
+  // ✅ เพิ่ม state สำหรับ getSaleOfMenu
+  const [salesByCategory, setSalesByCategory] = useState([]);
 
   // ✅ ดึงข้อมูลยอดขายรายวันตอนเปิดหน้า
   const fetchDailySalesReport = useCallback(async () => {
     try {
       setSalesLoading(true);
 
-      // ✅ ดึงข้อมูลทั้งปีเท่านั้น ไม่แยกตามเดือน
-      const params = {
-        Year: selectedYear
-      };
+      // ✅ สร้าง params แยกตามโหมด
+      const params = filterMode === 'month'
+        ? {
+          Month: selectedMonth + 1, // API รับเดือนเริ่มต้นที่ 1
+          Year: selectedYear,
+          IsPurchase: true,
+        }
+        : {
+          Year: selectedYear,
+          IsPurchase: true
+        };
 
-      const costParams = {
-        IsPurchase: true,
-        Year: selectedYear
-      };
-
-      const dineIn_response = await api.post("/orders/GetDailyDineInSalesReport", params);
-      setDineInSalesData(dineIn_response.data.data || []);
-
-      const delivery_response = await api.post("/orders/GetDailyDeliverySalesReport", params);
-      setDeliverySalesData(delivery_response.data.data || []);
-
-      const cost_response = await api.post("/cost/GetCostListReport", costParams);
-      setCostData(cost_response.data || []);
+      const _response = await api.post("/orders/GetDailyReport", params);
+      setDineInSalesData(_response.data.data.dailyDineInSalesReport || []);
+      setDeliverySalesData(_response.data.data.dailyDeliverySalesReport || []);
+      setCostData(_response.data.data.dailyCostReport || []);
+      
+      // ✅ เก็บข้อมูล getSaleOfMenu
+      setSalesByCategory(_response.data.data.getSaleOfMenu || []);
+      
+      console.log("Fetched sales by category:", JSON.stringify(_response.data.data.getSaleOfMenu, null, 2));
 
     } catch (error) {
       console.error("Error fetching sales report:", error);
@@ -78,9 +84,9 @@ function Dashboard() {
     } finally {
       setSalesLoading(false);
     }
-  }, [selectedYear]); // ✅ เหลือแค่ selectedYear ใน dependencies
+  }, [selectedYear, selectedMonth, filterMode]); // ✅ เพิ่ม selectedMonth และ filterMode
 
-  // ✅ ตอนนี้ useEffect จะไม่มี warning แล้ว
+  // ✅ 2. useEffect จะ auto re-run เมื่อ fetchDailySalesReport เปลี่ยน
   useEffect(() => {
     fetchDailySalesReport();
   }, [fetchDailySalesReport]);
@@ -413,6 +419,10 @@ function Dashboard() {
               />
               <span className="label-text">รายปี</span>
             </label>
+            {/* ✅ แสดง loading indicator ขณะเปลี่ยนโหมด */}
+            {salesLoading && (
+              <span className="loading loading-spinner loading-xs text-success"></span>
+            )}
           </div>
         </div>
         <div className="mt-2 text-center sm:mt-0">
@@ -767,9 +777,7 @@ function Dashboard() {
               selectedMonth={selectedMonth}
               selectedYear={selectedYear}
               months={months}
-              dailyData={dailyData}
-              dineInSalesData={dineInSalesData}
-              deliverySalesData={deliverySalesData}
+              salesByCategory={salesByCategory} // ✅ ใช้เฉพาะ prop นี้
               formatNumber={formatNumber}
             />
 
@@ -782,8 +790,6 @@ function Dashboard() {
                 months={months}
                 dailyData={dailyData}
                 monthlyData={monthlyData}
-                dineInSalesData={dineInSalesData}
-                deliverySalesData={deliverySalesData}
                 formatNumber={formatNumber}
               />
             </div>
@@ -798,7 +804,7 @@ function Dashboard() {
               <span className="text-sm font-medium text-base-content/70">⚡ สถิติรายปี</span>
             </div>
 
-            {/* สรุปสถิติรายปี */}
+            {/* สรุปสถิติตามปี */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
               <div className="bg-gradient-to-r from-success/10 to-success/5 border border-success/20 rounded-lg p-3 text-center">
                 <div className="text-success font-bold text-lg">
@@ -936,6 +942,7 @@ function Dashboard() {
               dailyData={yearlyDailyData} // ✅ ใช้ข้อมูลรายวันของทั้งปี
               dineInSalesData={dineInSalesData}
               deliverySalesData={deliverySalesData}
+              salesByCategory={salesByCategory} // ✅ เพิ่ม prop
               formatNumber={formatNumber}
             />
 
@@ -945,10 +952,8 @@ function Dashboard() {
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
                 months={months}
-                dailyData={dailyData}
+                dailyData={filterMode === 'year' ? yearlyDailyData : dailyData}  // ✅ ส่ง yearlyDailyData
                 monthlyData={monthlyData}
-                dineInSalesData={dineInSalesData}
-                deliverySalesData={deliverySalesData}
                 formatNumber={formatNumber}
               />
             </div>
@@ -965,21 +970,24 @@ function Dashboard() {
       ) : null}
 
       {/* ✅ ใช้ SummaryGraphCarousel แทนโค้ดเดิม */}
-      <SummaryGraphCarousel
-        salesLoading={salesLoading}
-        data={chartData.dineInData}
-        deliveryData={chartData.deliveryData}
-        costChartData={chartData.costChartData}
-        options={options}
-        dineInSalesData={dineInSalesData}
-        deliverySalesData={deliverySalesData}
-        costData={costData}
-        filterMode={filterMode}
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
-        months={months}
-        formatNumber={formatNumber}
-      />
+      {/* ✅ แสดง SummaryGraphCarousel เฉพาะโหมดรายปี */}
+      {filterMode === 'year' && !salesLoading && (
+        <SummaryGraphCarousel
+          salesLoading={salesLoading}
+          data={chartData.dineInData}
+          deliveryData={chartData.deliveryData}
+          costChartData={chartData.costChartData}
+          options={options}
+          dineInSalesData={dineInSalesData}
+          deliverySalesData={deliverySalesData}
+          costData={costData}
+          filterMode={filterMode}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          months={months}
+          formatNumber={formatNumber}
+        />
+      )}
 
       {/* ✅ Card สรุปรายวัน (แสดงเฉพาะโหมดรายเดือน) */}
       {filterMode === 'month' && !salesLoading && (
