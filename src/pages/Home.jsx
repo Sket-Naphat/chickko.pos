@@ -65,7 +65,8 @@ function Home() {
         { title: "🕒 ประวัติการเข้าออกงาน", path: "/worktime" }, // ✅ เพิ่ม disabled
         { title: "📦 นับสต๊อก", path: "/stock" },
         { title: "🗒️ เว็บรับออเดอร์", URL: site === "BKK" ? "https://chick-ko-bkk.web.app/index.html" : "https://chickkoapp.web.app/index.html" },
-        { title: "🎉 กิจกรรม", path: "/event" } // 👉 เพิ่มหน้ากิจกรรม
+        { title: "🎉 กิจกรรม", path: "/event" }, // 👉 เพิ่มหน้ากิจกรรม
+        { title: "📊 งบการเงิน", path: "/statement" } // 👉 เพิ่มหน้าจอ Statement
       );
       break;
     case 2: // manager
