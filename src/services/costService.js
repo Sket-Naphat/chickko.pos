@@ -3,6 +3,10 @@ export async function getCostCategories() {
     const res = await api.get("/cost/GetCostCategoryList"); // ✅ path ตาม Controller คุณ
     return res.data ?? [];
 }
+export async function getCostPurchases() {
+    const res = await api.get("/cost/GetCostPurchaseTypeList"); // ✅ path ตาม Controller คุณ
+    return res.data ?? [];
+}
 export const formatDisplayDate = (dateString) => {
   // สร้าง Date object จาก string
   const date = new Date(dateString);

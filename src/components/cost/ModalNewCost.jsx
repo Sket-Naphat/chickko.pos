@@ -1,12 +1,13 @@
 import { useRef, useState, useId, useEffect } from "react";
 import { api } from "../../lib/api";
-import { getCostCategories } from "../../services/costService";
+import { getCostCategories, getCostPurchases } from "../../services/costService";
 import Cookies from "js-cookie";
 
 export default function ModalNewCost({ onCreated, showToast }) {
     const dialogRef = useRef(null); // Reference to the dialog element
     const num_costPriceId = useId();
     const dt_costDateId = useId();
+    const tm_costTimeId = useId();
     const ddl_costCategoryId = useId();
     const txt_costDescriptionId = useId();
     const chk_isPurchaseId = useId();
@@ -17,12 +18,17 @@ export default function ModalNewCost({ onCreated, showToast }) {
     const [costDescription, setCostDescription] = useState("");
     const [categoryId, setCategoryId] = useState("");
     const [costCategory, setCostCategory] = useState([]);
+    const [costPurchase, setCostPurchase] = useState([]);
+    const [costTime, setCostTime] = useState("");
+    const [costPurchaseTypeId, setCostPurchaseTypeId] = useState("");
     const [isPurchase, setIsPurchase] = useState(false); // Default to checked
     const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
 
     useEffect(() => {
-        // default วันที่วันนี้
-        setCostDate(new Date().toISOString().slice(0, 10));
+        // default วันที่วันนี้ และเวลา
+        const now = new Date();
+        setCostDate(now.toISOString().slice(0, 10));
+        setCostTime(now.toTimeString().slice(0, 5));
     }, []);
     // เปิด/ปิด dialog
     //const open = () => dialogRef.current?.showModal();
@@ -31,11 +37,13 @@ export default function ModalNewCost({ onCreated, showToast }) {
         try {
             setIsLoadingModal(true);
             const costCategory = await getCostCategories();
+            const costPurchase = await getCostPurchases();
             setCostCategory(costCategory);
-
-            // if (!categoryId && costCategory.length > 0) {
-            //     setCategoryId(String(costCategory[0].costCategoryID));
-            // }
+            setCostPurchase(costPurchase);
+            // ตั้ง default ให้เลือกตัวแรกถ้ายังไม่ได้เลือก
+            if (!costPurchaseTypeId && costPurchase.length > 0) {
+                setCostPurchaseTypeId(String(costPurchase[0].costPurchaseTypeID));
+            }
         } catch (err) {
             console.error("โหลด costCategory ไม่ได้:", err);
         }
@@ -62,8 +70,10 @@ export default function ModalNewCost({ onCreated, showToast }) {
         const payload = {
             CostPrice: Number(costPrice || 0),
             CostDate: costDate,
+            CostTime: costTime.length === 5 ? costTime + ":00" : costTime,
             CostCategoryID: categoryId,
             CostDescription: (costDescription || categoryText).trim(),
+            CostPurchaseTypeID: costPurchaseTypeId,
             IsPurchase: isPurchase,
             UpdateBy: authData?.userId || null, // ใช้ userId จาก authData ถ้ามี
         };
@@ -95,17 +105,20 @@ export default function ModalNewCost({ onCreated, showToast }) {
             showToast?.(apiMsg, "error", 2000);
         } finally {
             setIsSaving(false);
- 
+
         }
     };
 
-   
+
 
     const resetForm = () => {
         setCostPrice("");
         setCategoryId("");
         setCostDescription("");
-        setCostDate(new Date().toISOString().slice(0, 10));
+        setCostPurchaseTypeId("");
+        const now = new Date();
+        setCostDate(now.toISOString().slice(0, 10));
+        setCostTime(now.toTimeString().slice(0, 5));
         setIsPurchase(true);
     };
 
@@ -125,7 +138,8 @@ export default function ModalNewCost({ onCreated, showToast }) {
                         className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3"
                         onSubmit={handleSubmit}
                     >
-                        <label className="form-control">
+
+                        <label className="form-control sm:col-span-12 md:col-span-3">
                             <div className="label">
                                 <span className="label-text" htmlFor={num_costPriceId}>
                                     จำนวนเงิน (บาท)
@@ -137,7 +151,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                className="input input-bordered"
+                                className="input input-bordered w-full"
                                 placeholder="เช่น 120.00"
                                 value={costPrice}
                                 onChange={(e) => setCostPrice(e.target.value)}
@@ -145,7 +159,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                             />
                         </label>
 
-                        <label className="form-control">
+                        <label className="form-control md:col-span-2">
                             <div className="label">
                                 <span className="label-text" htmlFor={dt_costDateId}>
                                     วันที่
@@ -155,14 +169,32 @@ export default function ModalNewCost({ onCreated, showToast }) {
                             <input
                                 id={dt_costDateId}
                                 type="date"
-                                className="input input-bordered"
+                                className="input input-bordered w-full"
                                 value={costDate}
                                 onChange={(e) => setCostDate(e.target.value)}
                                 required
                             />
                         </label>
 
-                        <label className="form-control md:col-span-2">
+                        <label className="form-control md:col-span-1">
+                            <div className="label">
+                                <span className="label-text" htmlFor={tm_costTimeId}>
+                                    เวลา
+                                </span>
+                            </div>
+                            <br />
+                            <input
+                                id={tm_costTimeId}
+                                type="time"
+                                className="input input-bordered w-full"
+                                value={costTime}
+                                onChange={(e) => setCostTime(e.target.value)}
+                                required
+                            />
+                        </label>
+
+                        <label className="form-control md:col-span-3">
+
                             <div className="label">
                                 <span className="label-text" htmlFor={ddl_costCategoryId}>
                                     ประเภท
@@ -170,7 +202,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                             </div><br />
                             <select
                                 id={ddl_costCategoryId}
-                                className="select select-bordered"
+                                className="select select-bordered w-full"
                                 value={categoryId}
                                 onChange={(e) => setCategoryId(e.target.value)}
                                 required
@@ -187,7 +219,30 @@ export default function ModalNewCost({ onCreated, showToast }) {
                             </select>
                         </label>
 
-                        <label className="form-control md:col-span-2">
+                        <label className="form-control md:col-span-3">
+                            <div className="label">
+                                <span className="label-text">วิธีการชำระเงิน</span>
+                            </div>
+                            <select
+                                className="select select-bordered w-full"
+                                value={costPurchaseTypeId}
+                                onChange={e => setCostPurchaseTypeId(e.target.value)}
+                                required
+                            >
+                                <option value="" disabled>— เลือกวิธีการชำระเงิน —</option>
+                                {costPurchase.map((purchase) => (
+                                    <option
+                                        key={purchase.costPurchaseTypeID}
+                                        value={String(purchase.costPurchaseTypeID)}
+                                    >
+                                        {purchase.description}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+
+
+                        <label className="form-control md:col-span-3">
                             <div className="label">
                                 <span className="label-text" htmlFor={txt_costDescriptionId}>
                                     รายละเอียดการซื้อ
@@ -196,7 +251,7 @@ export default function ModalNewCost({ onCreated, showToast }) {
                             <br />
                             <textarea
                                 id={txt_costDescriptionId}
-                                className="textarea textarea-bordered"
+                                className="textarea textarea-bordered w-full"
                                 rows={3}
                                 placeholder="รายละเอียดการซื้อ เช่น ซื้อวัตถุดิบ, ค่าบริการ, ค่าขนส่ง ฯลฯ"
                                 value={costDescription}
