@@ -17,7 +17,7 @@ const Statement = () => {
     const [loading, setLoading] = useState(false);
     const [statementData, setStatementData] = useState(null);
     const [dateFrom, setDateFrom] = useState("2026-03-01");
-    const [dateTo, setDateTo] = useState("2026-03-07");
+    const [dateTo, setDateTo] = useState("2026-03-31");
     const hideTimer = useRef(null); // ref เก็บ timer ของ toast เพื่อ clear ก่อน set ใหม่
     const navigate = useNavigate();
 
@@ -30,7 +30,7 @@ const Statement = () => {
                     'DateFrom': dateFrom,
                     'DateTo': dateTo
                 });
-                setStatementData(res.data);
+                setStatementData(res.data.data);
             } catch (e) {
                 showToast("ดึงข้อมูลงบการเงินไม่สำเร็จ", "error");
                 console.error(e.response?.data || e.message);
@@ -50,9 +50,9 @@ const Statement = () => {
     const showToast = (message, type = "success", duration = 2000) => {
         if (hideTimer.current) clearTimeout(hideTimer.current);
         setToast({ show: true, message, type });
-        hideTimer.current = setTimeout(() => 
+        hideTimer.current = setTimeout(() =>
             setToast((t) => ({ ...t, show: false }))
-        , duration);
+            , duration);
     };
 
     // Responsive check
@@ -192,7 +192,11 @@ const Statement = () => {
                                                 <th className="text-right">ยอดคงเหลือ</th>
                                                 <th className="text-right">ยอดขาย</th>
                                                 <th className="text-right">รายรับ</th>
+                                                <th className="text-right">รายรับธนาคาร</th>
+                                                <th className="text-right">รายรับเงินสด</th>
                                                 <th className="text-right">รายจ่าย</th>
+                                                <th className="text-right">รายจ่าย (โอนจ่าย)</th>
+                                                <th className="text-right">รายจ่าย (เงินสด)</th>
                                                 <th className="text-right">กำไร</th>
                                                 <th className="text-right">ต่าง</th>
                                             </tr>
@@ -204,7 +208,11 @@ const Statement = () => {
                                                     <td className="text-right">{d.balance?.toLocaleString()}</td>
                                                     <td className="text-right">{d.sales?.toLocaleString()}</td>
                                                     <td className="text-right text-success">{d.totalIncome?.toLocaleString()}</td>
+                                                    <td className="text-right">{d.bankIncome?.toLocaleString()}</td> 
+                                                    <td className="text-right">{d.cashIncome?.toLocaleString()}</td>
                                                     <td className="text-right text-error">{d.totalCost?.toLocaleString()}</td>
+                                                    <td className="text-right">{d.transferCost?.toLocaleString()}</td>
+                                                    <td className="text-right">{d.cashCost?.toLocaleString()}</td> 
                                                     <td className="text-right text-info">{d.profit?.toLocaleString()}</td>
                                                     <td className="text-right">{d.difference}</td>
                                                 </tr>
