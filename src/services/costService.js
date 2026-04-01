@@ -37,3 +37,10 @@ export const formatDisplayDate = (dateString) => {
 //   return `วัน${dayName} ที่ ${day} ${monthName} ${year}`;
 return `วัน${dayName} ที่ ${day} ${monthName} `;
 };
+
+export function formatDisplayTime(timeStr) {
+  if (!timeStr) return "";
+  // รับเฉพาะ HH:mm จาก HH:mm:ss หรือ HH:mm:ss.SSS...
+  const match = timeStr.match(/^(\d{2}:\d{2})/);
+  return match ? match[1] : timeStr;
+}

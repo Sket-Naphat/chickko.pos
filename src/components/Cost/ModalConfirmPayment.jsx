@@ -1,28 +1,37 @@
-import { getCostCategories } from "../../services/costService";
+import { getCostCategories, getCostPurchases } from "../../services/costService";
 import { useRef, useState, useId, useEffect } from "react";
 import { api } from "../../lib/api";
 import Cookies from "js-cookie";
 
 export default function ModalConfirmPayment({ onConfirm, item, showToast, buttonText = "จ่าย" }) {
     const num_costPriceId = useId();
-    const dt_purchaseDateId = useId();
+    // const dt_purchaseDateId = useId();
     const ddl_costCategoryId = useId();
     const dialogRef = useRef(null);
     const txt_costDescriptionId = useId();
-    // สถานะต่างๆ สำหรับ modal
+    const txt_costTimeId = useId();
+    const txt_costDateId = useId();
 
+    // สถานะต่างๆ สำหรับ modal
     const [isLoadingModal, setIsLoadingModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     // สถานะต่างๆ สำหรับข้อมูลค่าใช้จ่าย
     const [costCategories, setCostCategories] = useState([]);
     const [costPrice, setCostPrice] = useState(item.costPrice);
     const [purchaseDate, setPurchaseDate] = useState(item.purchaseDate || new Date().toISOString().slice(0, 10));
+    const [costDate, setCostDate] = useState(item.costDate || new Date().toISOString().slice(0, 10));
     const [categoryId, setCategoryId] = useState(item.costCategoryID || item.costCategory?.costCategoryID);
     const [costDescription, setCostDescription] = useState(item.costDescription);
+    const [costTime, setCostTime] = useState(item.costTime || "");
+    const [costPurchaseTypeId, setCostPurchaseTypeId] = useState(item.costPurchaseTypeID || "");
+    const [costPurchase, setCostPurchase] = useState([]);
     const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
+
     useEffect(() => {
         // default วันนี้ถ้าไม่มีค่า
         setPurchaseDate((prev) => prev || new Date().toISOString().slice(0, 10));
+        setCostDate((prev) => prev || new Date().toISOString().slice(0, 10));
+        setCostTime((prev) => prev || new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }));
     }, []);
 
     // เปิด modal เมื่อมีการคลิกปุ่ม
@@ -36,6 +45,12 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
             // ถ้ายังไม่มี categoryId ให้ใช้ค่าจาก item หรือค่าแรกใน list
             if (!categoryId && categories.length > 0) {
                 setCategoryId(String(item.costCategoryID || item.costCategory?.costCategoryID || categories[0].costCategoryID));
+            }
+
+            const types = await getCostPurchases();
+            setCostPurchase(types);
+            if (!costPurchaseTypeId && types.length > 0) {
+                setCostPurchaseTypeId(String(item.costPurchaseTypeID || types[0].costPurchaseTypeID));
             }
         }
         catch (err) {
@@ -56,9 +71,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
 
         const now = new Date();
         const pad = (n) => String(n).padStart(2, "0");
-        const purchaseTime = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(
-            now.getSeconds()
-        )}`;
+        const purchaseTime = costTime || `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
         // หาข้อความของ option ที่เลือกจาก dropdown
         const categoryText = costCategories.find(
@@ -74,6 +87,9 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
             CostDescription: (costDescription || categoryText).trim(),
             IsPurchase: true, // ยืนยันการจ่ายเงิน
             UpdateBy: authData?.userId || null, // ใช้ userId จาก authData ถ้ามี
+            CostPurchaseTypeID: costPurchaseTypeId, // เพิ่มฟิลด์นี้
+            CostDate : costDate, // เพิ่มฟิลด์นี้ (ถ้าจำเป็นสำหรับ API ของคุณ)
+            CostTime : costTime, // เพิ่มฟิลด์นี้ (ถ้าจำเป็นสำหรับ API ของคุณ)
         };
         if (!payload.CostPrice || payload.CostPrice <= 0) {
             setIsSaving(false);
@@ -110,9 +126,9 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
 
     return (
         <>
-            <button 
-                className="btn btn-sm lg:btn-md btn-primary shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap" 
-                onClick={openModal} 
+            <button
+                className="btn btn-sm lg:btn-md btn-primary shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
+                onClick={openModal}
                 disabled={isLoadingModal}
             >
                 {isLoadingModal ? (
@@ -128,7 +144,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                     </>
                 )}
             </button>
-            
+
             {/* Modal Dialog */}
             <dialog ref={dialogRef} className="modal">
                 <div className="modal-box w-11/12 max-w-3xl bg-gradient-to-br from-base-100 to-base-200 border-2 border-primary/20 shadow-2xl">
@@ -183,12 +199,34 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                                 </span>
                             </div>
                             <input
-                                id={dt_purchaseDateId}
+                                id={txt_costDateId}
                                 type="date"
                                 className="input input-bordered input-primary w-full bg-base-50 focus:bg-base-100 transition-colors"
-                                value={purchaseDate}
-                                onChange={(e) => setPurchaseDate(e.target.value)}
+                                value={costDate}
+                                onChange={(e) => {
+                                    setPurchaseDate(e.target.value);
+                                    setCostDate(e.target.value);
+                                }} // ซิงค์ costDate กับ purchaseDate
                                 required
+                            />
+                        </div>
+
+                        {/* Payment Time */}
+                        <div className="form-control w-full">
+                            <div className="mb-2 text-start">
+                                <span className="label-text font-semibold flex items-center gap-2">
+                                    <span className="text-lg">⏰</span>
+                                    เวลา
+                                </span>
+                            </div>
+                            <input
+                                id={txt_costTimeId}
+                                type="time"
+                                className="input input-bordered input-primary w-full bg-base-50 focus:bg-base-100 transition-colors"
+                                value={costTime}
+                                onChange={(e) => setCostTime(e.target.value)}
+                                required
+                                step="60"
                             />
                         </div>
 
@@ -214,6 +252,32 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                                         value={String(category.costCategoryID)}
                                     >
                                         {category.description}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Payment Method */}
+                        <div className="form-control w-full">
+                            <div className="mb-2 text-start">
+                                <span className="label-text font-semibold flex items-center gap-2">
+                                    <span className="text-lg">💳</span>
+                                    วิธีการชำระเงิน
+                                </span>
+                            </div>
+                            <select
+                                className="select select-bordered select-primary w-full bg-base-50 focus:bg-base-100 transition-colors"
+                                value={costPurchaseTypeId}
+                                onChange={e => setCostPurchaseTypeId(e.target.value)}
+                                required
+                            >
+                                <option value="" disabled>— เลือกวิธีการชำระเงิน —</option>
+                                {costPurchase.map((purchase) => (
+                                    <option
+                                        key={purchase.costPurchaseTypeID}
+                                        value={String(purchase.costPurchaseTypeID)}
+                                    >
+                                        {purchase.description}
                                     </option>
                                 ))}
                             </select>
