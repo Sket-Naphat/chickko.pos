@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import ModalConfirmPayment from "../components/cost/ModalConfirmPayment";
 import Toast from "../components/ui/Toast";
 import { useNavigate } from "react-router-dom";
-import { formatDisplayDate } from "../services/costService";
+import { formatDisplayDate ,formatDisplayTime } from "../services/costService";
 
 /**
  * ฟังก์ชัน React Component สำหรับดึงและแสดงรายการค่าใช้จ่ายคงค้างจาก API เส้นทาง /api/GetCostList
@@ -810,6 +810,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
               <th className="text-sm lg:text-base">🏷️ หมวดหมู่</th>
               <th className="text-right text-sm lg:text-base">💰 ราคา</th>
               <th className="text-sm lg:text-base">📝 รายละเอียดการซื้อ</th>
+              <th className="text-sm lg:text-base">💰 วิธีการชำระเงิน</th>
               <th className="text-sm lg:text-base">⏰ วันเวลาแก้ไข</th>
               <th className="text-sm lg:text-base">✏️ แก้ไข</th>
             </tr>
@@ -820,7 +821,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
 
               return (
                 <tr key={`desktop-${item.costID || item.id || idx}`} className="hover:bg-base-200">
-                  <td className="text-sm lg:text-base">{formatDisplayDate(item.costDate)}</td>
+                  <td className="text-sm lg:text-base">{formatDisplayDate(item.costDate) + " , " + formatDisplayTime(item.costTime) + " น."}</td>
                   <td className="text-sm lg:text-base">
                     <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
                       item.costCategoryID === 1 ? 'badge-primary' :
@@ -836,6 +837,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
                   </td>
                   <td className="text-right font-medium text-sm lg:text-base">{item.costPrice.toLocaleString()} บาท</td>
                   <td className="text-sm lg:text-base max-w-xs truncate" title={item.costDescription}>{item.costDescription}</td>
+                  <td className="text-sm lg:text-base max-w-xs truncate">{item.costPurchaseType.description.toLocaleString()}</td>
                   <td className="text-sm lg:text-base">
                     {lastModifiedDate !== '-' ? (
                       <div className="flex flex-col">
