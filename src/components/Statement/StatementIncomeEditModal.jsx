@@ -63,10 +63,14 @@ export default function StatementIncomeEditModal({ open, onClose, onUpdate, inco
         e.preventDefault();
         setIsSaving(true);
         try {
+            const normalizedTime = /^\d{2}:\d{2}$/.test(incomeTime)
+                ? `${incomeTime}:00`
+                : incomeTime;
+
             const payload = {
                 IncomeId: income?.incomeId,
                 IncomeDate: incomeDate,
-                IncomeTime: incomeTime,
+                IncomeTime: normalizedTime,
                 IncomeValue: Number(incomeValue),
                 IncomeTypeId: Number(incomeTypeId),
                 IncomeDescription: incomeDescription,
