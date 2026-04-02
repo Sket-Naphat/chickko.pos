@@ -15,6 +15,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
     // สถานะต่างๆ สำหรับ modal
     const [isLoadingModal, setIsLoadingModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     // สถานะต่างๆ สำหรับข้อมูลค่าใช้จ่าย
     const [costCategories, setCostCategories] = useState([]);
     const [costPrice, setCostPrice] = useState(item.costPrice);
@@ -65,13 +66,23 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
     const closeModal = () => dialogRef.current?.close();
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // (A) กันการรีเฟรชหน้า/เปลี่ยนหน้า default ของฟอร์ม
+        e.preventDefault();
         if (isSaving) return;
         setIsSaving(true);
 
         const now = new Date();
         const pad = (n) => String(n).padStart(2, "0");
-        const purchaseTime = costTime || `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+        // ฟังก์ชัน format เวลาให้เป็น HH:mm:ss
+        const formatTime = (timeStr) => {
+            if (!timeStr) return `${pad(now.getHours())}:${pad(now.getMinutes())}:00`;
+            // ถ้ามีแค่ HH:mm ให้เพิ่ม :00 ต่อท้าย
+            if (/^\d{2}:\d{2}$/.test(timeStr)) return `${timeStr}:00`;
+            return timeStr;
+        };
+
+        const purchaseTime = formatTime(costTime);
+        const formattedCostTime = formatTime(costTime);
 
         // หาข้อความของ option ที่เลือกจาก dropdown
         const categoryText = costCategories.find(
@@ -79,17 +90,17 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
         )?.description || "";
 
         const payload = {
-            CostID: item.costID, // ใช้ ID ของรายการที่ต้องการจ่าย
+            CostID: item.costID,
             CostPrice: Number(costPrice || 0),
-            PurchaseDate: purchaseDate,
-            PurchaseTime: purchaseTime,
-            CostCategoryID: categoryId,
+            PurchaseDate: purchaseDate,         // YYYY-MM-DD
+            PurchaseTime: purchaseTime,         // HH:mm:ss
+            CostCategoryID: Number(categoryId),
             CostDescription: (costDescription || categoryText).trim(),
-            IsPurchase: true, // ยืนยันการจ่ายเงิน
-            UpdateBy: authData?.userId || null, // ใช้ userId จาก authData ถ้ามี
-            CostPurchaseTypeID: costPurchaseTypeId, // เพิ่มฟิลด์นี้
-            CostDate : costDate, // เพิ่มฟิลด์นี้ (ถ้าจำเป็นสำหรับ API ของคุณ)
-            CostTime : costTime, // เพิ่มฟิลด์นี้ (ถ้าจำเป็นสำหรับ API ของคุณ)
+            IsPurchase: true,
+            UpdateBy: authData?.userId || null,
+            CostPurchaseTypeID: Number(costPurchaseTypeId),
+            CostDate: costDate,
+            CostTime: formattedCostTime,        // HH:mm:ss
         };
         if (!payload.CostPrice || payload.CostPrice <= 0) {
             setIsSaving(false);
@@ -123,6 +134,24 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
         }
     };
 
+    const handleDelete = async () => {
+        if (isDeleting) return;
+        if (!window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?")) return;
+
+        setIsDeleting(true);
+        try {
+            await api.delete(`/cost/DeleteCost/${item.costID}`);
+            showToast("ลบรายการเรียบร้อยแล้ว", "success", 2000);
+            onConfirm?.();
+            closeModal();
+        } catch (err) {
+            console.error(err);
+            const apiMsg = err?.response?.data?.message || err?.message || "ลบรายการไม่สำเร็จ";
+            showToast(apiMsg, "error", 2000);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     return (
         <>
@@ -303,19 +332,42 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
 
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 mt-6 border-t border-base-300">
+    
+                            {/* ปุ่มลบ - แสดงเฉพาะเมื่อเป็นโหมดแก้ไข */}
+                            {buttonText === "แก้ไข" && (
+                                <button
+                                    type="button"
+                                    className="btn btn-error btn-outline transition-all duration-200 order-3 sm:order-1 sm:mr-auto"
+                                    onClick={handleDelete}
+                                    disabled={isSaving || isDeleting}
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <span className="loading loading-spinner loading-sm"></span>
+                                            กำลังลบ...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="text-lg">🗑️</span>
+                                            ลบรายการ
+                                        </>
+                                    )}
+                                </button>
+                            )}
+
                             <button
                                 type="button"
-                                className="btn btn-outline btn-base-content hover:bg-base-200 transition-all duration-200 order-2 sm:order-1"
+                                className="btn btn-outline btn-base-content hover:bg-base-200 transition-all duration-200 order-2"
                                 onClick={closeModal}
-                                disabled={isSaving}
+                                disabled={isSaving || isDeleting}
                             >
                                 <span className="text-lg">❌</span>
                                 ยกเลิก
                             </button>
                             <button
                                 type="submit"
-                                className={`btn btn-success text-success-content shadow-lg hover:shadow-xl transition-all duration-200 order-1 sm:order-2 ${isSaving ? "loading" : ""}`}
-                                disabled={isSaving}
+                                className={`btn btn-success text-success-content shadow-lg hover:shadow-xl transition-all duration-200 order-1 sm:order-3 ${isSaving ? "loading" : ""}`}
+                                disabled={isSaving || isDeleting}
                             >
                                 {isSaving ? (
                                     <>
@@ -325,7 +377,6 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                                 ) : (
                                     <>
                                         <span className="text-lg">✅</span>
-                                        {/* ✅ เปลี่ยนปุ่ม submit ตาม buttonText */}
                                         {buttonText === "แก้ไข" ? "บันทึกการแก้ไข" : "ยืนยันการจ่าย"}
                                     </>
                                 )}
