@@ -539,7 +539,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
             </div>
             <div>
               <div className="text-base font-semibold text-base-content">
-                {selectedCategory ? 'ไม่มีรายการในหมวดหมู่ที่เลือก' : 'ไม่มีรายการในช่วงเวลาที่เลือก'}
+                {selectedCategory ? 'ไม่มีรายการในหมวดหมู่อื่นหรือช่วงเวลาอื่น' : 'ไม่มีรายการในช่วงเวลาอื่น'}
               </div>
               <div className="text-sm text-base-content/60">
                 {selectedCategory ? 'ลองเลือกหมวดหมู่อื่นหรือช่วงเวลาอื่น' : 'ลองเลือกช่วงเวลาอื่น'}
@@ -1014,6 +1014,23 @@ export default function Cost() {
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const hideTimer = useRef(null);
 
+  // ✅ เพิ่ม state สำหรับ Go to Top
+  const [showGoTop, setShowGoTop] = useState(false);
+
+  // ✅ เพิ่ม scroll listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowGoTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // ✅ ฟังก์ชัน scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const showToast = (message, type = "success", duration = 2000) => {
     // เคลียร์ timer เดิม (กันทับ)
     if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -1104,6 +1121,17 @@ export default function Cost() {
           <GetCostIsPurchaseList refreshKey={refreshKey} />
         </div>
       </div>
+
+      {/* ✅ ปุ่ม Go to Top */}
+      {showGoTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 btn btn-circle btn-primary shadow-lg"
+          aria-label="กลับขึ้นด้านบน"
+        >
+          ▲
+        </button>
+      )}
     </div>
   );
 }
