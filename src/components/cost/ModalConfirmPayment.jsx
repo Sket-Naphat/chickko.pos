@@ -65,13 +65,23 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
     const closeModal = () => dialogRef.current?.close();
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // (A) กันการรีเฟรชหน้า/เปลี่ยนหน้า default ของฟอร์ม
+        e.preventDefault();
         if (isSaving) return;
         setIsSaving(true);
 
         const now = new Date();
         const pad = (n) => String(n).padStart(2, "0");
-        const purchaseTime = costTime || `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+        // ฟังก์ชัน format เวลาให้เป็น HH:mm:ss
+        const formatTime = (timeStr) => {
+            if (!timeStr) return `${pad(now.getHours())}:${pad(now.getMinutes())}:00`;
+            // ถ้ามีแค่ HH:mm ให้เพิ่ม :00 ต่อท้าย
+            if (/^\d{2}:\d{2}$/.test(timeStr)) return `${timeStr}:00`;
+            return timeStr;
+        };
+
+        const purchaseTime = formatTime(costTime);
+        const formattedCostTime = formatTime(costTime);
 
         // หาข้อความของ option ที่เลือกจาก dropdown
         const categoryText = costCategories.find(
@@ -79,17 +89,17 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
         )?.description || "";
 
         const payload = {
-            CostID: item.costID, // ใช้ ID ของรายการที่ต้องการจ่าย
+            CostID: item.costID,
             CostPrice: Number(costPrice || 0),
-            PurchaseDate: purchaseDate,
-            PurchaseTime: purchaseTime,
-            CostCategoryID: categoryId,
+            PurchaseDate: purchaseDate,         // YYYY-MM-DD
+            PurchaseTime: purchaseTime,         // HH:mm:ss
+            CostCategoryID: Number(categoryId),
             CostDescription: (costDescription || categoryText).trim(),
-            IsPurchase: true, // ยืนยันการจ่ายเงิน
-            UpdateBy: authData?.userId || null, // ใช้ userId จาก authData ถ้ามี
-            CostPurchaseTypeID: costPurchaseTypeId, // เพิ่มฟิลด์นี้
-            CostDate : costDate, // เพิ่มฟิลด์นี้ (ถ้าจำเป็นสำหรับ API ของคุณ)
-            CostTime : costTime, // เพิ่มฟิลด์นี้ (ถ้าจำเป็นสำหรับ API ของคุณ)
+            IsPurchase: true,
+            UpdateBy: authData?.userId || null,
+            CostPurchaseTypeID: Number(costPurchaseTypeId),
+            CostDate: costDate,
+            CostTime: formattedCostTime,        // HH:mm:ss
         };
         if (!payload.CostPrice || payload.CostPrice <= 0) {
             setIsSaving(false);
