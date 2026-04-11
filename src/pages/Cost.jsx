@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import ModalConfirmPayment from "../components/cost/ModalConfirmPayment";
 import Toast from "../components/ui/Toast";
 import { useNavigate } from "react-router-dom";
-import { formatDisplayDate ,formatDisplayTime } from "../services/costService";
+import { formatDisplayDate, formatDisplayTime } from "../services/costService";
 
 /**
  * ฟังก์ชัน React Component สำหรับดึงและแสดงรายการค่าใช้จ่ายคงค้างจาก API เส้นทาง /api/GetCostList
@@ -360,7 +360,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
   // ✅ ฟังก์ชันสำหรับดึง unique categories จากข้อมูล
   const getUniqueCategories = (data) => {
     if (!data || !Array.isArray(data)) return [];
-    
+
     const categoryMap = new Map();
     data.forEach(item => {
       if (item?.costCategory && item?.costCategoryID) {
@@ -768,11 +768,10 @@ function GetCostIsPurchaseList({ refreshKey }) {
           <span className="text-sm text-base-content/60 font-medium">เรียงตาม:</span>
           <div className="join">
             <button
-              className={`btn btn-sm join-item ${
-                sortBy === 'costDate'
-                  ? 'btn-primary'
-                  : 'btn-outline btn-primary'
-              }`}
+              className={`btn btn-sm join-item ${sortBy === 'costDate'
+                ? 'btn-primary'
+                : 'btn-outline btn-primary'
+                }`}
               onClick={() => toggleSort('costDate')}
             >
               📅 วันที่ค่าใช้จ่าย
@@ -783,11 +782,10 @@ function GetCostIsPurchaseList({ refreshKey }) {
               )}
             </button>
             <button
-              className={`btn btn-sm join-item ${
-                sortBy === 'lastModified'
-                  ? 'btn-secondary'
-                  : 'btn-outline btn-secondary'
-              }`}
+              className={`btn btn-sm join-item ${sortBy === 'lastModified'
+                ? 'btn-secondary'
+                : 'btn-outline btn-secondary'
+                }`}
               onClick={() => toggleSort('lastModified')}
             >
               ✏️ วันเวลาแก้ไข
@@ -823,15 +821,14 @@ function GetCostIsPurchaseList({ refreshKey }) {
                 <tr key={`desktop-${item.costID || item.id || idx}`} className="hover:bg-base-200">
                   <td className="text-sm lg:text-base">{formatDisplayDate(item.costDate) + " , " + formatDisplayTime(item.costTime) + " น."}</td>
                   <td className="text-sm lg:text-base">
-                    <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
-                      item.costCategoryID === 1 ? 'badge-primary' :
+                    <span className={`badge badge-sm shadow-sm whitespace-nowrap ${item.costCategoryID === 1 ? 'badge-primary' :
                       item.costCategoryID === 2 ? 'badge-secondary' :
-                      item.costCategoryID === 3 ? 'badge-accent' :
-                      item.costCategoryID === 4 ? 'badge-info' :
-                      item.costCategoryID === 5 ? 'badge-warning' :
-                      item.costCategoryID === 6 ? 'badge-error' :
-                      'badge-neutral'
-                    }`}>
+                        item.costCategoryID === 3 ? 'badge-accent' :
+                          item.costCategoryID === 4 ? 'badge-info' :
+                            item.costCategoryID === 5 ? 'badge-warning' :
+                              item.costCategoryID === 6 ? 'badge-error' :
+                                'badge-neutral'
+                      }`}>
                       {item.costCategory.description}
                     </span>
                   </td>
@@ -880,7 +877,7 @@ function GetCostIsPurchaseList({ refreshKey }) {
                 {filteredData.length} รายการ
               </span>
             </div>
-            
+
             <div className="flex items-center gap-1">
               <span className="text-xs text-base-content/60 whitespace-nowrap">หมวดหมู่:</span>
               <select
@@ -903,11 +900,10 @@ function GetCostIsPurchaseList({ refreshKey }) {
             <span className="text-xs text-base-content/60 whitespace-nowrap">เรียงตาม:</span>
             <div className="join">
               <button
-                className={`btn btn-xs join-item ${
-                  sortBy === 'costDate'
-                    ? 'btn-primary'
-                    : 'btn-outline btn-primary'
-                }`}
+                className={`btn btn-xs join-item ${sortBy === 'costDate'
+                  ? 'btn-primary'
+                  : 'btn-outline btn-primary'
+                  }`}
                 onClick={() => toggleSort('costDate')}
               >
                 📅 วันที่
@@ -918,11 +914,10 @@ function GetCostIsPurchaseList({ refreshKey }) {
                 )}
               </button>
               <button
-                className={`btn btn-xs join-item ${
-                  sortBy === 'lastModified'
-                    ? 'btn-secondary'
-                    : 'btn-outline btn-secondary'
-                }`}
+                className={`btn btn-xs join-item ${sortBy === 'lastModified'
+                  ? 'btn-secondary'
+                  : 'btn-outline btn-secondary'
+                  }`}
                 onClick={() => toggleSort('lastModified')}
               >
                 ✏️ แก้ไข
@@ -941,42 +936,52 @@ function GetCostIsPurchaseList({ refreshKey }) {
 
           return (
             <div key={`mobile-${item.costID || item.id || idx}`} className="bg-gradient-to-r from-base-100 to-base-50 border-2 border-base-300 hover:border-success/30 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300">
-              {/* Compact Header Row */}
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 bg-base-200/50 rounded-lg px-2 py-1">
+              {/* Compact Header */}
+              <div className="flex gap-2 mb-2">
+                {/* Left: วันที่ + หมวดหมู่+วิธีชำระ */}
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-1.5 bg-base-200/50 rounded-lg px-2 py-1">
                     <span className="text-xs text-base-content/60">📅</span>
-                    <span className="text-sm font-medium">{formatDisplayDate(item.costDate)}</span>
+                    <span className="text-sm font-medium">{formatDisplayDate(item.costDate) + " , " + formatDisplayTime(item.costTime) + " น."}</span>
                   </div>
-                  <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
-                    item.costCategoryID === 1 ? 'badge-primary' :
-                    item.costCategoryID === 2 ? 'badge-secondary' :
-                    item.costCategoryID === 3 ? 'badge-accent' :
-                    item.costCategoryID === 4 ? 'badge-info' :
-                    item.costCategoryID === 5 ? 'badge-warning' :
-                    item.costCategoryID === 6 ? 'badge-error' :
-                    'badge-neutral'
-                  }`}>
-                    {item.costCategory.description}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-xs text-base-content/70 bg-base-200/50 rounded-lg px-2 py-1">
+                      <span>{item.costPurchaseTypeID == 1 ? '💳' : '💵'}</span>
+                      <span className="font-medium">{item.costPurchaseType?.description}</span>
+                    </div>
+                    <span className={`badge badge-sm shadow-sm whitespace-nowrap ${
+                      item.costCategoryID === 1 ? 'badge-primary' :
+                      item.costCategoryID === 2 ? 'badge-secondary' :
+                      item.costCategoryID === 3 ? 'badge-accent' :
+                      item.costCategoryID === 4 ? 'badge-info' :
+                      item.costCategoryID === 5 ? 'badge-warning' :
+                      item.costCategoryID === 6 ? 'badge-error' :
+                      'badge-neutral'
+                    }`}>
+                      {item.costCategory.description}
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-success/10 rounded-lg px-2 py-1">
-                  <span className="font-bold text-sm text-success">{item.costPrice.toLocaleString()} บาท</span>
+                {/* Right: ราคา span 2 rows */}
+                <div className="flex items-center justify-center bg-success/10 border border-success/20 rounded-xl px-3">
+                  <span className="font-bold text-base text-success whitespace-nowrap">{item.costPrice.toLocaleString()} ฿</span>
                 </div>
               </div>
 
-              {/* Description Row */}
-              <div className="text-xs text-base-content/80 bg-base-200/30 rounded px-2 py-1 break-words mb-2" title={item.costDescription}>
-                💬 {item.costDescription}
+              {/* Payment + Description Row */}
+              <div className="space-y-1 mb-2">
+                <div className="flex items-start gap-1.5 bg-base-200/30 rounded-lg px-2 py-1">
+                  <span className="text-sm shrink-0">💬</span>
+                  <span className="text-xs text-base-content/75 break-words" title={item.costDescription}>{item.costDescription}</span>
+                </div>
               </div>
 
               {/* Last Modified Row */}
               {lastModifiedDate !== '-' && (
-                <div className={`flex items-center justify-between rounded px-2 py-1 mb-2 ${
-                  sortBy === 'lastModified'
-                    ? 'bg-secondary/10 border border-secondary/20'
-                    : 'bg-base-100/50'
-                }`}>
+                <div className={`flex items-center justify-between rounded px-2 py-1 mb-2 ${sortBy === 'lastModified'
+                  ? 'bg-secondary/10 border border-secondary/20'
+                  : 'bg-base-100/50'
+                  }`}>
                   <div className="flex items-center gap-1 text-xs text-base-content/60">
                     {isUpdated ? (
                       <>
