@@ -15,6 +15,8 @@ import React, { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import { api } from '../lib/api';
 import StaffWorktime from '../components/workTime/StaffWorktime';
+import ModalCreateWorktime from '../components/workTime/ModalCreateWorktime';
+import Toast from '../components/ui/Toast';
 
 // ✅  EmployeeDetailWorktime
 function EmployeeDetailWorktime({ employee, onBack }) {
@@ -810,6 +812,13 @@ function EmployeeDetailWorktime({ employee, onBack }) {
 function ManagementWorktime() {
   // ✅ ALL HOOKS AT THE TOP
   const [selectedEmployee, setSelectedEmployee] = React.useState(null);
+  const [toast, setToast] = React.useState({ show: false, message: '', type: 'success' });
+  const toastTimer = React.useRef(null);
+  const showToast = React.useCallback((message, type = 'success', duration = 3000) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ show: true, message, type });
+    toastTimer.current = setTimeout(() => setToast(t => ({ ...t, show: false })), duration);
+  }, []);
 
   const [dateFrom, setDateFrom] = React.useState(() => {
     const now = new Date();
@@ -1336,8 +1345,18 @@ function ManagementWorktime() {
 
   return (
     <div className="min-h-screen bg-base-200 flex flex-col items-center px-2 py-4 sm:px-4 sm:py-6">
+      <Toast show={toast.show} message={toast.message} type={toast.type} position="bottom-center" />
       <div className="w-full max-w-lg md:max-w-2xl lg:max-w-4xl card bg-base-100 shadow-xl p-3 sm:p-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-primary mb-4 text-center">เวลาทำงานของทุกคน</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-primary">เวลาทำงานของทุกคน</h1>
+          {authData?.userPermissionId === 1 && (
+            <ModalCreateWorktime
+              onCreated={() => window.location.reload()}
+              showToast={showToast}
+            />
+          )}
+        </div>
+
         <section>
           {/* ✅ สลับระหว่าง ช่วงเวลา กับ รายวัน */}
           <div className="mb-4 flex flex-col sm:flex-row items-center gap-2 justify-center">
