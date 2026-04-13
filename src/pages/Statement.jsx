@@ -220,7 +220,11 @@ const Statement = () => {
                                         <div className="flex justify-between items-center px-4 py-2">
                                             <span className="text-xs text-base-content/60">📈 กำไรสุทธิ</span>
                                             <span className={`font-bold text-sm ${statementData.netProfitWithHidden < 0 ? 'text-error' : 'text-success'}`}>฿{statementData.netProfitWithHidden?.toLocaleString()}</span>
-                                        </div>                                 
+                                        </div>
+                                        <div className="flex justify-between items-center px-4 py-2 bg-warning/10">
+                                            <span className="text-xs text-base-content/60">⏳ รายจ่ายคงค้าง</span>
+                                            <span className="font-bold text-sm text-warning">฿{statementData.pendingCost?.toLocaleString()}</span>
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
@@ -273,7 +277,12 @@ const Statement = () => {
                                     <div className="bg-base-200 rounded-lg p-2 text-center">
                                         <div className="text-xs text-base-content/70">กำไรสุทธิ (รวม เงินขาด/เกิน)</div>
                                         <div className={`font-bold text-lg ${statementData.netProfitWithHidden < 0 ? 'text-error' : 'text-success'}`}>฿{statementData.netProfitWithHidden?.toLocaleString()}</div>
-                                    </div>                                   
+                                    </div>
+                                    <div className="bg-warning/10 rounded-lg p-2 text-center">
+                                        <div className="text-xs text-base-content/70">⏳ รายจ่ายคงค้าง</div>
+                                        <div className="font-bold text-lg text-warning">฿{statementData.pendingCost?.toLocaleString()}</div>
+                                    </div>
+                                                               
                                 </div>
                             )}
                             {/* Daily Statements */}
