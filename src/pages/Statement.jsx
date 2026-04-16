@@ -184,7 +184,7 @@ const Statement = () => {
                                     </div>
 
                                     {/* รายละเอียด: list แบบ minimal */}
-                                    <div className="bg-white rounded-xl divide-y divide-base-300 overflow-hidden">                                        
+                                    <div className="bg-white rounded-xl divide-y divide-base-300 overflow-hidden">
                                         <div className="flex justify-between items-center px-4 py-3 bg-success/10">
                                             <span className="text-xs font-semibold text-success">🏦 บัญชีคงเหลือ</span>
                                             <span className="font-black text-base text-success">฿{statementData.bankBalance?.toLocaleString()}</span>
@@ -201,7 +201,7 @@ const Statement = () => {
                                             <span className="text-xs text-base-content/60">🏁 เงินตั้งต้น</span>
                                             <span className="font-bold text-sm text-info">฿{statementData.startingBalance?.toLocaleString()}</span>
                                         </div>
-                                         <div className="flex justify-between items-center px-4 py-2">
+                                        <div className="flex justify-between items-center px-4 py-2">
                                             <span className="text-xs text-base-content/60">📊 กระแสเงินสดสุทธิ</span>
                                             <span className={`font-bold text-sm ${statementData.netChange < 0 ? 'text-error' : 'text-success'}`}>฿{statementData.netChange?.toLocaleString()}</span>
                                         </div>
@@ -212,11 +212,26 @@ const Statement = () => {
                                         <div className="flex justify-between items-center px-4 py-2">
                                             <span className="text-xs text-base-content/60">🔍 เงินขาด/เกิน</span>
                                             <span className="font-bold text-sm text-base-content">฿{statementData.hiddenCost?.toLocaleString()}</span>
-                                        </div> 
+                                        </div>
+                                        {/* Mobile - เจ้าของรับเงิน */}
+                                        {statementData.totalOwnerCost !== undefined && statementData.totalOwnerCost > 0 ? (
+                                            <div className="flex justify-between items-center px-4 py-2">
+                                                <span className="text-xs text-base-content/60">👤 ค่าแรงทีมบริหาร</span>
+                                                <span className="font-bold text-sm text-info">฿{statementData.totalOwnerCost?.toLocaleString()}</span>
+                                            </div>
+                                        ) : null}
+                                        <div className="flex justify-between items-center px-4 py-2">
+                                            <span className="text-xs text-base-content/60">🏦 รายจ่ายเงินโอน</span>
+                                            <span className="font-bold text-sm text-error">฿{statementData.totalBankCost?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center px-4 py-2">
+                                            <span className="text-xs text-base-content/60">💵 รายจ่ายเงินสด</span>
+                                            <span className="font-bold text-sm text-error">฿{statementData.totalCashCost?.toLocaleString()}</span>
+                                        </div>
                                         <div className="flex justify-between items-center px-4 py-2">
                                             <span className="text-xs text-base-content/60">📊 รายจ่าย (รวม เงินขาด/เกิน) </span>
                                             <span className="font-bold text-sm text-error">฿{statementData.totalCostWithHidden?.toLocaleString()}</span>
-                                        </div>                                                                             
+                                        </div>
                                         <div className="flex justify-between items-center px-4 py-2">
                                             <span className="text-xs text-base-content/60">📈 กำไรสุทธิ</span>
                                             <span className={`font-bold text-sm ${statementData.netProfitWithHidden < 0 ? 'text-error' : 'text-success'}`}>฿{statementData.netProfitWithHidden?.toLocaleString()}</span>
@@ -229,7 +244,7 @@ const Statement = () => {
                                 </div>
                             ) : (
                                 /* Summary - Desktop */
-                                <div className="grid grid-cols-5 gap-2 mb-4">                                    
+                                <div className="grid grid-cols-5 gap-2 mb-4">
                                     <div className="bg-green-900/20 rounded-lg p-2 text-center">
                                         <div className="text-xs text-base-content/70">ยอดบัญชีคงเหลือ</div>
                                         <div className="font-bold text-lg text-success">฿{statementData.bankBalance?.toLocaleString()}</div>
@@ -242,7 +257,7 @@ const Statement = () => {
                                         <div className="text-xs text-base-content/70">ยอดเงินคงเหลือทั้งหมด</div>
                                         <div className="font-bold text-lg text-primary">฿{statementData.balance?.toLocaleString()}</div>
                                     </div>
-                                     <div className="bg-base-200 rounded-lg p-2 text-center">
+                                    <div className="bg-base-200 rounded-lg p-2 text-center">
                                         <div className="text-xs text-base-content/70">เงินตั้งต้น</div>
                                         <div className="font-bold text-lg text-info">฿{statementData.startingBalance?.toLocaleString()}</div>
                                     </div>
@@ -250,18 +265,35 @@ const Statement = () => {
                                         <div className="text-xs text-base-content/70">กระแสเงินสดสุทธิ</div>
                                         <div className={`font-bold text-lg ${statementData.netChange < 0 ? 'text-error' : 'text-success'}`}>฿{statementData.netChange?.toLocaleString()}</div>
                                     </div>
-                                    <div className="bg-success/10 rounded-lg p-2 text-center">
-                                        <div className="text-xs text-base-content/70">รายรับรวม</div>
-                                        <div className="font-bold text-lg text-success">฿{statementData.totalIncome?.toLocaleString()}</div>
-                                    </div>                                    
+                                     
+                                    {/* Desktop - เจ้าของรับเงิน */}
+                                    {statementData.totalOwnerCost !== undefined && statementData.totalOwnerCost > 0 ? (
+                                        <div className="bg-base-200 rounded-lg p-2 text-center">
+                                            <div className="text-xs text-base-content/70">ค่าแรงทีมบริหาร</div>
+                                            <div className="font-bold text-lg text-error">฿{statementData.totalOwnerCost?.toLocaleString()}</div>
+                                        </div>
+                                    ) : null}
                                     <div className="bg-error/10 rounded-lg p-2 text-center">
+                                        <div className="text-xs text-base-content/70">รายจ่ายเงินโอน</div>
+                                        <div className="font-bold text-lg text-error">฿{statementData.totalBankCost?.toLocaleString()}</div>
+                                    </div>
+                                    <div className="bg-error/10 rounded-lg p-2 text-center">
+                                        <div className="text-xs text-base-content/70">รายจ่ายเงินสด</div>
+                                        <div className="font-bold text-lg text-error">฿{statementData.totalCashCost?.toLocaleString()}</div>
+                                    </div>
+                                   
+                                    <div className="bg-error/25 rounded-lg p-2 text-center">
                                         <div className="text-xs text-base-content/70">รายจ่ายรวม</div>
                                         <div className="font-bold text-lg text-error">฿{statementData.totalCost?.toLocaleString()}</div>
                                     </div>
-                                    <div className="bg-secondary/10 rounded-lg p-2 text-center">
-                                        <div className="text-xs text-base-content/70">กำไรสุทธิ</div>
+                                    <div className="bg-success/20 rounded-lg p-2 text-center">
+                                        <div className="text-xs text-base-content/70">รายรับรวม</div>
+                                        <div className="font-bold text-lg text-success">฿{statementData.totalIncome?.toLocaleString()}</div>
+                                    </div>
+                                    <div className="bg-success/40 rounded-lg p-2 text-center">
+                                        <div className="text-xs text-base-content/70">กำไร</div>
                                         <div className={`font-bold text-lg ${statementData.netProfit < 0 ? 'text-error' : 'text-success'}`}>฿{statementData.netProfit?.toLocaleString()}</div>
-                                    </div>                                    
+                                    </div>
                                     <div className="bg-base-200 rounded-lg p-2 text-center">
                                         <div className="text-xs text-base-content/70">ยอดขายรวม</div>
                                         <div className="font-bold text-lg text-warning">฿{statementData.totalSales?.toLocaleString()}</div>
@@ -273,7 +305,7 @@ const Statement = () => {
                                     <div className="bg-base-200 rounded-lg p-2 text-center">
                                         <div className="text-xs text-base-content/70">รายจ่ายรวม (รวม เงินขาด/เกิน)</div>
                                         <div className="font-bold text-lg text-error">฿{statementData.totalCostWithHidden?.toLocaleString()}</div>
-                                    </div>                                    
+                                    </div>
                                     <div className="bg-base-200 rounded-lg p-2 text-center">
                                         <div className="text-xs text-base-content/70">กำไรสุทธิ (รวม เงินขาด/เกิน)</div>
                                         <div className={`font-bold text-lg ${statementData.netProfitWithHidden < 0 ? 'text-error' : 'text-success'}`}>฿{statementData.netProfitWithHidden?.toLocaleString()}</div>
@@ -282,7 +314,7 @@ const Statement = () => {
                                         <div className="text-xs text-base-content/70">⏳ รายจ่ายคงค้าง</div>
                                         <div className="font-bold text-lg text-warning">฿{statementData.pendingCost?.toLocaleString()}</div>
                                     </div>
-                                                               
+
                                 </div>
                             )}
                             {/* Daily Statements */}
