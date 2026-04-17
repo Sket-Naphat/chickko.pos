@@ -75,11 +75,15 @@ export default function DeliveryDetail() {
                         orderId: order.orderId,
                         orderTime: order.orderTime,
                         customerName: order.customerName,
-                        totalPrice: order.totalPrice, // ✅ ใช้ totalPrice จาก API
+                        totalPrice: order.totalPrice,
+                        totalGrabPrice: order.totalGrabPrice,
+                        totalFoodCost: order.totalFoodCost,
                         items: order.orderDetails?.map(detail => ({
                             name: detail.menuName,
                             qty: detail.quantity,
-                            price: detail.price / detail.quantity, // ✅ คำนวณราคาต่อชิ้น
+                            price: detail.price / detail.quantity,
+                            grabPrice: detail.grabPrice,           // ✅ เพิ่ม
+                            totalFoodCost: detail.totalFoodCost,   // ✅ เพิ่ม
                             toppings: detail.toppings || []
                         })) || []
                     }));
@@ -180,20 +184,43 @@ export default function DeliveryDetail() {
                             <div className="card-body">
                                 <h2 className="card-title text-primary mb-4">💰 สรุปยอดขาย</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                    {/* ✅ Column ซ้าย: ยอดขาย + ต้นทุน */}
                                     <div className="space-y-4">
-                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
-                                            <span className="font-semibold">ยอดหลังหัก GP</span>
-                                            <span className="text-success font-bold text-xl">
-                                                ฿{detailData?.netSales?.toLocaleString() || 0}
-                                            </span>
-                                        </div>
                                         <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
                                             <span className="font-semibold">ยอดขายรวม</span>
                                             <span className="text-info font-bold text-xl">
                                                 ฿{detailData?.totalSales?.toLocaleString() || 0}
                                             </span>
                                         </div>
+                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
+                                            <span className="font-semibold">ยอดหลังหัก GP</span>
+                                            <span className="text-success font-bold text-xl">
+                                                ฿{detailData?.netSales?.toLocaleString() || 0}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-3 bg-error/10 border border-error/20 rounded-lg">
+                                            <span className="font-semibold">ต้นทุนอาหารรวม</span>
+                                            <span className="text-error font-bold text-xl">
+                                                ฿{ordersData.reduce((sum, order) => sum + (order.totalFoodCost || 0), 0).toLocaleString()}
+                                            </span>
+                                        </div>
+                                        {(() => {
+                                            const netSales = detailData?.netSales || 0;
+                                            const totalFoodCost = ordersData.reduce((sum, order) => sum + (order.totalFoodCost || 0), 0);
+                                            const grossProfit = netSales - totalFoodCost;
+                                            return (
+                                                <div className={`flex justify-between items-center p-3 rounded-lg border ${grossProfit >= 0 ? 'bg-success/10 border-success/20' : 'bg-error/10 border-error/20'}`}>
+                                                    <span className="font-semibold">กำไรขั้นต้น</span>
+                                                    <span className={`font-bold text-xl ${grossProfit >= 0 ? 'text-success' : 'text-error'}`}>
+                                                        ฿{grossProfit.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
+
+                                    {/* ✅ Column ขวา: GP + วิเคราะห์ */}
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
                                             <span className="font-semibold">% GP ที่หักไป</span>
@@ -207,43 +234,32 @@ export default function DeliveryDetail() {
                                                 ฿{detailData?.gpAmount?.toLocaleString() || 0}
                                             </span>
                                         </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
-                                            <span className="font-semibold">เทียบกับราคาหน้าร้าน</span>
-                                            <span className={`font-bold text-xl ${(() => {
-                                                // ✅ คำนวณส่วนต่าง: ยอดหลังหัก GP - สรุปรวมราคาหน้าร้าน
-                                                const netSales = detailData?.netSales || 0;
-                                                const totalOrderPrice = ordersData.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-                                                const difference = netSales - totalOrderPrice;
-
-                                                // ✅ กำหนดสีตามผลลัพธ์
-                                                if (difference > 0) return 'text-success'; // เขียว = ได้มากกว่าราคาหน้าร้าน
-                                                if (difference < 0) return 'text-error';   // แดง = ได้น้อยกว่าราคาหน้าร้าน
-                                                return 'text-warning'; // เหลือง = เท่ากัน
-                                            })()}`}>
-                                                {(() => {
-                                                    // ✅ คำนวณส่วนต่าง: ยอดหลังหัก GP - สรุปรวมราคาหน้าร้าน
-                                                    const netSales = detailData?.netSales || 0;
-                                                    const totalOrderPrice = ordersData.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-                                                    const difference = netSales - totalOrderPrice;
-
-                                                    // ✅ แสดงผลพร้อมเครื่องหมาย + หรือ - และสัญลักษณ์บาท
-                                                    return `${difference >= 0 ? '+' : ''}${difference.toLocaleString()}`;
-                                                })()}
-                                            </span>
+                                        {(() => {
+                                            const netSales = detailData?.netSales || 0;
+                                            const totalOrderPrice = ordersData.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+                                            const difference = netSales - totalOrderPrice;
+                                            const colorClass = difference > 0 ? 'text-success' : difference < 0 ? 'text-error' : 'text-warning';
+                                            return (
+                                                <div className="flex justify-between items-center p-3 bg-base-100 rounded-lg">
+                                                    <span className="font-semibold">เทียบกับราคาหน้าร้าน</span>
+                                                    <span className={`font-bold text-xl ${colorClass}`}>
+                                                        {`${difference >= 0 ? '+' : ''}${difference.toLocaleString()}`}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })()}
+                                        <div className="p-3 bg-base-200 rounded-lg">
+                                            <h3 className="font-bold mb-1">วิเคราะห์ GP</h3>
+                                            <div className="text-sm">
+                                                {detailData?.gpPercent > 30
+                                                    ? "🔴 GP สูงกว่าปกติ อาจต้องตรวจสอบราคา"
+                                                    : detailData?.gpPercent > 20
+                                                        ? "🟡 GP อยู่ในเกณฑ์ปกติ"
+                                                        : "🟢 GP ต่ำ ได้กำไรดี"}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold">วิเคราะห์ GP</h3>
-                                        <div className="text-xs">
-                                            {detailData?.gpPercent > 30
-                                                ? "🔴 GP สูงกว่าปกติ อาจต้องตรวจสอบราคา"
-                                                : detailData?.gpPercent > 20
-                                                    ? "🟡 GP อยู่ในเกณฑ์ปกติ"
-                                                    : "🟢 GP ต่ำ ได้กำไรดี"}
-                                        </div>
-                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -314,6 +330,10 @@ export default function DeliveryDetail() {
                                                             <div className="text-right">
                                                                 <div className="font-bold text-lg text-success">
                                                                     ฿{order.totalPrice?.toLocaleString() || 0}
+                                                                </div>
+                                                                {/* ✅ เพิ่ม cost food */}
+                                                                <div className="text-xs text-error">
+                                                                    🍳 ต้นทุน ฿{order.totalFoodCost?.toLocaleString() || 0}
                                                                 </div>
                                                                 <div className="text-xs text-base-content/60">
                                                                     {order.items?.length || 0} รายการ
