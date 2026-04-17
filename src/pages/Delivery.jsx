@@ -136,6 +136,9 @@ export default function Delivery() {
     const totalMonthSales = grabData.reduce((sum, item) => sum + (item.totalSales || 0), 0);
     const totalMonthNetSales = grabData.reduce((sum, item) => sum + (item.netSales || 0), 0);
     const totalMonthGP = grabData.reduce((sum, item) => sum + (item.gpAmount || 0), 0);
+    const totalMonthFoodCost = grabData.reduce((sum, item) => sum + (item.totalFoodCost || 0), 0);
+    // ✅ เพิ่ม
+    const totalMonthGrossProfit = totalMonthNetSales - totalMonthFoodCost;
 
     // คำนวณ % GP รวมของเดือน
     const totalMonthGPPercent = totalMonthSales > 0
@@ -296,6 +299,27 @@ export default function Delivery() {
                     <div className="text-lg font-bold text-primary">{grabData.reduce((sum, item) => sum + (item.totalOrders || 0), 0).toLocaleString()}</div>
                     <div className="text-xs text-base-content/60">ออเดอร์</div>
                 </div>
+
+                <div className="bg-error/10 border border-error/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="text-error">🍳</div>
+                    </div>
+                    <div className="text-xs text-base-content/70 mb-1">ต้นทุนอาหารรวม</div>
+                    <div className="text-lg font-bold text-error">฿{totalMonthFoodCost.toLocaleString()}</div>
+                    <div className="text-xs text-base-content/60">{months[selectedMonth]} {selectedYear}</div>
+                </div>
+
+                {/* ✅ เพิ่ม card กำไรขั้นต้น */}
+                <div className={`border rounded-lg p-4 ${totalMonthGrossProfit >= 0 ? 'bg-success/10 border-success/20' : 'bg-error/10 border-error/20'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                        <div className={totalMonthGrossProfit >= 0 ? 'text-success' : 'text-error'}>📈</div>
+                    </div>
+                    <div className="text-xs text-base-content/70 mb-1">กำไรขั้นต้น</div>
+                    <div className={`text-lg font-bold ${totalMonthGrossProfit >= 0 ? 'text-success' : 'text-error'}`}>
+                        ฿{totalMonthGrossProfit.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-base-content/60">ยอดหลัก GP - ต้นทุน</div>
+                </div>
             </div>
 
             {/* Data Display Section */}
@@ -342,6 +366,22 @@ export default function Delivery() {
                                             {item.gpPercent?.toFixed(2) || 0}% (฿{item.gpAmount?.toLocaleString() || 0})
                                         </span>
                                     </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-base-content/70">ต้นทุนอาหาร</span>
+                                        <span className="text-error font-semibold">฿{item.totalFoodCost?.toLocaleString() || 0}</span>
+                                    </div>
+                                    {/* ✅ เพิ่มกำไรขั้นต้น */}
+                                    {(() => {
+                                        const grossProfit = (item.netSales || 0) - (item.totalFoodCost || 0);
+                                        return (
+                                            <div className="flex justify-between items-center pt-1 border-t border-base-300/50">
+                                                <span className="text-sm text-base-content/70">กำไรขั้นต้น</span>
+                                                <span className={`font-semibold ${grossProfit >= 0 ? 'text-success' : 'text-error'}`}>
+                                                    ฿{grossProfit.toLocaleString()}
+                                                </span>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-sm text-base-content/70">จำนวนบิล</span>

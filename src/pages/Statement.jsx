@@ -166,7 +166,7 @@ const Statement = () => {
                                 <div className="mb-4 space-y-3">
                                     {/* Highlight: กำไรจากการดำเนินงาน */}
                                     <div className={`rounded-xl p-4 text-center ${statementData.netProfit < 0 ? 'bg-error/10 border border-error/30' : 'bg-success/10 border border-success/30'}`}>
-                                        <div className="text-xs text-base-content/60 mb-1">ผลการดำเนินงาน</div>
+                                        <div className="text-xs text-base-content/60 mb-1">กำไร</div>
                                         <div className={`text-3xl font-black ${statementData.netProfit < 0 ? 'text-error' : 'text-success'}`}>
                                             ฿{statementData.netProfit?.toLocaleString()}
                                         </div>
@@ -202,7 +202,7 @@ const Statement = () => {
                                             <span className="font-bold text-sm text-info">฿{statementData.startingBalance?.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between items-center px-4 py-2">
-                                            <span className="text-xs text-base-content/60">📊 กระแสเงินสดสุทธิ</span>
+                                            <span className="text-xs text-base-content/60">📊 ผลการดำเนินงาน</span>
                                             <span className={`font-bold text-sm ${statementData.netChange < 0 ? 'text-error' : 'text-success'}`}>฿{statementData.netChange?.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between items-center px-4 py-2">
@@ -217,7 +217,7 @@ const Statement = () => {
                                         {statementData.totalOwnerCost !== undefined && statementData.totalOwnerCost > 0 ? (
                                             <div className="flex justify-between items-center px-4 py-2">
                                                 <span className="text-xs text-base-content/60">👤 ค่าแรงทีมบริหาร</span>
-                                                <span className="font-bold text-sm text-info">฿{statementData.totalOwnerCost?.toLocaleString()}</span>
+                                                <span className="font-bold text-sm text-error">฿{statementData.totalOwnerCost?.toLocaleString()}</span>
                                             </div>
                                         ) : null}
                                         <div className="flex justify-between items-center px-4 py-2">
@@ -262,7 +262,7 @@ const Statement = () => {
                                         <div className="font-bold text-lg text-info">฿{statementData.startingBalance?.toLocaleString()}</div>
                                     </div>
                                     <div className="bg-base-200 rounded-lg p-2 text-center">
-                                        <div className="text-xs text-base-content/70">กระแสเงินสดสุทธิ</div>
+                                        <div className="text-xs text-base-content/70">ผลการดำเนินงาน</div>
                                         <div className={`font-bold text-lg ${statementData.netChange < 0 ? 'text-error' : 'text-success'}`}>฿{statementData.netChange?.toLocaleString()}</div>
                                     </div>
                                      
