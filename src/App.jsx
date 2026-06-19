@@ -30,6 +30,7 @@ import Event from "./pages/Event"; // 👉 เพิ่มหน้ากิจ�
 import EventRollingReport from "./pages/EventRollingReport"; // ✅ เพิ่มหน้าจับฉลาก - Protected route
 import Statement from "./pages/Statement";
 import StatementIncome from "./pages/StatementIncome";
+import Employee from "./pages/Employee";
 
 function App() {
   const location = useLocation();
@@ -80,6 +81,7 @@ function App() {
                 <Route path="/rolling-game-report" element={<EventRollingReport />} /> {/* ✅ เพิ่มหน้าจับฉลาก - Protected route */}
                 <Route path="/statement" element={<Statement />} />
                 <Route path="/statement-income" element={<StatementIncome />} />
+                <Route path="/employee" element={<Employee />} />
               </Route>
 
               {/* ไป path แปลก ๆ ขณะอยู่ layout นี้ → ส่งไป /login */}
