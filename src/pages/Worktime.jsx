@@ -17,6 +17,7 @@ import { api } from '../lib/api';
 import StaffWorktime from '../components/workTime/StaffWorktime';
 import ModalCreateWorktime from '../components/workTime/ModalCreateWorktime';
 import Toast from '../components/ui/Toast';
+import { IoCopyOutline } from 'react-icons/io5';
 
 // ✅  EmployeeDetailWorktime
 function EmployeeDetailWorktime({ employee, onBack }) {
@@ -866,7 +867,9 @@ function ManagementWorktime() {
     worktime: 0,
     wageCost: 0,
     dateFrom: '',
-    dateTo: ''
+    dateTo: '',
+    bankAccount: '',
+    bankName: ''
   });
   const [paymentLoading, setPaymentLoading] = React.useState(false);
 
@@ -1027,6 +1030,29 @@ function ManagementWorktime() {
                 <span>ค่าตอบแทน:</span>
                 <span className="font-bold text-success text-lg">{formatCurrency(paymentModal.wageCost)}</span>
               </div>
+              {paymentModal.bankAccount && (
+                <div className="border-t pt-2 mt-1">
+                  <div className="border border-base-300 rounded-lg p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        {paymentModal.bankName && (
+                          <div className="text-xs font-medium text-info mb-0.5">{paymentModal.bankName}</div>
+                        )}
+                        <div className="font-bold text-base tracking-wider">{paymentModal.bankAccount}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-info btn-outline gap-1"
+                        title="คัดลอกเลขบัญชี"
+                        onClick={() => navigator.clipboard.writeText(paymentModal.bankAccount)}
+                      >
+                        <IoCopyOutline size={15} />
+                        คัดลอก
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-4 p-3 bg-warning/10 rounded-lg text-center">
@@ -1106,7 +1132,9 @@ function ManagementWorktime() {
       worktime: employee.totalWorktime || 0,
       wageCost: employee.wageCost || 0,
       dateFrom: filterType === "daily" ? selectedDate : dateFrom,
-      dateTo: filterType === "daily" ? selectedDate : dateTo
+      dateTo: filterType === "daily" ? selectedDate : dateTo,
+      bankAccount: employee.bankAccount || '',
+      bankName: employee.bankName || ''
     });
 
     // ✅ เริ่ม loading และดึงข้อมูลใหม่จาก API
