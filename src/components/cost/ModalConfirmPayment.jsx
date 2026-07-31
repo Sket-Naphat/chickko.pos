@@ -1,149 +1,161 @@
-import { getCostCategories, getCostPurchases } from "../../services/costService";
+import { updatePurchaseCost, deleteCost } from "../../services/costService"; // เรียก backend อัปเดต/ลบผ่าน service layer
+import { useCostOptions } from "./hooks/useCostOptions"; // hook กลาง โหลด category/purchase-type (ใช้ร่วมกับ ModalNewCost)
+import ConfirmDeleteModal from "./ConfirmDeleteModal";     // modal ยืนยันก่อนลบ ซ้อนเปิดทับ modal นี้ได้ (ดูหมายเหตุ ConfirmDeleteModal.jsx)
 import { useRef, useState, useId, useEffect } from "react";
-import { api } from "../../lib/api";
 import Cookies from "js-cookie";
 
+// component นี้ทำงาน 2 โหมดในตัวเดียว แยกด้วย prop `buttonText`:
+// - buttonText="จ่าย" (ค่า default) → ใช้ใน UnpaidCostList.jsx สำหรับ "ยืนยันจ่ายเงิน" รายการที่ยังไม่จ่าย (ไม่มีปุ่มลบ)
+// - buttonText="แก้ไข" → ใช้ใน PaidCostList.jsx สำหรับ "แก้ไข" รายการที่จ่ายแล้ว (มีปุ่มลบเพิ่มมาด้วย)
+// ทั้งสองโหมดยิง API เดียวกันคือ updatePurchaseCost — ต่างกันแค่ label/ปุ่มที่โชว์บนหน้าจอ
 export default function ModalConfirmPayment({ onConfirm, item, showToast, buttonText = "จ่าย" }) {
+    // useId() สร้าง id ไม่ซ้ำกันสำหรับผูก label กับ input แต่ละช่อง กันชนกันถ้ามี modal นี้เปิดพร้อมกันหลาย instance (เช่นในตาราง PaidCostList ที่มีปุ่ม "แก้ไข" ทุกแถว)
     const num_costPriceId = useId();
     // const dt_purchaseDateId = useId();
     const ddl_costCategoryId = useId();
-    const dialogRef = useRef(null);
+    const dialogRef = useRef(null); // ref ของ native <dialog> ใช้เรียก .showModal()/.close()
     const txt_costDescriptionId = useId();
     const txt_costTimeId = useId();
     const txt_costDateId = useId();
 
     // สถานะต่างๆ สำหรับ modal
-    const [isLoadingModal, setIsLoadingModal] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-    // สถานะต่างๆ สำหรับข้อมูลค่าใช้จ่าย
-    const [costCategories, setCostCategories] = useState([]);
+    const { categories, purchaseTypes, isLoading, loadOptions } = useCostOptions(); // ตัวเลือก dropdown + สถานะโหลด
+    const [isSaving, setIsSaving] = useState(false);           // true ระหว่างรอ updatePurchaseCost() ตอบกลับ
+    const [isDeleting, setIsDeleting] = useState(false);       // true ระหว่างรอ deleteCost() ตอบกลับ
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // ควบคุมเปิด/ปิด ConfirmDeleteModal ที่ซ้อนอยู่ข้างใน
+    // สถานะต่างๆ สำหรับข้อมูลค่าใช้จ่าย — ทุกตัว seed ค่าเริ่มต้นมาจาก `item` ที่รับเข้ามา (รายการที่กำลังจะจ่าย/แก้ไข)
     const [costPrice, setCostPrice] = useState(item.costPrice);
-    const [purchaseDate, setPurchaseDate] = useState(item.purchaseDate || new Date().toISOString().slice(0, 10));
+    const [purchaseDate, setPurchaseDate] = useState(item.purchaseDate || new Date().toISOString().slice(0, 10)); // ยังไม่เคยมีวันที่จ่าย (โหมด "จ่าย" ครั้งแรก) → default วันนี้
     const [costDate, setCostDate] = useState(item.costDate || new Date().toISOString().slice(0, 10));
-    const [categoryId, setCategoryId] = useState(item.costCategoryID || item.costCategory?.costCategoryID);
+    const [categoryId, setCategoryId] = useState(item.costCategoryID || item.costCategory?.costCategoryID); // เผื่อ backend ส่งมาคนละ field กันในบางเคส
     const [costDescription, setCostDescription] = useState(item.costDescription);
     const [costTime, setCostTime] = useState(item.costTime || "");
     const [costPurchaseTypeId, setCostPurchaseTypeId] = useState(item.costPurchaseTypeID || "");
-    const [costPurchase, setCostPurchase] = useState([]);
-    const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null;
+    const authData = Cookies.get("authData") ? JSON.parse(Cookies.get("authData")) : null; // ผู้ใช้ปัจจุบัน ใช้บันทึกว่าใครเป็นคนแก้ไข
 
     useEffect(() => {
         // default วันนี้ถ้าไม่มีค่า
+        // ใช้ functional update (prev) แทนอ่านตัวแปรตรงๆ กัน stale closure — เผื่อ item เปลี่ยนหลัง mount (ไม่เกิดจริงในทางปฏิบัติ แต่เขียนกันไว้)
         setPurchaseDate((prev) => prev || new Date().toISOString().slice(0, 10));
         setCostDate((prev) => prev || new Date().toISOString().slice(0, 10));
-        setCostTime((prev) => prev || new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }));
-    }, []);
+        setCostTime((prev) => prev || new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })); // en-GB locale ให้ผลเป็น 24 ชม. รูปแบบ HH:mm
+    }, []); // ทำครั้งเดียวตอน mount
 
     // เปิด modal เมื่อมีการคลิกปุ่ม
     const openModal = async () => {
         if (isSaving) return; // ป้องกันการเปิด modal ซ้ำในขณะที่กำลังบันทึก
         try {
-            setIsLoadingModal(true);
-
-            const categories = await getCostCategories();
-            setCostCategories(categories);
+            const { categories: loadedCategories, purchaseTypes: loadedPurchaseTypes } = await loadOptions(); // โหลด dropdown options พร้อมกัน
             // ถ้ายังไม่มี categoryId ให้ใช้ค่าจาก item หรือค่าแรกใน list
-            if (!categoryId && categories.length > 0) {
-                setCategoryId(String(item.costCategoryID || item.costCategory?.costCategoryID || categories[0].costCategoryID));
+            if (!categoryId && loadedCategories.length > 0) {
+                setCategoryId(String(item.costCategoryID || item.costCategory?.costCategoryID || loadedCategories[0].costCategoryID));
             }
-
-            const types = await getCostPurchases();
-            setCostPurchase(types);
-            if (!costPurchaseTypeId && types.length > 0) {
-                setCostPurchaseTypeId(String(item.costPurchaseTypeID || types[0].costPurchaseTypeID));
+            if (!costPurchaseTypeId && loadedPurchaseTypes.length > 0) {
+                setCostPurchaseTypeId(String(item.costPurchaseTypeID || loadedPurchaseTypes[0].costPurchaseTypeID));
             }
         }
         catch (err) {
-            console.error("เปิด modal ไม่ได้:", err);
+            console.error("เปิด modal ไม่ได้:", err); // โหลดพังก็ไม่บล็อกผู้ใช้ ปล่อยให้เปิด modal ต่อ
         }
         finally {
-            setIsLoadingModal(false);
-            if (dialogRef.current) dialogRef.current.showModal();
+            if (dialogRef.current) dialogRef.current.showModal(); // เปิด modal เสมอไม่ว่าโหลด option สำเร็จหรือไม่
         }
     }
 
     const closeModal = () => dialogRef.current?.close();
 
+    // กด submit ฟอร์ม (ปุ่ม "ยืนยันการจ่าย"/"บันทึกการแก้ไข" แล้วแต่โหมด)
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (isSaving) return;
+        e.preventDefault(); // กันฟอร์ม submit แบบ native ที่จะรีเฟรชหน้า
+        if (isSaving) return; // กันกดซ้ำ
         setIsSaving(true);
 
         const now = new Date();
-        const pad = (n) => String(n).padStart(2, "0");
+        const pad = (n) => String(n).padStart(2, "0"); // เติม 0 ข้างหน้าตัวเลขให้ครบ 2 หลัก เช่น 5 → "05"
 
         // ฟังก์ชัน format เวลาให้เป็น HH:mm:ss
         const formatTime = (timeStr) => {
-            if (!timeStr) return `${pad(now.getHours())}:${pad(now.getMinutes())}:00`;
+            if (!timeStr) return `${pad(now.getHours())}:${pad(now.getMinutes())}:00`; // ไม่มีค่าเลย → ใช้เวลาปัจจุบัน
             // ถ้ามีแค่ HH:mm ให้เพิ่ม :00 ต่อท้าย
-            if (/^\d{2}:\d{2}$/.test(timeStr)) return `${timeStr}:00`;
-            return timeStr;
+            if (/^\d{2}:\d{2}$/.test(timeStr)) return `${timeStr}:00`; // input type=time ให้ค่าแค่ HH:mm ต้องเติมวินาทีเอง
+            return timeStr; // เผื่อกรณีมี :ss มาแล้วอยู่แล้ว ก็คืนตรงๆ
         };
 
-        const purchaseTime = formatTime(costTime);
+        const purchaseTime = formatTime(costTime);       // ใช้ค่าเดียวกันทั้งสองชื่อ field เพราะ backend ต้องการทั้ง PurchaseTime และ CostTime
         const formattedCostTime = formatTime(costTime);
 
         // หาข้อความของ option ที่เลือกจาก dropdown
-        const categoryText = costCategories.find(
+        const categoryText = categories.find(
             (c) => String(c.costCategoryID) === String(categoryId)
-        )?.description || "";
+        )?.description || ""; // ใช้เป็น fallback รายละเอียดถ้าผู้ใช้ไม่ได้กรอกเอง
 
         const payload = {
-            CostID: item.costID,
+            CostID: item.costID, // ต้องส่ง ID ของรายการเดิมเสมอ (ต่างจาก ModalNewCost ที่เป็นการสร้างใหม่ ไม่มี ID)
             CostPrice: Number(costPrice || 0),
             PurchaseDate: purchaseDate,         // YYYY-MM-DD
             PurchaseTime: purchaseTime,         // HH:mm:ss
             CostCategoryID: Number(categoryId),
             CostDescription: (costDescription || categoryText).trim(),
-            IsPurchase: true,
+            IsPurchase: true,                   // บันทึกผ่าน modal นี้ = ถือว่าจ่ายแล้วเสมอ (ทั้งสองโหมด)
             UpdateBy: authData?.userId || null,
             CostPurchaseTypeID: Number(costPurchaseTypeId),
             CostDate: costDate,
             CostTime: formattedCostTime,        // HH:mm:ss
         };
+        // ตรวจฟอร์มฝั่ง client ก่อนยิง API — พังจุดไหนก็โชว์ toast แล้วหยุดทันที (return เปล่าๆ)
         if (!payload.CostPrice || payload.CostPrice <= 0) {
             setIsSaving(false);
-            return alert("กรุณากรอกจำนวนเงินให้ถูกต้อง");
+            showToast("กรุณากรอกจำนวนเงินให้ถูกต้อง", "error", 2000);
+            return;
         }
         if (!payload.PurchaseDate) {
             setIsSaving(false);
-            return alert("กรุณาเลือกวันที่");
+            showToast("กรุณาเลือกวันที่", "error", 2000);
+            return;
         }
         if (payload.CostCategoryID === "" || payload.CostCategoryID === null) {
             setIsSaving(false);
-            return alert("กรุณาเลือกหมวดหมู่");
+            showToast("กรุณาเลือกหมวดหมู่", "error", 2000);
+            return;
         }
         try {
-            await api.post("/cost/UpdatePurchaseCost", payload);
+            await updatePurchaseCost(payload); // ยิง POST /cost/UpdatePurchaseCost — ใช้ endpoint เดียวกันทั้งโหมด "จ่าย" และ "แก้ไข"
             //alert(payload);
 
 
             showToast("บันทึกสำเร็จ!", "success", 2000);
-            onConfirm?.(); // ให้ parent ไป refresh list ถ้าต้องการ
+            onConfirm?.(); // ให้ parent ไป refresh list ถ้าต้องการ — UnpaidCostList/PaidCostList จะ fetch ข้อมูลใหม่
             closeModal();
 
         } catch (err) {
             console.error(err);
-            const apiMsg = err?.response?.data?.message || err?.message || "บันทึกไม่สำเร็จ";
+            const apiMsg = err?.response?.data?.message || err?.message || "บันทึกไม่สำเร็จ"; // ดึงข้อความจาก backend ก่อน ถ้าไม่มีค่อย fallback
             showToast(apiMsg, "error", 2000);
         } finally {
             setIsSaving(false);
             setTimeout(() => {
-            }, 2500);
+            }, 2500); // หมายเหตุ: setTimeout เปล่าๆ ไม่มีผลอะไร (โค้ดเดิมทิ้งไว้) — ไม่ได้ลบเพราะไม่กระทบ behavior แค่ไม่มีประโยชน์
         }
     };
 
-    const handleDelete = async () => {
+    // กดปุ่ม "ลบรายการ" ในฟอร์ม (โหมด "แก้ไข" เท่านั้น) → เปิด ConfirmDeleteModal ก่อน ยังไม่ลบจริง
+    const handleDeleteClick = () => {
         if (isDeleting) return;
-        if (!window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?")) return;
+        setShowDeleteConfirm(true);
+    };
 
+    // ปิด ConfirmDeleteModal โดยไม่ลบ (กด "ยกเลิก"/Esc/คลิกพื้นหลัง)
+    const handleDeleteCancel = () => setShowDeleteConfirm(false);
+
+    // กดยืนยัน "ลบรายการ" ใน ConfirmDeleteModal → ยิง API ลบจริง
+    const handleDeleteConfirm = async () => {
         setIsDeleting(true);
         try {
-            await api.delete(`/cost/DeleteCost/${item.costID}`);
+            await deleteCost(item.costID);
             showToast("ลบรายการเรียบร้อยแล้ว", "success", 2000);
-            onConfirm?.();
-            closeModal();
+            onConfirm?.();               // บอก parent ให้ refresh list (รายการที่ลบจะหายไป)
+            setShowDeleteConfirm(false); // ปิด confirm modal
+            closeModal();                // ปิด modal แก้ไขด้วย (ลบสำเร็จแล้วไม่มีอะไรให้แก้ไขต่อ)
         } catch (err) {
             console.error(err);
             const apiMsg = err?.response?.data?.message || err?.message || "ลบรายการไม่สำเร็จ";
@@ -155,12 +167,13 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
 
     return (
         <>
+            {/* ปุ่มเปิด modal — ข้อความบนปุ่มมาจาก buttonText prop ("จ่าย" หรือ "แก้ไข") */}
             <button
                 className="btn btn-sm lg:btn-md btn-primary shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
                 onClick={openModal}
-                disabled={isLoadingModal}
+                disabled={isLoading}
             >
-                {isLoadingModal ? (
+                {isLoading ? (
                     <>
                         <span className="loading loading-spinner loading-sm"></span>
                         ⏳กำลังโหลด...
@@ -177,7 +190,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
             {/* Modal Dialog */}
             <dialog ref={dialogRef} className="modal">
                 <div className="modal-box w-11/12 max-w-3xl bg-gradient-to-br from-base-100 to-base-200 border-2 border-primary/20 shadow-2xl">
-                    {/* Modal Header */}
+                    {/* Modal Header: หัวข้อเปลี่ยนไปตามโหมด */}
                     <div className="flex items-center gap-4 mb-6 pb-4 border-base-300">
                         <div className="p-3 bg-primary/20 rounded-full">
                             <span className="text-2xl">💰</span>
@@ -235,7 +248,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                                 onChange={(e) => {
                                     setPurchaseDate(e.target.value);
                                     setCostDate(e.target.value);
-                                }} // ซิงค์ costDate กับ purchaseDate
+                                }} // ซิงค์ costDate กับ purchaseDate — ฟอร์มนี้มีแค่ input วันที่ช่องเดียว แต่ต้องส่งทั้ง CostDate และ PurchaseDate ไป backend จึงอัปเดตคู่กันเสมอ
                                 required
                             />
                         </div>
@@ -259,7 +272,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                             />
                         </div>
 
-                        {/* Category Selection */}
+                        {/* Category Selection — ตัวเลือกจาก categories (useCostOptions) */}
                         <div className="form-control w-full">
                             <div className="mb-2 text-start">
                                 <span className="label-text font-semibold flex items-center gap-2">
@@ -275,7 +288,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                                 required
                             >
                                 <option value="" disabled>— เลือกประเภทค่าใช้จ่าย —</option>
-                                {costCategories.map((category) => (
+                                {categories.map((category) => (
                                     <option
                                         key={category.costCategoryID}
                                         value={String(category.costCategoryID)}
@@ -286,7 +299,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                             </select>
                         </div>
 
-                        {/* Payment Method */}
+                        {/* Payment Method — ตัวเลือกจาก purchaseTypes (useCostOptions) */}
                         <div className="form-control w-full">
                             <div className="mb-2 text-start">
                                 <span className="label-text font-semibold flex items-center gap-2">
@@ -301,7 +314,7 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                                 required
                             >
                                 <option value="" disabled>— เลือกวิธีการชำระเงิน —</option>
-                                {costPurchase.map((purchase) => (
+                                {purchaseTypes.map((purchase) => (
                                     <option
                                         key={purchase.costPurchaseTypeID}
                                         value={String(purchase.costPurchaseTypeID)}
@@ -332,13 +345,13 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
 
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 mt-6 border-t border-base-300">
-    
-                            {/* ปุ่มลบ - แสดงเฉพาะเมื่อเป็นโหมดแก้ไข */}
+
+                            {/* ปุ่มลบ - แสดงเฉพาะเมื่อเป็นโหมดแก้ไข (ไม่มีปุ่มลบในโหมด "จ่าย" เพราะรายการยังไม่จ่ายให้ไปลบที่ UnpaidCostList แทน) */}
                             {buttonText === "แก้ไข" && (
                                 <button
                                     type="button"
                                     className="btn btn-error btn-outline transition-all duration-200 order-3 sm:order-1 sm:mr-auto"
-                                    onClick={handleDelete}
+                                    onClick={handleDeleteClick}
                                     disabled={isSaving || isDeleting}
                                 >
                                     {isDeleting ? (
@@ -384,6 +397,15 @@ export default function ModalConfirmPayment({ onConfirm, item, showToast, button
                         </div>
                     </form>
                 </div>
+                {/* ซ้อน ConfirmDeleteModal ไว้ "ข้างใน" <dialog> เดียวกัน (ไม่ใช่ sibling นอก dialog)
+                    เพื่อให้ browser จัดการ top-layer stacking ให้ถูกต้องเวลาเปิดซ้อนทับฟอร์มแก้ไขที่เปิดอยู่แล้ว */}
+                <ConfirmDeleteModal
+                    show={showDeleteConfirm}
+                    item={item}
+                    isDeleting={isDeleting}
+                    onConfirm={handleDeleteConfirm}
+                    onCancel={handleDeleteCancel}
+                />
             </dialog>
         </>
     );

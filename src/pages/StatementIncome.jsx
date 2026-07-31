@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
-import StatementIncomeAddButton from '../components/Statement/StatementIncomeAddButton';
-import StatementIncomeEditModal from '../components/Statement/StatementIncomeEditModal';
+import StatementIncomeAddButton from '../components/statement/StatementIncomeAddButton';
+import StatementIncomeEditModal from '../components/statement/StatementIncomeEditModal';
 import { toThaiDateString } from '../lib/dateUtils';
 
 const StatementIncome = () => {

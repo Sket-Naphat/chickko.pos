@@ -42,3 +42,32 @@ export function formatDateWithDay(dateString) {
     const year = date.getFullYear() + 543;
     return `${dayName} ${day} ${month} ${year}`;
 }
+
+/**
+ * แปลง string เป็นวันที่แบบไทยชื่อเต็ม ไม่มีปี (เช่น "วันเสาร์ ที่ 01 ตุลาคม ")
+ * ย้ายมาจาก services/costService.js — คงรูปแบบ (รวมช่องว่างท้ายสตริง) เดิมไว้ตามที่หน้า Cost ใช้แสดงผลอยู่
+ */
+export function formatDisplayDateLong(dateString) {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+
+    const dayNames = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+    const monthNames = [
+        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    ];
+
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, "0");
+    const monthName = monthNames[date.getMonth()];
+    return `วัน${dayName} ที่ ${day} ${monthName} `;
+}
+
+/**
+ * รับเฉพาะ HH:mm จาก HH:mm:ss หรือ HH:mm:ss.SSS...
+ */
+export function formatDisplayTime(timeStr) {
+    if (!timeStr) return "";
+    const match = timeStr.match(/^(\d{2}:\d{2})/);
+    return match ? match[1] : timeStr;
+}

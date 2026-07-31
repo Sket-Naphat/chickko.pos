@@ -2,11 +2,11 @@
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import Navbar from "./components/Navbar";
-import LoadingBar from "./components/LoadingBar";
+import Navbar from "./components/common/Navbar";
+import LoadingBar from "./components/common/LoadingBar";
 import Toast from "./components/Toast";
 
-import RequireAuth from "../routes/RequireAuth";                 // ✅ กันหน้า: ต้องมี token/ไม่หมดอายุ
+import RequireAuth from "./routes/RequireAuth";                  // ✅ กันหน้า: ต้องมี token/ไม่หมดอายุ
 import { bindLoadingListener, bindErrorListener } from "./lib/api"; // ✅ ผูก interceptors → UI กลาง
 
 // เพจ

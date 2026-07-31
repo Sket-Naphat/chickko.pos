@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MdLogout, MdMenu, MdClose } from "react-icons/md";
 import Cookies from "js-cookie"; // ถ้าไม่ได้ใช้ ลบได้
-import { logout } from "../lib/api";
+import { logout } from "../../lib/api";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle"; // นำเข้า ThemeToggle
 

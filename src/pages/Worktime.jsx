@@ -14,8 +14,8 @@ function formatCurrency(val) {
 import React, { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import { api } from '../lib/api';
-import StaffWorktime from '../components/workTime/StaffWorktime';
-import ModalCreateWorktime from '../components/workTime/ModalCreateWorktime';
+import StaffWorktime from '../components/worktime/StaffWorktime';
+import ModalCreateWorktime from '../components/worktime/ModalCreateWorktime';
 import Toast from '../components/ui/Toast';
 import { IoCopyOutline } from 'react-icons/io5';
 

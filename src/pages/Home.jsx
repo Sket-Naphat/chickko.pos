@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import { MdLogout } from "react-icons/md";
 import { logout } from "../lib/api";
 import { jwtDecode } from "jwt-decode";
-import ThemeToggle from "../components/ThemeToggle";
+import ThemeToggle from "../components/common/ThemeToggle";
 
 function Home() {
   const [site, setSite] = useState("");

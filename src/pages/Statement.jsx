@@ -5,7 +5,7 @@ import Cookies from 'js-cookie';
 import React from 'react';
 import Toast from '../components/ui/Toast';
 import { useNavigate } from 'react-router-dom';
-import StatementIncomeAddButton from '../components/Statement/StatementIncomeAddButton';
+import StatementIncomeAddButton from '../components/statement/StatementIncomeAddButton';
 
 // Main Statement Component
 const Statement = () => {
